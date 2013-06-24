@@ -51,7 +51,7 @@ foreach my $tool ( @tools ) {
 	
 	
 	print "* Updating $tool\n" ;
-	foreach ( `cd $dir ; git commit -m "$msg"` ) {
+	foreach ( `cd $dir ; git commit -am "$msg"` ) {
 		next if $_ =~ m/^\# On branch master/ ;
 		next if $_ =~ m/^nothing to commit/ ;
 		print $_ ;
