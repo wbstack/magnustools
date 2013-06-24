@@ -1,0 +1,17 @@
+magnustools
+flickr2commons
+geograph2commons
+commonshelper
+add-information
+usualsuspects
+catscan2
+catfood
+wikidata-terminator
+wikidata-todo
+reasonator
+glamtools
+sighting
+book2scroll
+dnbtools
+tusc
+geohack
