@@ -5,6 +5,7 @@ error_reporting(E_ERROR|E_CORE_ERROR|E_ALL|E_COMPILE_ERROR);
 ini_set('display_errors', 'On');
 */
 
+define('CLI', PHP_SAPI === 'cli');
 ini_set('user_agent','Magnus labs tools'); # Fake user agent
 $tusc_url = "http://127.0.0.1/tusc/tusc.php" ;
 
@@ -15,8 +16,9 @@ function myurlencode ( $t ) {
 }
 
 function getDBpassword () {
-	global $mysql_user , $mysql_password ;
-	$user = str_replace ( 'local-' , '' , get_current_user() ) ;
+	global $mysql_user , $mysql_password , $tool_user_name ;
+	if ( isset ( $tool_user_name ) ) $user = $tool_user_name ;
+	else $user = str_replace ( 'local-' , '' , get_current_user() ) ;
 	$passwordfile = '/data/project/' . $user . '/replica.my.cnf' ;
 	if ( $user == 'magnus' ) $passwordfile = '/home/' . $user . '/replica.my.cnf' ; // Command-line usage
 	$t = file_get_contents ( $passwordfile ) ;
