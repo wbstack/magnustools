@@ -60,8 +60,14 @@ function openToolDB ( $dbname = '' ) {
 	return $db ;
 }
 
+$common_db_cache = array() ;
+
 function openDB ( $language , $project ) {
-	global $mysql_user , $mysql_password , $o ;
+	global $mysql_user , $mysql_password , $o , $common_db_cache ;
+	
+	$db_key = "$language.$project" ;
+	if ( isset ( $common_db_cache[$db_key] ) ) return $common_db_cache[$db_key] ;
+	
 	getDBpassword() ;
 	$dbname = getDBname ( $language , $project ) ;
 
@@ -79,6 +85,7 @@ function openDB ( $language , $project ) {
 		$o['status'] = 'ERROR' ;
 		return false ;
 	}
+	$common_db_cache[$db_key] = $db ;
 	return $db ;
 }
 
@@ -124,8 +131,6 @@ function getPagesInCategory ( $db , $category , $depth = 0 , $namespace = 0 , $n
 	$namespace *= 1 ;
 	$sql = "SELECT DISTINCT page_title FROM page,categorylinks WHERE cl_from=page_id AND page_namespace=$namespace AND cl_to IN ('" . implode("','",$cats) . "')" ;
 	if ( $no_redirects ) $sql .= " AND page_is_redirect=0" ;
-	
-#	if ( $testing ) print "<pre>$sql</pre>" ;
 
 	if(!$result = $db->query($sql)) die('There was an error running the query [' . $db->error . ']');
 	while($o = $result->fetch_object()){

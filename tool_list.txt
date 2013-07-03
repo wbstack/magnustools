@@ -18,3 +18,4 @@ geohack
 url2commons
 file-siblings
 not-in-the-other-language
+fist
