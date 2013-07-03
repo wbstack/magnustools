@@ -44,10 +44,12 @@ function getDBname ( $language , $project ) {
 	return $ret ;
 }
 
-function openToolDB () {
+function openToolDB ( $dbname = '' ) {
 	global $o , $mysql_user , $mysql_password ;
 	getDBpassword() ;
-	$dbname = $mysql_user."_main" ;
+	if ( $dbname == '' ) $dbname = '_main' ;
+	else $dbname = "__$dbname" ;
+	$dbname = $mysql_user.$dbname; #"_main" ;
 	$server = "tools-db" ;
 	$db = new mysqli($server, $mysql_user, $mysql_password, $dbname);
 	if($db->connect_errno > 0) {
@@ -91,26 +93,30 @@ function make_db_safe ( &$s , $fixup = false ) {
 }
 
 function findSubcats ( $db , $root , &$subcats , $depth = -1 ) {
+	global $testing ;
 	$check = array() ;
 	$c = array() ;
 	foreach ( $root AS $r ) {
 		if ( isset ( $subcats[$r] ) ) continue ;
 		$subcats[$r] = get_db_safe ( $r ) ;
-		$c[] = $db->escape_string ( $r ) ;
+		$c[] = str_replace ( ' ' , '_' , $db->escape_string ( $r ) ) ;
 	}
 	if ( count ( $c ) == 0 ) return ;
 	if ( $depth == 0 ) return ;
 	$sql = "select distinct page_title from page,categorylinks where page_id=cl_from and cl_to IN ('" . implode ( "','" , $c ) . "') and cl_type='subcat'" ;
 	if(!$result = $db->query($sql)) die('There was an error running the query [' . $db->error . ']');
+#	if ( $testing ) print "<pre>$depth : $sql</pre>" ;
 	while($row = $result->fetch_assoc()){
 		if ( isset ( $subcats[$row['page_title']] ) ) continue ;
 		$check[] = $row['page_title'] ;
 	}
+#	if ( $testing ) print_r ( $check ) ;
 	if ( count ( $check ) == 0 ) return ;
 	findSubcats ( $db , $check , $subcats , $depth - 1 ) ;
 }
 
 function getPagesInCategory ( $db , $category , $depth = 0 , $namespace = 0 , $no_redirects = false ) {
+	global $testing ;
 	$ret = array() ;
 	$cats = array() ;
 	findSubcats ( $db , array($category) , $cats , $depth ) ;
@@ -118,6 +124,8 @@ function getPagesInCategory ( $db , $category , $depth = 0 , $namespace = 0 , $n
 	$namespace *= 1 ;
 	$sql = "SELECT DISTINCT page_title FROM page,categorylinks WHERE cl_from=page_id AND page_namespace=$namespace AND cl_to IN ('" . implode("','",$cats) . "')" ;
 	if ( $no_redirects ) $sql .= " AND page_is_redirect=0" ;
+	
+#	if ( $testing ) print "<pre>$sql</pre>" ;
 
 	if(!$result = $db->query($sql)) die('There was an error running the query [' . $db->error . ']');
 	while($o = $result->fetch_object()){
@@ -344,8 +352,9 @@ function get_thumbnail_url ( $lang , $image , $width , $project = "wikipedia" ) 
 	$m = md5( $image2 ) ;
 	$m1 = substr ( $m , 0 , 1 ) ;
 	$m2 = substr ( $m , 0 , 2 ) ;
-	
-	$url = "http://upload.wikimedia.org/{$project}/{$lang}/thumb/{$m1}/{$m2}/" . myurlencode ( $image ) ;
+	$project='wikipedia' ;
+
+	$url = "//upload.wikimedia.org/{$project}/{$lang}/thumb/{$m1}/{$m2}/" . myurlencode ( $image ) ;
 	$url .= '/' . $width . 'px-' . myurlencode ( $image ) ;
 	if ( strtolower ( substr ( $image , -4 , 4 ) ) == '.svg' ) $url .= '.png' ;
 	return $url ;
@@ -397,5 +406,19 @@ function cGetEditButton ( $text , $title , $lang , $project , $summary , $button
 	$ncb .= "</form>" ;
 	return $ncb ;
 }
+
+function db_get_user_images ( $username , $db ) {
+	make_db_safe ( $username ) ;
+	$username = str_replace ( '_' , ' ' , $username ) ;
+
+	$ret = array () ;
+	$sql = "SELECT  * FROM image WHERE img_user_text=\"{$username}\"" ;
+	if(!$result = $db->query($sql)) die('There was an error running the query [' . $db->error . ']');
+	while($o = $result->fetch_object()){
+		$ret[$o->img_name] = $o ;
+	}
+	return $ret ;
+}
+
 
 ?>

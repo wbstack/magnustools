@@ -1048,6 +1048,42 @@ WikiPage.prototype.checkExists = function ( yes , no ) {
 	} ) ;	
 }
 
+
+WikiPage.prototype.getViewStats = function  ( o ) {
+	var me = this ;
+	var wiki = me.lang + wikiDataCache.pv_proj2stats[me.project] ;
+	var title = ucFirst ( $.trim ( me.title ) ) .replace ( / /g , '_' ) ;
+
+	$.get ( '/glamtools/viewstats_api.php' , {
+		action:'request',
+		date:o.date,
+		pages:JSON.stringify([ wiki+':'+title ])
+	} , function ( d ) {
+		if ( d.status != 'OK' ) {
+			console.log ( d ) ;
+			return ;
+		}
+		if ( d.views.length == 0 ) {
+			setTimeout ( function () { me.getViewStats ( o ) } , 1000+Math.floor(Math.random()*5001) ) ;
+			return ;
+		}
+		
+		var nd = { monthly_views:0 , daily_views:{} , month:o.date , project:wiki , title:me.title } ;
+		$.each ( d.views , function ( date , pages ) {
+			$.each ( pages , function ( page , daily ) { // Only one page
+				$.each ( daily , function ( day , v ) {
+					nd.monthly_views += v ;
+					if ( day < 9 ) day = '0' + day ;
+					nd.daily_views[o.date.substr(0,4)+'-'+o.date.substr(4,2)+'-'+day] = v ;
+				} ) ;
+			} ) ;
+		} ) ;
+		
+		o.callback ( { data : nd , options : o } ) ;
+		
+	} , 'json' ) ;
+}
+/*
 WikiPage.prototype.getViewStats = function  ( o ) {
 	var me = this ;
 	var url = 'http://' + wikiSettings.stats_grok + '/jsonp/' ;
@@ -1081,6 +1117,7 @@ WikiPage.prototype.getViewStats = function  ( o ) {
 	} ) ;
 
 }
+*/
 
 WikiPage.prototype.getText = function ( callback ) {
 	var me = this ;
