@@ -24,3 +24,4 @@ makeref
 missingtopics
 wiki-todo
 multidesc
+icommons
