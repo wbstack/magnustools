@@ -3,6 +3,9 @@
 /*
 error_reporting(E_ERROR|E_CORE_ERROR|E_ALL|E_COMPILE_ERROR);
 ini_set('display_errors', 'On');
+
+ini_set('memory_limit','500M');
+set_time_limit ( 60 * 10 ) ; // Seconds
 */
 
 define('CLI', PHP_SAPI === 'cli');
@@ -428,5 +431,62 @@ function db_get_user_images ( $username , $db ) {
 	return $ret ;
 }
 
+function get_initial_paragraph ( &$text , $language = '' ) {
+	global $image_aliases ;
+	$t = explode ( "\n" , $text ) ;
+	while ( count ( $t ) > 0 ) {
+		$s = trim ( array_shift ( $t ) ) ;
+		if ( $s == "" ) continue ;
+		if ( substr ( $s , 0 , 2 ) == '{{' ) { # Template
+			if ( substr ( $s , -2 , 2 ) == '}}' ) continue ; # One-line template
+			while ( count ( $t ) > 0 && substr ( $s , -2 , 2 ) != '}}' ) {
+				$s = trim ( array_shift ( $t ) ) ;
+			}
+			continue ;
+		}
+		if ( substr ( $s , 0 , 2 ) == '--' ) continue ; # <hr>
+		if ( substr ( $s , 0 , 1 ) == ':' ) continue ; # Remark
+		if ( substr ( $s , 0 , 1 ) == '*' ) continue ; # List
+		if ( substr ( $s , 0 , 1 ) == '#' ) continue ; # List
+		if ( substr ( $s , 0 , 1 ) == '=' ) continue ; # Heading
+		if ( substr ( $s , 0 , 1 ) == '<' ) continue ; # HTML
+		if ( substr ( $s , 0 , 1 ) == '!' ) continue ; # Table fragment
+		if ( substr ( $s , 0 , 1 ) == '|' ) continue ; # Table fragment
+		if ( substr ( $s , 0 , 2 ) == '|-' ) continue ; # Table fragment
+		if ( substr ( $s , 0 , 2 ) == '|}' ) continue ; # Table fragment
+		if ( substr ( $s , 0 , 2 ) == '{|' ) { # Table
+			while ( count ( $t ) > 0 && substr ( $s , 0 , 2 ) != '|}' ) {
+				$s = trim ( array_shift ( $t ) ) ;
+			}
+			continue ;
+		}
+
+		if ( substr ( $s , 0 , 2 ) == '}}' ) continue ; # Template end
+		
+		$sl = strtolower ( $s ) ;
+		
+		# Check for images
+		foreach ( $image_aliases AS $ia )
+			{
+			if ( false === strpos ( $sl , '[['.$ia ) ) continue ; # Image
+			$sl = '' ;
+			break ;
+			}
+		if ( $sl == '' ) continue ;
+		
+		if ( false !== strpos ( $sl , "|thumb|" ) ) continue ; # Image
+		if ( false !== strpos ( $sl , "|frame|" ) ) continue ; # Image
+		if ( false !== strpos ( $sl , "|right|" ) ) continue ; # Image
+		if ( false !== strpos ( $sl , "|miniatur|" ) ) continue ; # Image
+		if ( false !== strpos ( $sl , "|hochkant=" ) ) continue ; # Image
+
+		if ( $language == 'eo' AND false !== strpos ( $sl , ">>" ) ) continue ; # Esperanto navigation line
+		
+		# Seems to be a real paragraph
+		break ;
+	}
+	if ( count ( $t ) == 0 ) return "" ;
+	return $s ;
+}
 
 ?>
