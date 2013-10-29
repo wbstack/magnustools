@@ -20,10 +20,12 @@
 			<li><a href='file_reuse'>File reuse</a> allows you to drag'n'drop a file onto it, and show a thumbnail and attribution.</li>
 			<li><a href='/fist/fist.php'>FIST</a>, the Free Image Search Tool.</li>
 			<li><a href='/url2commons'>URL2Commons</a> can transfer files from a list of URLs to Commons.</li>
-			<li><a href='/file-fiblings'>File siblings</a> builds, for a file, an HTML fragment with thumbnails of related images. See <a href='//de.wikipedia.org/wiki/MediaWiki:Gadget-ImageSiblings.js'>the corresponding JavaScript</a>.</li>
+			<li><a href='/file-siblings'>File siblings</a> builds, for a file, an HTML fragment with thumbnails of related images. See <a href='//de.wikipedia.org/wiki/MediaWiki:Gadget-ImageSiblings.js'>the corresponding JavaScript</a>.</li>
 			<li><a href='/filedupes'>FileDupes</a>, a merge of "userdupes" and "commons_dupes" from toolserver.</li>
 			<li><a href='/multidesc'>MultiDesc</a> generates multilingual gallery and file descriptions (a merge of "whatisthat" and "commons_sumitup").</li>
 			<li><a href='./wiki2playlist.php'>Wiki2playlist</a> generates a .M3U playlist from files hosted on Commons.</li>
+			<li><a href='/icommons'>iCommons</a> is a Commons browser for mobile devices.</li>
+			<li><a href='/magnustools/flickrfree.php'>FlickrFree</a> shows free, recently uploaded images on Flickr, ready for transfer to Commons.</li>
 		</ul>
 	</div>
 </div>
@@ -34,8 +36,11 @@
 		<ul class='unstyled'>
 			<li><a href='/catscan2/catscan2.php'>CatScan 2</a> for complex category tree and template intersection.</li>
 			<li><a href='/catscan2/quick_intersection.php'>Quick intersection</a> for fast and simple category tree intersection.</li>
+			<li><a href='/catscan2/pages_in_cats.php'>Pages inb categories</a> counts pages in a category tree.</li>
 			<li><a href='/catfood/catfood.php'>CatFood</a>, RSS feeds for pages and files based on category or user name.</li>
 			<li><a href='/catfood/commons_image_feed.php'>Commons image feed</a>, RSS image feeds for Commons categories to use in screensavers etc.</li>
+			<li><a href='/catnap'>CatNap</a> lists Wikipedia articles in a category grouped by their other categories.</li>
+			<li><a href='/catscan2/cross_cats.php'>CrossCats</a> finds articles that ought to be in a category tree in a language via categories in other languages.</li>
 		</ul>
 	</div>
 </div>
@@ -49,6 +54,12 @@
 			<li><a href='/not-in-the-other-language'>Not in the Other Language</a> finds Wikidata items with a Wikipedia page in language A but not in B.</li>
 			<li><a href='/wikidata-todo'>Todo</a>, little things you can do on Wikidata.</li>
 			<li><a href='//208.80.153.172'>WikiDataQuery</a>, an API for Wikidata items and properties.</li>
+			<li><a href='/wikidata-todo/important_blank_items.php'>Important blank items</a>, Wikidata items with many language links that do not reference other items.</li>
+			<li>Demos:
+			<a href='http://tools.wmflabs.org/wikidata-todo/tempo_spatial_display.html?q=Q46083&title=The Franco-Prussian War&subtitle=Major battles'>Tempo-spatial display</a>, 
+			<a href='http://tools.wmflabs.org/wikidata-todo/tree.html?q=23112&rp=131&method=d3'>property trees</a>, 
+			<a href='http://tools.wmflabs.org/wikidata-todo/stats.php'>stats</a>
+			</li>
 		</ul>
 	</div>
 </div>
@@ -86,33 +97,57 @@
 	                <li><a href='/dnbtools/map2wp.php'>Map2WP</a> attempts to map DNB articles on wikisource to wikipedia.</li>
 	                <li><a href='/dnbtools/dnb_wikisource.php'>Wikisource DNB</a> looks for inconsistencies in the wikisource link structures of the DNB.</li>
 	                <li><a href='/dnbtools/dnb_ratios.php'>DNB ratios</a> gives page length ratios between Wikisource and Wikipedia articles.</li>
-	                
+	                <li><a href='/dnbtools/dnb_link_finder.php'>DNB link finder</a> finds links to Google books DNB that would better point to Wikisource.</li>
                 </ul>
         </div>
 </div>
+
+<div class="span10">
+        <h2>Displays</h2>
+        <div class='well well-small'>
+                <ul class='unstyled'>
+	                <li><a href='/geohack/geohack.php?pagename=Berlin&params=52_31_N_13_23_E_type:city(3292365)_region:DE'>GeoHack</a> (example:Berlin), meta-map tool.</li>
+	                <li><a href='./cas.php?language=en&cas=7601-54-9&title=Trisodium phosphate'>CAS</a> shows links to CAS numbers based on parameter.</li>
+	                <li><a href='/isin/?language=de&isin=GB00B24CGK77'>ISIN</a> shows links to ISIN numbers (stock market) based on parameter.</li>
+                </ul>
+        </div>
+</div>
+
+<div class="span10">
+        <h2>Content generators</h2>
+        <div class='well well-small'>
+                <ul class='unstyled'>
+	                <li><a href='/magnustools/prepbio.php'>PrepBio</a> generates infobox templates for biographies.</li>
+	                <li><a href='./html2wiki.php'>HTML2wiki</a> can convert some HTML into wikitext, especially tables.</li>
+					<li><a href='/magnustools/tab2wiki.php'>Tab2Wiki</a> converts tables (tab-delim, e.g. copied from Excel) to Wikitext tables.</li>
+	                <li><a href='/makeref'>MakeRef</a>, a form to generate &lt;ref&gt;erences.</li>
+	                <li><a href='/isbn2wiki'>ISBN2Wiki</a> generates wikitext reference texts for ISBNs.</li>
+	                <li><a href='/magnustools/get_article_intro.php'>GetArticleIntro</a> returns the first sentence of an article as JSONP.</li>
+	                <li><a href='/magnustools/update_article_counter.php'>Update article counter</a> updates the number of articles in a WikiProject.</li>
+                </ul>
+        </div>
+</div>
+
+
+<div class="span10">
+        <h2>Queries</h2>
+        <div class='well well-small'>
+                <ul class='unstyled'>
+	                <li><a href='/missingtopics'>MissingTopics</a> finds the "most wanted" missing topics in an article or category tree.</li>
+	                <li><a href='/wiki-todo'>Wiki ToDo</a> finds articles with things to do for you!</li>
+	                <li><a href='/most-wanted'>Most wanted</a> topics, measured by redlink count, for several languages.</li>
+	                <li><a href='/magnustools/get_distinct_authors.php'>GetDistinctAuthors</a> gives the distinct (non-IP) list of editors on a set of articles.</li>
+	                <li><a href='/magnustools/herding_sheep.php'>Herding Sheep</a> shows the (last) edits of all users in a user category.</li>
+                </ul>
+        </div>
+</div>
+
 
 <div class="span10">
         <h2>Miscellaneous</h2>
         <div class='well well-small'>
                 <ul class='unstyled'>
 	                <li><a href='/tusc'>TUSC</a>, an authentication tool for tools.</li>
-	                <li><a href='/geohack/geohack.php?pagename=Berlin&params=52_31_N_13_23_E_type:city(3292365)_region:DE'>GeoHack</a> (example:Berlin), meta-map tool.</li>
-	                <li><a href='./cas.php?language=en&cas=7601-54-9&title=Trisodium phosphate'>CAS</a> shows links to CAS numbers based on parameter.</li>
-	                <li><a href='./html2wiki.php'>HTML2wiki</a> can convert some HTML into wikitext, especially tables.</li>
-	                <li><a href='/makeref'>MakeRef</a>, a form to generate &lt;ref&gt;erences.</li>
-	                <li><a href='/missingtopics'>MissingTopics</a> finds the "most wanted" missing topics in an article or category tree.</li>
-	                <li><a href='/wiki-todo'>Wiki ToDo</a> finds articles with things to do for you!</li>
-	                <li><a href='/magnustools/get_article_intro.php'>GetArticleIntro</a> returns the first sentence of an article as JSONP.</li>
-	                <li><a href='/magnustools/get_distinct_authors.php'>GetDistinctAuthors</a> gives the distinct (non-IP) list of editors on a set of articles.</li>
-	                <li><a href='/magnustools/update_article_counter.php'>Update article counter</a> updates the number of articles in a WikiProject.</li>
-                </ul>
-        </div>
-</div>
-
-<div class="span10">
-        <h2>Demos</h2>
-        <div class='well well-small'>
-                <ul class='unstyled'>
 	                <li><a href='./wp_data_url.php?lang=en&title=Richard_Dawkins'>Data URL</a> demoing images as data URLs in Wikipedia, with or without WEBP.</li>
                 </ul>
         </div>

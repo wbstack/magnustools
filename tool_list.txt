@@ -25,3 +25,6 @@ missingtopics
 wiki-todo
 multidesc
 icommons
+most-wanted
+catnap
+isbn2wiki

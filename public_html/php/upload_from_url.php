@@ -1,7 +1,7 @@
 <?PHP
 
-#$hide_header = true ;
-#$hide_doctype = true ;
+//error_reporting(E_ERROR|E_CORE_ERROR|E_ALL|E_COMPILE_ERROR);
+//ini_set('display_errors', 'On');
 
 require_once( 'common.php' );
 require_once( 'peachy/Init.php' );

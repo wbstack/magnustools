@@ -10,7 +10,10 @@ set_time_limit ( 60 * 10 ) ; // Seconds
 
 define('CLI', PHP_SAPI === 'cli');
 ini_set('user_agent','Magnus labs tools'); # Fake user agent
-$tusc_url = "http://127.0.0.1/tusc/tusc.php" ;
+header("Connection: close");
+#$tusc_url = "http://127.0.0.1/tusc/tusc.php" ;
+$tusc_url = 'http://tools-webserver-01/tusc/tusc.php' ;
+$use_db_cache = false ;
 
 function myurlencode ( $t ) {
 	$t = str_replace ( " " , "_" , $t ) ;
@@ -39,6 +42,7 @@ function getDBname ( $language , $project ) {
 	else if ( $language == 'wikidata' || $project == 'wikidata' ) $ret = 'wikidatawiki_p' ;
 	else if ( $project == 'wikipedia' ) $ret .= 'wiki_p' ;
 	else if ( $project == 'wikisource' ) $ret .= 'wikisource_p' ;
+	else if ( $project == 'wiktionary' ) $ret .= 'wiktionary_p' ;
 	else if ( $project == 'wikibooks' ) $ret .= 'wikibooks_p' ;
 	else if ( $project == 'wikinews' ) $ret .= 'wikinews_p' ;
 	else if ( $project == 'wikiversity' ) $ret .= 'wikiversity_p' ;
@@ -47,13 +51,13 @@ function getDBname ( $language , $project ) {
 	return $ret ;
 }
 
-function openToolDB ( $dbname = '' ) {
+function openToolDB ( $dbname = '' , $server = '' ) {
 	global $o , $mysql_user , $mysql_password ;
 	getDBpassword() ;
 	if ( $dbname == '' ) $dbname = '_main' ;
 	else $dbname = "__$dbname" ;
 	$dbname = $mysql_user.$dbname; #"_main" ;
-	$server = "tools-db" ;
+	if ( $server == '' ) $server = "tools-db" ;
 	$db = new mysqli($server, $mysql_user, $mysql_password, $dbname);
 	if($db->connect_errno > 0) {
 		$o['msg'] = 'Unable to connect to database [' . $db->connect_error . ']';
@@ -66,7 +70,7 @@ function openToolDB ( $dbname = '' ) {
 $common_db_cache = array() ;
 
 function openDB ( $language , $project ) {
-	global $mysql_user , $mysql_password , $o , $common_db_cache ;
+	global $mysql_user , $mysql_password , $o , $common_db_cache , $use_db_cache ;
 	
 	$db_key = "$language.$project" ;
 	if ( isset ( $common_db_cache[$db_key] ) ) return $common_db_cache[$db_key] ;
@@ -88,7 +92,7 @@ function openDB ( $language , $project ) {
 		$o['status'] = 'ERROR' ;
 		return false ;
 	}
-	$common_db_cache[$db_key] = $db ;
+	if ( $use_db_cache ) $common_db_cache[$db_key] = $db ;
 	return $db ;
 }
 
@@ -130,6 +134,7 @@ function getPagesInCategory ( $db , $category , $depth = 0 , $namespace = 0 , $n
 	$ret = array() ;
 	$cats = array() ;
 	findSubcats ( $db , array($category) , $cats , $depth ) ;
+	if ( $namespace == 14 ) return $cats ; // Faster, and includes root category
 
 	$namespace *= 1 ;
 	$sql = "SELECT DISTINCT page_title FROM page,categorylinks WHERE cl_from=page_id AND page_namespace=$namespace AND cl_to IN ('" . implode("','",$cats) . "')" ;

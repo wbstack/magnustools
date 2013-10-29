@@ -70,7 +70,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 	}
 	
 	this.getClaimsForProperty = function ( p ) {
-		p = this.wd.convertToStringArray ( p , 'p' ) [0] ;
+		p = this.wd.convertToStringArray ( p , 'P' ) [0] ;
 		if ( undefined === this.raw || undefined === this.raw.claims ) return [] ;
 		return this.raw.claims[this.wd.getUnifiedID(p)]||[] ;
 	}
@@ -108,7 +108,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 		if ( undefined !== s.datavalue ) {
 			if ( s.datavalue.type == 'wikibase-entityid' ) {
 				o.type = 'item' ;
-				o.q = 'q' + s.datavalue.value['numeric-id'] ;
+				o.q = 'Q' + s.datavalue.value['numeric-id'] ;
 				o.key = o.q ;
 			} else if ( s.datavalue.type == 'string' ) {
 				o.type = 'string' ;
@@ -189,7 +189,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 		if ( claim.mainsnak.datavalue.value === undefined ) return undefined ;
 		if ( claim.mainsnak.datavalue.value['entity-type'] != 'item' ) return undefined ;
 		if ( claim.mainsnak.datavalue.value['numeric-id'] === undefined ) return undefined ;
-		return 'q'+claim.mainsnak.datavalue.value['numeric-id'] ;
+		return 'Q'+claim.mainsnak.datavalue.value['numeric-id'] ;
 	}
 	
 	this.getClaimTargetString = function ( claim ) {
@@ -204,7 +204,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 	this.hasClaimItemLink = function ( p , q ) {
 		var self = this ;
 		var ret = false ;
-		q = this.wd.convertToStringArray ( q , 'q' ) [0] ;
+		q = this.wd.convertToStringArray ( q , 'Q' ) [0] ;
 		var claims = self.getClaimsForProperty ( p ) ;
 		$.each ( claims , function ( dummy , c ) {
 			var id = self.getClaimTargetItemID ( c ) ;
@@ -226,7 +226,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 			o.hadthat = {} ;
 			o.longest = [] ;
 			o.current = [] ;
-			o.props = self.wd.convertToStringArray ( o.props , 'p' ) ;
+			o.props = self.wd.convertToStringArray ( o.props , 'P' ) ;
 		}
 		if ( undefined !== o.hadthat[id] ) return ;
 		o.hadthat[id] = 1 ;
@@ -275,8 +275,8 @@ function WikiData () {
 	}
 
 	this.getUnifiedID = function ( name , type ) {
-		var ret = String(name).replace ( /\s/g , '' ).toLowerCase() ;
-		if ( /^\d+$/.test(ret) && undefined !== type ) ret = type.toLowerCase() + ret ;
+		var ret = String(name).replace ( /\s/g , '' ).toUpperCase() ;
+		if ( /^\d+$/.test(ret) && undefined !== type ) ret = type.toUpperCase() + ret ;
 		return ret ;
 	}
 	
@@ -302,7 +302,7 @@ function WikiData () {
 		var self = this ;
 		if ( undefined === fallback ) fallback = '' ;
 		var a = [] ;
-		$.each ( self.convertToStringArray ( ql , 'q' ) , function ( dummy , q ) {
+		$.each ( self.convertToStringArray ( ql , 'Q' ) , function ( dummy , q ) {
 			if ( undefined === self.items[q] ) return ;
 			a.push ( self.items[q].getLink ( o ) ) ;
 		} ) ;
@@ -341,9 +341,9 @@ function WikiData () {
 			if ( params.preload_all_for_root ) download_all_linked_items = true ;
 			params.running = 0 ;
 			params.post_load_items = [] ;
-			params.preload = self.convertToStringArray ( params.preload , 'p' ) ;
-			params.follow = self.convertToStringArray ( params.follow , 'p' ) ;
-			ql = self.convertToStringArray ( item_list , 'q' ) ; // 'q' being the default, in case only integers get passed
+			params.preload = self.convertToStringArray ( params.preload , 'P' ) ;
+			params.follow = self.convertToStringArray ( params.follow , 'P' ) ;
+			ql = self.convertToStringArray ( item_list , 'Q' ) ; // 'Q' being the default, in case only integers get passed
 			if ( undefined !== params.status ) params.status ( params ) ;
 		} else {
 			ql = item_list ;
@@ -403,7 +403,7 @@ function WikiData () {
 									if ( undefined === v4.datavalue ) return ;
 									if ( undefined === v4.datavalue.value ) return ;
 									if ( undefined === v4.datavalue.value['numeric-id'] ) return ;
-									var qualq = 'q'+v4.datavalue.value['numeric-id'] ;
+									var qualq = 'Q'+v4.datavalue.value['numeric-id'] ;
 									if ( -1 == $.inArray ( qualq , params.post_load_items ) ) params.post_load_items.push ( qualq ) ;
 								} ) ;
 							} ) ;
