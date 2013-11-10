@@ -59,7 +59,7 @@ foreach my $tool ( @tools ) {
 	
 	my $origin = `grep -c origin $dir/.git/config` ;
 	chomp $origin ;
-	unless ( $origin == '0' ) {
+	unless ( $origin eq '0' ) {
 		print "Updating external repository...\n" ;
 		`cd $dir ; git push` ;
 	}
