@@ -74,6 +74,11 @@ function WikiDataItem ( init_wd , init_raw ) {
 		if ( undefined === this.raw || undefined === this.raw.claims ) return [] ;
 		return this.raw.claims[this.wd.getUnifiedID(p)]||[] ;
 	}
+	
+	this.hasClaims = function ( p ) {
+		var claims = this.getClaimsForProperty ( p ) ;
+		return claims.length > 0 ;
+	}
 
 	this.getClaimLabelsForProperty = function ( p ) {
 		var self = this ;

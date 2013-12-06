@@ -11,9 +11,9 @@ set_time_limit ( 60 * 10 ) ; // Seconds
 define('CLI', PHP_SAPI === 'cli');
 ini_set('user_agent','Magnus labs tools'); # Fake user agent
 header("Connection: close");
-#$tusc_url = "http://127.0.0.1/tusc/tusc.php" ;
 $tusc_url = 'http://tools-webserver-01/tusc/tusc.php' ;
 $use_db_cache = false ;
+$common_db_cache = array() ;
 
 function myurlencode ( $t ) {
 	$t = str_replace ( " " , "_" , $t ) ;
@@ -67,8 +67,6 @@ function openToolDB ( $dbname = '' , $server = '' ) {
 	}
 	return $db ;
 }
-
-$common_db_cache = array() ;
 
 function openDB ( $language , $project ) {
 	global $mysql_user , $mysql_password , $o , $common_db_cache , $use_db_cache ;

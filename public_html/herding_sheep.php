@@ -67,8 +67,9 @@ if ( isset ( $_REQUEST['doit'] ) ) {
 	if(!$result = $db->query($sql)) die('There was an error running the query [' . $db->error . ']');
 	while($o = $result->fetch_object()){
 		$page = $o->page_title ;
+		$ut = str_replace ( '_' , ' ' , $o->rev_user_text ) ;
 		print "<tr><td><a target='_blank' href='//$language.$project.org/wiki/" . urlencode ( $page ) . "'>" . str_replace ( '_' , ' ' , $page ) . "</a></td>" ;
-		print "<td><a target='_blank' href='//$language.$project.org/wiki/User:" . urlencode ( $o->rev_user_text ) . "'>" . str_replace ( '_' , ' ' , $o->rev_user_text ) . "</a></td>" ;
+		print "<td><a target='_blank' href='//$language.$project.org/wiki/User:" . urlencode ( str_replace ( ' ' , '_' , $o->rev_user_text ) ) . "'>$ut</a></td>" ;
 		print "<td>" . format_ts ( $o->rev_timestamp ) . "</td></tr>" ;
 		$last_ts = $o->rev_timestamp ;
 		$cnt++ ;

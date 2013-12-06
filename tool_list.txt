@@ -29,3 +29,5 @@ most-wanted
 catnap
 isbn2wiki
 mix-n-match
+templator
+magnus-toolserver
