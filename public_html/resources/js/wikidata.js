@@ -14,6 +14,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 	this.getID = function () { return (this.raw||{}).id ; }
 	
 	this.getURL = function () {
+		if ( typeof(this.raw) == 'undefined' ) return '' ;
 		var ret = "//www.wikidata.org/wiki/" ;
 		ret += this.raw.title ;
 		return ret ;
@@ -93,14 +94,14 @@ function WikiDataItem ( init_wd , init_raw ) {
 		return ret ;
 	}
 
-	this.getClaimItemsForProperty = function ( p ) {
+	this.getClaimItemsForProperty = function ( p , return_all ) {
 		var self = this ;
 		var ret = [] ;
 		var claims = self.getClaimsForProperty ( p ) ;
 		$.each ( claims , function ( dummy , c ) {
 			var q = self.getClaimTargetItemID ( c ) ;
 			if ( q === undefined ) return ;
-			if ( undefined === self.wd.items[q] ) return ;
+			if ( undefined === self.wd.items[q] && !return_all ) return ;
 			ret.push ( q ) ;
 		} ) ;
 		return ret ;
@@ -164,6 +165,19 @@ function WikiDataItem ( init_wd , init_raw ) {
 		}
 		return desc ;
 	}
+
+	this.getLabelDefaultLanguage = function () {
+		var self = this ;
+		var default_label = self.getID() ; // Fallback
+		var ret = '' ;
+		$.each ( self.wd.main_languages , function ( dummy , lang ) {
+			var l = self.getLabel ( lang ) ;
+			if ( l == default_label ) return ;
+			ret = lang ;
+			return false ;
+		} ) ;
+		return ret ;
+	}
 		
 	this.getLabel = function ( language ) {
 		var self = this ;
@@ -184,6 +198,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 	}
 	
 	this.getWikiLinks = function () {
+		if ( typeof(this.raw) == 'undefined' ) return {} ;
 		return (this.raw.sitelinks||{}) ;
 	}
 	
@@ -314,6 +329,43 @@ function WikiData () {
 		if ( a.length == 0 ) return fallback ;
 		return a.join ( '; ' ) ;
 	}
+	
+	
+	this.getItemBatch = function ( item_list , callback , props ) {
+		var self = this ;
+		if ( props === undefined ) props = 'info|aliases|labels|descriptions|claims|sitelinks' ;
+		var ids = [ [] ] ;
+		$.each ( item_list , function ( dummy , q ) {
+			if ( self.items[q] !== undefined ) return ; // Have that one
+			if ( -1 != $.inArray ( q , ids ) ) return ; // Already planning to load that one
+			if ( ids[ids.length-1].length >= 50 ) ids.push ( [] ) ;
+			ids[ids.length-1].push ( q ) ;
+		} ) ;
+		
+		if ( ids[0].length == 0 ) { // My work here is done
+			callback ( ids ) ;
+			return ;
+		}
+		
+		var running = ids.length ;
+		$.each ( ids , function ( dummy , id_list ) {
+			$.getJSON ( self.api , {
+				action : 'wbgetentities' ,
+				ids : id_list.join('|') ,
+				props : props ,
+				format : 'json'
+			} , function ( data ) {
+				$.each ( (data.entities||[]) , function ( k , v ) {
+					var q = self.getUnifiedID ( k ) ;
+					self.items[q] = new WikiDataItem ( self , data.entities[q] ) ;
+				} ) ;
+				
+				running-- ;
+				if ( running == 0 ) callback ( ids ) ;
+			} ) ;
+		} ) ;
+		
+	}
 
 
 	/**
@@ -368,13 +420,15 @@ function WikiData () {
 			params.running++ ;
 			started = true ;
 			if ( undefined !== params.status ) params.status ( params ) ;
-			$.getJSON ( self.api , {
+			var call_params = {
 				action : 'wbgetentities' ,
 				ids : ids.join('|') ,
 //				languages : self.main_languages.join('|') ,
 				props : 'info|aliases|labels|descriptions|claims|sitelinks' ,
 				format : 'json'
-			} , function ( data ) {
+			} ;
+			if ( !first && params.languages !== undefined ) call_params.languages = params.languages ;
+			$.getJSON ( self.api , call_params , function ( data ) {
 				var nql = [] ;
 				$.each ( (data.entities||[]) , function ( k , v ) {
 					var q = self.getUnifiedID ( k ) ;

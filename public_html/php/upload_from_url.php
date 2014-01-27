@@ -1,7 +1,7 @@
 <?PHP
 
-//error_reporting(E_ERROR|E_CORE_ERROR|E_ALL|E_COMPILE_ERROR);
-//ini_set('display_errors', 'On');
+error_reporting(E_ERROR|E_CORE_ERROR|E_ALL|E_COMPILE_ERROR);
+ini_set('display_errors', 'On');
 
 require_once( 'common.php' );
 require_once( 'peachy/Init.php' );
@@ -54,22 +54,27 @@ function do_direct_upload ( $url , $new_name , $desc ) {
 	$desc = trim ( $desc ) ;
 
 	$newname = $short_file ;
+	$comment = "Transferred from $source by [[User:$tusc_user]]" ;
 
 	$bot_name = "File Upload Bot (Magnus Manske)" ;
 	$bot_pass = trim ( file_get_contents ( "/data/project/magnustools/fub_key.txt" ) ) ;
-	$peach = Peachy::newWiki( null , $bot_name , $bot_pass , 'http://commons.wikimedia.org/w/api.php' );
+	
+	$o['upload'] = uploadFileViaAPI ( $bot_name , $bot_pass , $newfile , $newname , $desc , $comment ) ;
+
+	
+/*	
+	$peach = Peachy::newWiki( null , $bot_name , $bot_pass , 'https://commons.wikimedia.org/w/api.php' );
 	$pi = $peach->initImage( $newname );
-	$comment = "Transferred from $source by [[User:$tusc_user]]" ;
 	$ret = $pi->upload ( $newfile , $desc , $comment ) ;
 	$o['peachy'] = $peachy_error ;
-
+*/
 	// Cleanup
 	unlink ( $newfile ) ;
 	rmdir ( $temp_dir ) ;
 	fclose ( $temp ) ;
 	unlink ( $temp_name ) ;
 
-	return $ret ;
+	return true ;
 }
 
 # Prep
@@ -93,13 +98,13 @@ if ( !verify_tusc () ) {
 
 if ( ! do_direct_upload ( $url , $new_name , $desc ) ) {
 	$a = array() ;
-	foreach ( $o['peachy'] AS $e ) {
+/*	foreach ( $o['peachy'] AS $e ) {
 		if ( stristr ( $e , ' error' ) ) $a[] = $e ;
-	}
+	}*/
 	if ( count ( $a ) == 0 ) $a[] = 'Unknown upload error' ;
 	$o['status'] = implode ( "<br/>" , $a ) ;
 }
-unset ( $o['peachy'] ) ;
+//unset ( $o['peachy'] ) ;
 
 print json_encode ( $o ) ;
 myflush() ;

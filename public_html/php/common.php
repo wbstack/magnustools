@@ -493,4 +493,49 @@ function get_initial_paragraph ( &$text , $language = '' ) {
 	return $s ;
 }
 
+
+// UPLOAD FILE VIA API
+
+$cookiejar = '' ;
+
+function do_post_request_curl ( $url , $params ) {
+	global $cookiejar ;
+	$params['format'] = 'php' ;
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_COOKIEJAR, $cookiejar);
+	curl_setopt($ch, CURLOPT_COOKIEFILE, $cookiejar);
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	curl_setopt($ch, CURLOPT_POST, true);
+	curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
+	$output = curl_exec($ch);
+	$info = curl_getinfo($ch);
+	curl_close($ch);
+	return unserialize ( $output ) ;
+}
+
+function uploadFileViaAPI ( $username , $userpass , $local_file , $new_file_name , $desc , $comment ) {
+	global $cookiejar ;
+	$cookiejar = tempnam("/tmp", "magnus_upload_cookiejar");
+	$api = 'http://commons.wikimedia.org/w/api.php' ;
+	
+	$r1 = do_post_request_curl ( $api , array ( 'action' => 'login' , 'lgname' => $username , 'lgpassword' => $userpass ) ) ;
+	$r2 = do_post_request_curl ( $api , array ( 'action' => 'login' , 'lgname' => $username , 'lgpassword' => $userpass , 'lgtoken' => $r1['login']['token'] ) ) ;
+	$r3 = do_post_request_curl ( $api , array ( 'action' => 'tokens' , 'type' => 'edit' ) ) ;
+	$token = $r3['tokens']['edittoken'] ;
+	$r4 = do_post_request_curl ( $api , array (
+		'action' => 'upload' ,
+		'filename' => $new_file_name ,
+		'comment' => $comment ,
+		'text' => $desc ,
+		'token' => $token ,
+		'file' => '@' . $local_file
+	) ) ;
+	
+	unlink ( $cookiejar ) ;
+	return true ; // TODO 
+}
+
+
+
 ?>
