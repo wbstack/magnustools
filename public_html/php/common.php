@@ -497,6 +497,7 @@ function get_initial_paragraph ( &$text , $language = '' ) {
 // UPLOAD FILE VIA API
 
 $cookiejar = '' ;
+$file_upload_api_result = array() ;
 
 function do_post_request_curl ( $url , $params ) {
 	global $cookiejar ;
@@ -514,8 +515,8 @@ function do_post_request_curl ( $url , $params ) {
 	return unserialize ( $output ) ;
 }
 
-function uploadFileViaAPI ( $username , $userpass , $local_file , $new_file_name , $desc , $comment ) {
-	global $cookiejar ;
+function uploadFileViaAPI ( $username , $userpass , $local_file , $new_file_name , $desc , $comment , $testing ) {
+	global $cookiejar , $file_upload_api_result ;
 	$cookiejar = tempnam("/tmp", "magnus_upload_cookiejar");
 	$api = 'http://commons.wikimedia.org/w/api.php' ;
 	
@@ -523,7 +524,7 @@ function uploadFileViaAPI ( $username , $userpass , $local_file , $new_file_name
 	$r2 = do_post_request_curl ( $api , array ( 'action' => 'login' , 'lgname' => $username , 'lgpassword' => $userpass , 'lgtoken' => $r1['login']['token'] ) ) ;
 	$r3 = do_post_request_curl ( $api , array ( 'action' => 'tokens' , 'type' => 'edit' ) ) ;
 	$token = $r3['tokens']['edittoken'] ;
-	$r4 = do_post_request_curl ( $api , array (
+	$file_upload_api_result = do_post_request_curl ( $api , array (
 		'action' => 'upload' ,
 		'filename' => $new_file_name ,
 		'comment' => $comment ,
@@ -531,8 +532,14 @@ function uploadFileViaAPI ( $username , $userpass , $local_file , $new_file_name
 		'token' => $token ,
 		'file' => '@' . $local_file
 	) ) ;
-	
+	if ( isset($testing) AND $testing ) {
+		print "<pre>" ; print_r ( $r1 ) ; print "</pre>" ;
+		print "<pre>" ; print_r ( $r2 ) ; print "</pre>" ;
+		print "<pre>" ; print_r ( $r3 ) ; print "</pre>" ;
+		print "<pre>" ; print_r ( $file_upload_api_result ) ; print "</pre>" ;
+	}
 	unlink ( $cookiejar ) ;
+	if ( $file_upload_api_result['upload']['result'] == 'Warning' ) return false ;
 	return true ; // TODO 
 }
 

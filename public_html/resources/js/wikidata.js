@@ -36,10 +36,12 @@ function WikiDataItem ( init_wd , init_raw ) {
 		$.each ( ['target','class'] , function ( dummy , v ) {
 			if ( undefined !== o[v] ) h += v + "='" + o[v] + "' " ;
 		} ) ;
+		if ( o.add_q ) h += "q='" + self.raw.title + "' " ;
 		if ( undefined !== o.desc ) h += "title='" + self.getDesc() + "' " ;
 		var url = self.getURL() ;
 		h += "href='" + url + "'>" ;
-		if ( o.ucfirst ) h += ucFirst ( self.getLabel() ) ;
+		if ( o.title !== undefined ) h += o.title ;
+		else if ( o.ucfirst ) h += ucFirst ( self.getLabel() ) ;
 		else h += self.getLabel() ;
 		h += "</a>" ;
 		return h ;
@@ -56,6 +58,10 @@ function WikiDataItem ( init_wd , init_raw ) {
 		} ) ;
 		$.each ( aliases , function ( k , v ) { ret.push ( k ) } ) ;
 		return ret ;
+	}
+
+	this.getStringsForProperty = function ( p ) {
+		return this.getMultimediaFilesForProperty ( p ) ;
 	}
 	
 	this.getMultimediaFilesForProperty = function ( p ) {
@@ -124,6 +130,10 @@ function WikiDataItem ( init_wd , init_raw ) {
 				o.type = 'time' ;
 				$.extend ( true , o , s.datavalue.value ) ;
 				o.key = o.time ; // TODO FIXME
+			} else if ( s.datavalue.type == 'quantity' ) {
+				o.type = 'quantity' ;
+				$.extend ( true , o , s.datavalue.value ) ;
+				o.key = o.amount ; // TODO FIXME
 			}
 		}
 		return o ;
@@ -136,6 +146,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 		$.each ( claims , function ( dummy , c ) {
 			var o = self.getSnakObject ( c.mainsnak ) ;
 			if ( o.type === undefined ) return ;
+			o.rank = c.rank ;
 			o.qualifiers = {} ;
 			$.each ( (c.qualifiers||[]) , function ( qp , qv ) {
 				o.qualifiers[qp] = [] ;
@@ -202,6 +213,16 @@ function WikiDataItem ( init_wd , init_raw ) {
 		return (this.raw.sitelinks||{}) ;
 	}
 	
+	this.getClaimRank = function ( claim ) {
+		if ( claim === undefined ) return undefined ;
+		return claim.rank || 'normal' ; // default
+/*		if ( claim.rank === undefined ) return undefined ;
+		if ( claim.rank == 'normal' ) return 0 ;
+		if ( claim.rank == 'deptecated' ) return -1 ;
+		if ( claim.rank == 'preferred' ) return 1 ;
+		return undefined ;*/
+	}
+	
 	this.getClaimTargetItemID = function ( claim ) {
 		if ( claim === undefined ) return undefined ;
 		if ( claim.mainsnak === undefined ) return undefined ;
@@ -218,6 +239,15 @@ function WikiDataItem ( init_wd , init_raw ) {
 		if ( claim.mainsnak.datavalue === undefined ) return undefined ;
 		if ( claim.mainsnak.datavalue.type === undefined ) return undefined ;
 		if ( claim.mainsnak.datavalue.type != 'string' ) return undefined ;
+		return claim.mainsnak.datavalue.value ;
+	}
+	
+	this.getClaimDate = function ( claim ) {
+		if ( claim === undefined ) return undefined ;
+		if ( claim.mainsnak === undefined ) return undefined ;
+		if ( claim.mainsnak.datavalue === undefined ) return undefined ;
+		if ( claim.mainsnak.datavalue.type === undefined ) return undefined ;
+		if ( claim.mainsnak.datavalue.type != 'time' ) return undefined ;
 		return claim.mainsnak.datavalue.value ;
 	}
 	
@@ -253,14 +283,22 @@ function WikiDataItem ( init_wd , init_raw ) {
 		o.current.push ( id ) ;
 		if ( o.current.length > o.longest.length ) o.longest = $.extend(true, [], o.current);
 		
+		var tried_item = {} ;
 		$.each ( o.props , function ( dummy , p ) {
-			var claims = self.getClaimsForProperty ( p ) ;
+			var items = self.getClaimItemsForProperty ( p ) ;
+			$.each ( items , function ( dummy , q ) {
+				if ( -1 != $.inArray ( q , o.current ) ) return ; // Already on that
+				if ( tried_item[q] ) return ; // Only once my dear
+				tried_item[q] = true ;
+				self.wd.getItem(q).followChain(o) ;
+			} ) ;
+/*			var claims = self.getClaimsForProperty ( p ) ;
 			$.each ( claims , function ( dummy , c ) {
 				var q = self.getClaimTargetItemID ( c ) ;
 				if ( q === undefined ) return ;
 				var i = self.wd.getItem ( q ) ;
 				if ( i !== undefined ) i.followChain ( o ) ;
-			} ) ;
+			} ) ;*/
 		} ) ;
 		
 		delete o.hadthat[this.getID()] ;
@@ -333,13 +371,18 @@ function WikiData () {
 	
 	this.getItemBatch = function ( item_list , callback , props ) {
 		var self = this ;
-		if ( props === undefined ) props = 'info|aliases|labels|descriptions|claims|sitelinks' ;
+		if ( props === undefined ) props = 'info|aliases|labels|descriptions|claims|sitelinks|datatype' ;
 		var ids = [ [] ] ;
+		self.loaded_count = 0 ;
+		self.loading_count = 0 ;
+		max_per_batch = item_list.length > 100 ? 50 : 25 ; // Smaller batch size for small list
 		$.each ( item_list , function ( dummy , q ) {
+			if ( typeof q == 'number' ) q = 'Q' + q ;
 			if ( self.items[q] !== undefined ) return ; // Have that one
 			if ( -1 != $.inArray ( q , ids ) ) return ; // Already planning to load that one
-			if ( ids[ids.length-1].length >= 50 ) ids.push ( [] ) ;
+			if ( ids[ids.length-1].length >= max_per_batch ) ids.push ( [] ) ;
 			ids[ids.length-1].push ( q ) ;
+			self.loading_count++ ;
 		} ) ;
 		
 		if ( ids[0].length == 0 ) { // My work here is done
@@ -347,6 +390,15 @@ function WikiData () {
 			return ;
 		}
 		
+		if ( ids.length > 1 ) {
+			var last = ids.length-1 ;
+			while ( ids[last].length+last <= max_per_batch && ids[last].length+last <= ids[0].length ) {
+				for ( var i = 0 ; i < last ; i++ ) {
+					ids[last].push ( ids[i].pop() ) ;
+				}
+			}
+		}
+
 		var running = ids.length ;
 		$.each ( ids , function ( dummy , id_list ) {
 			$.getJSON ( self.api , {
@@ -355,10 +407,14 @@ function WikiData () {
 				props : props ,
 				format : 'json'
 			} , function ( data ) {
+				
 				$.each ( (data.entities||[]) , function ( k , v ) {
 					var q = self.getUnifiedID ( k ) ;
 					self.items[q] = new WikiDataItem ( self , data.entities[q] ) ;
+					self.loaded_count++ ;
 				} ) ;
+
+				if ( undefined !== self.loading_status_callback ) self.loading_status_callback ( self.loaded_count , self.loading_count ) ;
 				
 				running-- ;
 				if ( running == 0 ) callback ( ids ) ;
