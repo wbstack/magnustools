@@ -56,18 +56,26 @@ div.all_good {
 	color:green;
 	display:none;
 }
+#main {
+	margin-top:10px;
+}
+#intro {
+	margin-top:10px;
+	display:none;
+}
 </style>
 
 
-<script type="text/javascript" src="/magnustools/resources/js/jquery/jquery-1.10.1.min.js"></script>
+<script type="text/javascript" src="resources/js/jquery/jquery-1.10.1.min.js"></script>
 <script type="text/javascript" src="resources/js/bootstrap.min.js"></script>
 
 
 <script type="text/javascript">
 
 var checkmark = "&#10003;" ;
-var server = 'en.wikipedia.org' ;
-var api = '//'+server+'/w/api.php?callback=?' ;
+var default_server = 'en.wikipedia.org' ;
+var server = '' ;
+var api = '' ;
 var params = {} ;
 var pages = [] ;
 var current_page = 0 ;
@@ -169,7 +177,8 @@ function showPage ( page ) {
 
 function updateHash () {
 	var parts = [] ;
-	parts.push ( 'module=' + encodeURIComponent(params.module) ) ;
+	if ( server != default_server ) parts.push ( 'server=' + encodeURIComponent(server) ) ;
+	if ( undefined !== params.module ) parts.push ( 'module=' + encodeURIComponent(params.module) ) ;
 	if ( current_page != 0 ) parts.push ( 'page=' + (current_page+1) ) ;
 	location.hash = parts.join('&') ;
 }
@@ -333,6 +342,7 @@ function loadMoodle ( page ) {
 			alert ( "Module "+page+" not found on "+server ) ;
 			return ;
 		}
+		$('#intro').hide() ;
 		var wt = d.parse.wikitext['*'] ;
 		current_page = ((params.page||1)+'').replace(/\D/g,'') * 1 - 1 ;
 		pages = [] ;
@@ -353,9 +363,39 @@ function loadMoodle ( page ) {
 	} ) ;
 }
 
+function setServer ( s ) {
+	server = s ;
+	api = '//'+server+'/w/api.php?callback=?' ;
+	$('span.server').html ( "<a target='_blank' href='//"+server+"'>"+server+"</a>" ) ;
+	$('#server').val ( server ) ;
+}
+
+function changeServer () {
+	setServer ( $('#server').val() ) ;
+	updateHash() ;
+	return false ;
+}
+
+function loadModule () {
+	params.module = $('#module').val() ;
+	loadMoodle ( params.module ) ;
+	return false ;
+}
+
+function showMainPage () {
+	params.module = undefined ;
+	params.page = undefined ;
+	$('#main').html ( '' ) ;
+	updateHash() ;
+	$('#intro').show() ;
+}
+
 $(document).ready ( function () {
+	$('#intro a').each ( function () { $(this).attr({target:'_blank'}) } ) ;
 	params = getUrlVars() ;
+	setServer ( params.server||default_server ) ;
 	if ( params.module !== undefined ) loadMoodle ( params.module ) ;
+	else $('#intro').show() ;
 } ) ;
 
 </script>
@@ -381,8 +421,8 @@ $(document).ready ( function () {
 		<ul id="toolbar-right" class="nav pull-right">
 <!--			<li><a href="//tools.wmflabs.org/magnustools">Tools</a></li>
 			<li><a href="//toolserver.org/%7Emagnus">Olde tools</a></li>
-			<li><a href="//bitbucket.org/magnusmanske">Git</a></li>
-			<li><a href="//en.wikipedia.org/wiki/User_talk:Magnus_Manske" id="discuss_link">Talk</a></li>-->
+			<li><a href="//bitbucket.org/magnusmanske">Git</a></li>-->
+			<li><button class='btn' onclick="showMainPage();return false">Wikisoba</button></li>
 			<li><a style="margin:0px;padding:0px;margin-top:4px" href="//tools.wmflabs.org/"><img src="//wikitech.wikimedia.org/w/images/c/cf/Labslogo_thumb.png" title="Powered by Wikimedia Labs" border="0" width="32px"></a></li>
 		</ul>
 		
@@ -392,6 +432,26 @@ $(document).ready ( function () {
 
 <div class="container">
 	<div class="row" id='main'>
+	</div>
+	<div class="well" id='intro'>
+		<h1>Wikisoba</h1>
+		<p>A <a href='https://en.wikipedia.org/wiki/Portmanteau'>portmanteau</a> of <a href='https://en.wikipedia.org/wiki/Wiki'>wiki</a> and <a href='https://en.wikipedia.org/wiki/Yakisoba'>yakisoba</a>.</p>
+		<p>Wikisoba is a light-weight viewer for a modified subset of <a href='https://en.wikipedia.org/wiki/Moodle'>Moodle</a>-style slide code.</p>
+		<p>You can use any page on <span class='server'></span> as a module with such code, and all other pages on that server as slides.</p>
+		<p><form class='form-inline'><input type='text' id='server' class='span3' /> <input value='Switch wiki server' type='submit' class='btn btn-primary' onclick='changeServer();return false'/></form></p>
+		<p><form class='form-inline'><input type='text' id='module' class='span6' placeholder='Module name' /> <input value='Load module' type='submit' class='btn btn-primary' onclick='loadModule();return false'/></form></p>
+		
+		<div style='font-size:8pt !important'>
+			<p>
+				Wikisoba modules use the <a href='https://en.wikipedia.org/wiki/GIFT_%28file_format%29'>GIFT</a> syntax. Some caveats:
+				<ul>
+					<li>All "pages" are separated by at least one blank line in the GIFT code.</li>
+					<li>A GIFT line containing just a wiki link will show the linked wiki page, with some "prettyfication" (making it look like a "slide" rather than a wiki page).</li>
+					<li>You can specify a section in the wiki link; only the specified section will be transcluded to the quiz. Just add a section number (not a heading!) to the link with '#'.</li>
+				</ul>
+			</p>
+		</div>
+		
 	</div>
 </div>
 
