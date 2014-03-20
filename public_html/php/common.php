@@ -11,9 +11,11 @@ set_time_limit ( 60 * 10 ) ; // Seconds
 define('CLI', PHP_SAPI === 'cli');
 ini_set('user_agent','Magnus labs tools'); # Fake user agent
 header("Connection: close");
-$tusc_url = 'http://tools-webserver-01/tusc/tusc.php' ;
+$tools_webproxy = 'tools-webproxy' ;
+$tusc_url = "http://$tools_webproxy/tusc/tusc.php" ; // http://tools-webserver-01/ // tools.wmflabs.org
 $use_db_cache = false ;
 $common_db_cache = array() ;
+$wdq_internal_url = 'http://wikidata-wdq-mm.instance-proxy.wmflabs.org/api' ; //'http://wikidata-wdq-mm/api' ;
 
 function myurlencode ( $t ) {
 	$t = str_replace ( " " , "_" , $t ) ;
@@ -24,7 +26,7 @@ function myurlencode ( $t ) {
 function getDBpassword () {
 	global $mysql_user , $mysql_password , $tool_user_name ;
 	if ( isset ( $tool_user_name ) ) $user = $tool_user_name ;
-	else $user = str_replace ( 'local-' , '' , get_current_user() ) ;
+	else $user = str_replace ( 'tools.' , '' , get_current_user() ) ;
 	$passwordfile = '/data/project/' . $user . '/replica.my.cnf' ;
 	if ( $user == 'magnus' ) $passwordfile = '/home/' . $user . '/replica.my.cnf' ; // Command-line usage
 	$t = file_get_contents ( $passwordfile ) ;
@@ -52,12 +54,13 @@ function getDBname ( $language , $project ) {
 	return $ret ;
 }
 
-function openToolDB ( $dbname = '' , $server = '' ) {
+function openToolDB ( $dbname = '' , $server = '' , $force_user = '' ) {
 	global $o , $mysql_user , $mysql_password ;
 	getDBpassword() ;
 	if ( $dbname == '' ) $dbname = '_main' ;
 	else $dbname = "__$dbname" ;
-	$dbname = $mysql_user.$dbname; #"_main" ;
+	if ( $force_user == '' ) $dbname = $mysql_user.$dbname;
+	else $dbname = $force_user.$dbname;
 	if ( $server == '' ) $server = "tools-db" ;
 	$db = new mysqli($server, $mysql_user, $mysql_password, $dbname);
 	if($db->connect_errno > 0) {
@@ -207,14 +210,16 @@ function verify_tusc () {
 	global $tusc_user , $tusc_password , $tusc_url ;
 	if ( $tusc_user == '' ) return false ;
 	if ( $tusc_password == '' ) return false ;
+	$ret = '' ;
+	
 	$ret = do_post_request ( $tusc_url , 
-			array (
-				'check' => '1' ,
-				'botmode' => '1' ,
-				'user' => $tusc_user ,
-				'language' => 'commons' ,
-				'project' => 'wikimedia' ,
-				'password' => $tusc_password ) ) ;
+		array (
+			'check' => '1' ,
+			'botmode' => '1' ,
+			'user' => $tusc_user ,
+			'language' => 'commons' ,
+			'project' => 'wikimedia' ,
+			'password' => $tusc_password ) ) ;
 
 	if ( strpos ( $ret , '1' ) !== false ) return true ;
 	return false ;

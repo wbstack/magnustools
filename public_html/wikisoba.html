@@ -56,6 +56,10 @@ div.all_good {
 	color:green;
 	display:none;
 }
+#talk_li {
+	display:none;
+	margin-right:10px;
+}
 #main {
 	margin-top:10px;
 }
@@ -144,6 +148,7 @@ function getNavBar ( top ) {
 
 function showToC () {
 	var h = "" ;
+	$("#talk_li").hide() ;
 	h += "<h1>Table of Contents</h1>" ;
 	h += "<div class='well'>" ;
 	h += "<ol>" ;
@@ -185,11 +190,55 @@ function updateHash () {
 
 function showQuestion ( p ) {
 	var h = '' ;
+	h += "<div style='float:right'>Page " + (current_page+1) + " of " + pages.length + "</div>" ;
 	h += "<h1>Question</h1>" ;
 	h += "<div class='lead'>" + p.title + "</div>" ;
 	h += "<div class='question_container'><form class='form-inline'>" + renderQuestion ( p ) + "</form></div>" ;
 	h += getNavBar ( false ) ;
 	$('#main').html ( h ) ;
+
+	showTalkPageButton ( params.module+'#'+p.title ) ;
+}
+
+function showWikiPage ( p ) {
+	$('#main').html ( "<i>Loading page...</i>" ) ;
+	loadParsedPage ( p.page , function ( html ) {
+		var h = '' ;
+		h += getNavBar ( true ) ;
+		h += "<div style='float:right'>Page " + (current_page+1) + " of " + pages.length + "</div>" ;
+		h += "<h1>" + p.page.replace(/\#.+$/,'') + "</h1>" ;
+		h += "<div id='wikipage' class='well'>" ;
+		h += html ;
+		h += "</div>" ;
+		h += getNavBar ( false ) ;
+		$('#main').hide().html ( h ) ;
+		$('#wikipage span.mw-editsection').remove() ;
+		$('#wikipage sup.reference').remove() ;
+		$('#wikipage .error').remove() ;
+		$('#wikipage a').each ( function () {
+			var a = $(this) ;
+			a.attr({target:'_blank'})
+			if ( a.attr('href').substr(0,1) == '/' ) a.attr({href:'//'+server+a.attr('href')}) ;
+		} ) ;
+		$('#main').show() ;
+		
+		showTalkPageButton ( p.page.replace(/#/,'#Section ') ) ;
+	} ) ;
+}
+
+function showTalkPageButton ( page ) {
+	var talk_page = page+'' ;
+	var m = talk_page.match(/^(\S+):(.+)$/) ;
+	if ( null == m ) talk_page = "Talk:" + talk_page ;
+	else talk_page = m[1] + ' talk:' + m[2] ;
+	$("#talk_li button").attr ( { url : '//'+server+'/wiki/'+encodeURIComponent(talk_page) } ) ;
+	$("#talk_li").show() ;
+}
+
+function loadDiscussionPage () {
+	var url = $("#talk_li button").attr ( 'url' ) ;
+	var win=window.open(url, '_blank');
+	win.focus();
 }
 
 function showCurrentPage () {
@@ -197,26 +246,7 @@ function showCurrentPage () {
 	visited[current_page] = true ;
 	var p = pages[current_page] ;
 	if ( p.type == 'wikipage' ) {
-		$('#main').html ( "<i>Loading page...</i>" ) ;
-		loadParsedPage ( p.page , function ( html ) {
-			var h = '' ;
-			h += getNavBar ( true ) ;
-			h += "<h1>" + p.page.replace(/\#.+$/,'') + "</h1>" ;
-			h += "<div id='wikipage' class='well'>" ;
-			h += html ;
-			h += "</div>" ;
-			h += getNavBar ( false ) ;
-			$('#main').hide().html ( h ) ;
-			$('#wikipage span.mw-editsection').remove() ;
-			$('#wikipage sup.reference').remove() ;
-			$('#wikipage .error').remove() ;
-			$('#wikipage a').each ( function () {
-				var a = $(this) ;
-				a.attr({target:'_blank'})
-				if ( a.attr('href').substr(0,1) == '/' ) a.attr({href:'//'+server+a.attr('href')}) ;
-			} ) ;
-			$('#main').show() ;
-		} ) ;
+		showWikiPage ( p ) ;
 	} else if ( p.type == 'question' ) {
 		showQuestion ( p ) ;
 	}
@@ -247,7 +277,7 @@ function checkQuestions () {
 			} else if ( v2.type == '~' && checked ) {
 				// Bad answer checked
 				var h = "<span class='bad_answer'>" ;
-				h += (v2.bad_answer === undefined) ? "Sorry, Wrong answer!" : v2.bad_answer ;
+				h += (v2.bad_answer === undefined) ? "Sorry, wrong answer!" : v2.bad_answer ;
 				h += "</span>" ;
 				label.after ( h ) ;
 				wrong++ ;
@@ -271,7 +301,7 @@ function checkQuestions () {
 	if ( wrong > 0 ) return ;
 	
 	$('button.check_answers_button').remove() ;
-	$('button.next_page_button').show() ;
+	$('button.next_page_button').addClass('btn-success').show() ;
 	$('div.all_good').show() ;
 }
 
@@ -388,6 +418,7 @@ function showMainPage () {
 	$('#main').html ( '' ) ;
 	updateHash() ;
 	$('#intro').show() ;
+	$('#talk_li').hide() ;
 }
 
 $(document).ready ( function () {
@@ -422,6 +453,7 @@ $(document).ready ( function () {
 <!--			<li><a href="//tools.wmflabs.org/magnustools">Tools</a></li>
 			<li><a href="//toolserver.org/%7Emagnus">Olde tools</a></li>
 			<li><a href="//bitbucket.org/magnusmanske">Git</a></li>-->
+			<li id='talk_li'><button class='btn btn-info' onclick='loadDiscussionPage()'><b>Slide feedback</b></button></li>
 			<li><button class='btn' onclick="showMainPage();return false">Wikisoba</button></li>
 			<li><a style="margin:0px;padding:0px;margin-top:4px" href="//tools.wmflabs.org/"><img src="//wikitech.wikimedia.org/w/images/c/cf/Labslogo_thumb.png" title="Powered by Wikimedia Labs" border="0" width="32px"></a></li>
 		</ul>
