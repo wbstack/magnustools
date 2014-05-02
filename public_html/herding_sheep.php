@@ -16,6 +16,7 @@ $project = get_request ( 'project' , 'wikipedia' ) ;
 $category = get_request ( 'category' , '' ) ;
 $manual_users = get_request ( 'users' , '' ) ;
 $timestamp = get_request ( 'timestamp' , '' ) ;
+$timestamp_stop = get_request ( 'timestamp_stop' , '' ) ;
 $limit = get_request ( 'limit' , 500 ) ;
 
 print get_common_header ( '' , 'Herding Sheep' ) ;
@@ -27,7 +28,9 @@ print "<div>Common edits from a user group defined by a category</div>
 <tr><th>Project</th><td><input type='text' class='span2' name='language' value='$language'/>.<input type='text' class='span4' name='project' value='$project'/></td></tr>
 <tr><th>Category</th><td><input type='text' class='span4' name='category' value='$category'/>, <i>or</i></td></tr>
 <tr><th>User list</th><td><textarea name='users'>" . htmlspecialchars ( $manual_users ) . "</textarea></td></tr>
-<tr><th>Start at</th><td><input type='text' class='span4' name='timestamp' value='$timestamp'/> (timestamp, shorter allowed)</td></tr>
+<tr><th>Time range</th><td>
+<input type='text' class='span3' name='timestamp_stop' value='$timestamp_stop'/> &mdash; <input type='text' class='span3' name='timestamp' value='$timestamp'/>
+(<span style='font-family:Courier'>YYYYMMDDHHMMSS</span>, shorter allowed)</td></tr>
 <tr><th>Limit</th><td><input type='number' class='span4' name='limit' value='$limit'/></td></tr>
 <tr><td/><td><input type='submit' name='doit' value='Do it' class='btn btn-primary' /></td></tr>
 </tbody></table>
@@ -50,15 +53,18 @@ if ( isset ( $_REQUEST['doit'] ) ) {
 	}
 
 	$sql = "SELECT rev_user_text,page_title,page_namespace,rev_timestamp FROM revision_userindex,page WHERE page_namespace=0 AND rev_page=page_id AND rev_user_text IN ('" . implode ( "','" , $u2 ) . "')" ;
-	if ( $timestamp != '' ) $sql .= " AND rev_timestamp<=" . get_db_safe ( $timestamp ) . "" ;
+	if ( $timestamp != '' ) $sql .= " AND rev_timestamp<='" . get_db_safe ( $timestamp ) . "'" ;
+	if ( $timestamp_stop != '' ) $sql .= " AND rev_timestamp>='" . get_db_safe ( $timestamp_stop ) . "'" ;
 	$sql .= " ORDER BY rev_timestamp DESC LIMIT " . get_db_safe($limit) ;
 
 	print "<div>" . count ( $u2 ) . " users" ;
 	if ( $category != '' ) print " in category <a target='_blank' href='//$language.$project.org/wiki/Category:" . urlencode($category) . "'>$category</a>" ;
 	else print " in list" ;
 	print ". " ;
-	if ( $timestamp == '' ) print "Last $limit edits:</div>" ;
-	else print "$limit edits since " . format_ts ( $timestamp ) . ":</div>" ;
+	if ( $timestamp == '' ) print "Last $limit edits" ;
+	else print "$limit edits since " . format_ts ( $timestamp ) ;
+	if ( $timestamp_stop != '' ) print " until " . format_ts ( $timestamp_stop ) ;
+	print ":</div>" ;
 
 	print "<div><table class='table table-condensed table-striped'>" ;
 	print "<thead><tr><th>Page</th><th>User</th><th>Timestamp</th></thead>" ;

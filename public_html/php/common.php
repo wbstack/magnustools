@@ -15,7 +15,7 @@ $tools_webproxy = 'tools-webproxy' ;
 $tusc_url = "http://$tools_webproxy/tusc/tusc.php" ; // http://tools-webserver-01/ // tools.wmflabs.org
 $use_db_cache = false ;
 $common_db_cache = array() ;
-$wdq_internal_url = 'http://wikidata-wdq-mm.instance-proxy.wmflabs.org/api' ; //'http://wikidata-wdq-mm/api' ;
+$wdq_internal_url = 'http://wikidata-wdq-mm.eqiad.wmflabs/api' ; //'http://wdq.wmflabs.org/api' ;
 
 function myurlencode ( $t ) {
 	$t = str_replace ( " " , "_" , $t ) ;

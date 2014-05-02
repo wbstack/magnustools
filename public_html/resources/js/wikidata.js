@@ -47,7 +47,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 		return h ;
 	}
 	
-	this.getAliases = function () {
+	this.getAliases = function ( include_labels ) {
 		var self = this ;
 		var ret = [] ;
 		var aliases = {} ;
@@ -56,6 +56,11 @@ function WikiDataItem ( init_wd , init_raw ) {
 				aliases[v2.value] = 1 ;
 			} ) ;
 		} ) ;
+		if ( include_labels ) {
+			$.each ( (self.raw.labels||{}) , function ( lang , v1 ) {
+				aliases[v1.value] = 1 ;
+			} ) ;
+		}
 		$.each ( aliases , function ( k , v ) { ret.push ( k ) } ) ;
 		return ret ;
 	}
@@ -313,6 +318,7 @@ function WikiData () {
 	// Variables
 	this.api = '//www.wikidata.org/w/api.php?callback=?' ;
 	this.max_get_entities = 50 ;
+	this.max_get_entities_smaller = 25 ;
 	this.language = 'en' ; // Default
 	this.main_languages = [ 'en' , 'de' , 'fr' , 'es' , 'it' , 'pl' , 'pt' , 'ja' , 'ru' , 'hu' ] ;
 	this.items = {} ;
@@ -375,7 +381,7 @@ function WikiData () {
 		var ids = [ [] ] ;
 		self.loaded_count = 0 ;
 		self.loading_count = 0 ;
-		max_per_batch = item_list.length > 100 ? 50 : 25 ; // Smaller batch size for small list
+		max_per_batch = item_list.length > 100 ? self.max_get_entities : self.max_get_entities_smaller ; // Smaller batch size for small list
 		$.each ( item_list , function ( dummy , q ) {
 			if ( typeof q == 'number' ) q = 'Q' + q ;
 			if ( self.items[q] !== undefined ) return ; // Have that one

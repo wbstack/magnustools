@@ -472,6 +472,52 @@ Claims are used like this:
 
 		return true ;
 	}
+	
+	function createItemFromPage ( $site , $page ) {
+		$page = str_replace ( ' ' , '_' , $page ) ;
+	
+		// Next fetch the edit token
+		$ch = null;
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'tokens',
+			'type' => 'edit',
+		), $ch );
+		if ( !isset( $res->tokens->edittoken ) ) {
+			header( "HTTP/1.1 500 Internal Server Error" );
+			echo 'Bad API response[setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			return false ;
+		}
+		$token = $res->tokens->edittoken;
+
+
+		$data = array ( 
+			'sitelinks' => array ( array ( "site" => $site ,"title" => $page ) )
+		) ;
+		$m = array () ;
+		if ( preg_match ( '/^(.+)wiki$/' , $site , $m ) ) {
+			$nice_title = preg_replace ( '/\s+\(.+$/' , '' , str_replace ( '_' , ' ' , $page ) ) ;
+			$data['labels'] = array ( array ( 'language' => $m[1] , 'value' => $nice_title ) ) ;
+		}
+//		print "<pre>" ; print_r ( json_encode ( $data ) ) ; print " </pre>" ; return true ;
+
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'wbeditentity',
+			'new' => 'item' ,
+			'data' => json_encode ( $data ) ,
+			'token' => $token,
+		), $ch );
+		
+		if ( isset ( $_REQUEST['test'] ) ) {
+			print "<pre>" ; print_r ( $res ) ; print "</pre>" ;
+		}
+
+		$this->last_res = $res ;
+		if ( isset ( $res->error ) ) return false ;
+
+		return true ;
+	}
 
 
 	function setClaim ( $claim ) {

@@ -10,6 +10,7 @@ var flickr_api_key = 'd5abcf21d0111581ce258176f0ff92a1' ;
 //________________________________________________________________________________________________
 
 function ucFirst(string) {
+	if ( typeof string == 'undefined' ) return '' ;
 	return string.substring(0, 1).toUpperCase() + string.substring(1);
 }
 
@@ -1048,7 +1049,7 @@ WikiPage.prototype.checkExists = function ( yes , no ) {
 	} ) ;	
 }
 
-
+/*
 WikiPage.prototype.getViewStats = function  ( o ) {
 	var me = this ;
 	var wiki = me.lang + wikiDataCache.pv_proj2stats[me.project] ;
@@ -1083,6 +1084,76 @@ WikiPage.prototype.getViewStats = function  ( o ) {
 		
 	} , 'json' ) ;
 }
+*/
+
+
+var view_stats_cache = [] ;
+var view_stats_running = 0 ;
+var view_stats_running_max = 4 ;
+
+function getViewStatsCallback () {
+//	console.log ( "Trying to run, " + view_stats_running + " left in queue" ) ;
+	if ( view_stats_running >= view_stats_running_max ) return ;
+	if ( view_stats_cache.length == 0 ) return ;
+	view_stats_running++ ;
+	
+	var m = view_stats_cache.shift() ;
+	var me = m.page ;
+	var o = m.o ;
+	var url = 'http://' + wikiSettings.stats_grok + '/json/' ; // jsonp
+	url += me.lang + wikiDataCache.pv_proj2stats[me.project] + '/' + o.date + '/' ;
+	url += encodeURI ( me.title ) .replace ( /\?/g , '%3F' ) ;
+
+	var k = me.lang + wikiDataCache.pv_proj2stats[me.project] + '|' + me.title + '|' + o.date ;
+//	console.log ( "Starting : " + url ) ;
+	
+	$.post ( '../proxy.php' , {
+		url:url
+	} , function ( d ) {
+//			console.log ( "Success!" ) ;
+			view_stats_running-- ;
+			d.monthly_views = 0 
+			$.each ( d.daily_views , function ( k , v ) { d.monthly_views += v } ) ;
+			d.project = me.project ;
+			d.lang = me.lang ;
+			o.callback ( { data : d , options : o } ) ;
+			getViewStatsCallback() ;
+	} , 'json' ) . fail ( function (xOptions, textStatus) {
+			view_stats_running-- ;
+			console.log ( "ERROR : " + textStatus ) ;
+			getViewStatsCallback() ;
+	} ) ;
+	
+/*
+	$.jsonp ( {
+		url : url ,
+		callback : 'pageviewsCallback' ,
+		timeout : 10000 ,
+		success : function ( d , textStatus ) {
+			console.log ( "Success!" ) ;
+			view_stats_running-- ;
+			d.monthly_views = 0 
+			$.each ( d.daily_views , function ( k , v ) { d.monthly_views += v } ) ;
+			o.callback ( { data : d , options : o } ) ;
+			getViewStatsCallback() ;
+		} ,
+		error : function (xOptions, textStatus) {
+			view_stats_running-- ;
+			console.log ( "ERROR : " + textStatus ) ;
+			getViewStatsCallback() ;
+//			setTimeout ( function () { me.getViewStats ( o ) } , 500 ) ;
+		}
+	} ) ;
+*/
+}
+
+
+WikiPage.prototype.getViewStats = function  ( o ) {
+	var me = this ;
+	view_stats_cache.push ( { page:me , o:o } ) ;
+	getViewStatsCallback () ;
+}
+
 /*
 WikiPage.prototype.getViewStats = function  ( o ) {
 	var me = this ;
