@@ -30,6 +30,16 @@ class MW_OAuth {
 
 	}
 	
+	function logout () {
+		$this->setupSession() ;
+		session_start();
+		setcookie ( 'tokenKey' , '' , 1 , '/'+$this->tool+'/' ) ;
+		setcookie ( 'tokenSecret' , '' , 1 , '/'+$this->tool+'/' ) ;
+		$_SESSION['tokenKey'] = '' ;
+		$_SESSION['tokenSecret'] = '' ;
+		session_write_close();
+	}
+	
 	function setupSession() {
 		// Setup the session cookie
 		session_name( $this->tool );
@@ -428,6 +438,7 @@ Claims are used like this:
 			'language' => $language ,
 			'value' => $text ,
 			'token' => $token,
+			'bot' => 1
 		), $ch );
 		
 		if ( isset ( $res->error ) ) {
@@ -473,6 +484,46 @@ Claims are used like this:
 		return true ;
 	}
 	
+	function addPageText ( $page , $text , $header , $summary , $section ) {
+
+		// Fetch the edit token
+		$ch = null;
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'tokens',
+			'type' => 'edit',
+		), $ch );
+		if ( !isset( $res->tokens->edittoken ) ) {
+			header( "HTTP/1.1 500 Internal Server Error" );
+			echo 'Bad API response[setPageText]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			return false ;
+		}
+		$token = $res->tokens->edittoken;
+		
+		$p = array(
+			'format' => 'json',
+			'action' => 'edit',
+			'title' => $page,
+			'appendtext' => $text ,
+			'sectiontitle' => $header ,
+			'minor' => '' ,
+			'token' => $token,
+		) ;
+		
+		if ( isset ( $section ) and $section != '' ) $p['section'] = $section ;
+		if ( $summary != '' ) $p['summary'] = $summary ;
+		
+		// Now do that!
+		$res = $this->doApiQuery( $p , $ch );
+		
+		if ( isset ( $res->error ) ) {
+			$this->error = $res->error->info ;
+			return false ;
+		}
+
+		return true ;
+	}
+	
 	function createItemFromPage ( $site , $page ) {
 		$page = str_replace ( ' ' , '_' , $page ) ;
 	
@@ -485,7 +536,7 @@ Claims are used like this:
 		), $ch );
 		if ( !isset( $res->tokens->edittoken ) ) {
 			header( "HTTP/1.1 500 Internal Server Error" );
-			echo 'Bad API response[setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			echo 'Bad API response[createItemFromPage]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
 		$token = $res->tokens->edittoken;
@@ -507,6 +558,7 @@ Claims are used like this:
 			'new' => 'item' ,
 			'data' => json_encode ( $data ) ,
 			'token' => $token,
+			'bot' => 1
 		), $ch );
 		
 		if ( isset ( $_REQUEST['test'] ) ) {
@@ -519,6 +571,41 @@ Claims are used like this:
 		return true ;
 	}
 
+	function removeClaim ( $id , $baserev ) {
+		// Fetch the edit token
+		$ch = null;
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'tokens',
+			'type' => 'edit',
+		), $ch );
+		if ( !isset( $res->tokens->edittoken ) ) {
+			header( "HTTP/1.1 500 Internal Server Error" );
+			echo 'Bad API response[setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			return false ;
+		}
+		$token = $res->tokens->edittoken;
+	
+	
+	
+		// Now do that!
+		$params = array(
+			'format' => 'json',
+			'action' => 'wbremoveclaims',
+			'claim' => $id ,
+			'token' => $token,
+			'bot' => 1
+		) ;
+		if ( isset ( $baserev ) and $baserev != '' ) $params['baserevid'] = $baserev ;
+		$res = $this->doApiQuery( $params , $ch );
+		
+		if ( isset ( $_REQUEST['test'] ) ) {
+			print "<pre>" ; print_r ( $claim ) ; print "</pre>" ;
+			print "<pre>" ; print_r ( $res ) ; print "</pre>" ;
+		}
+		
+		return true ;
+	}
 
 	function setClaim ( $claim ) {
 		if ( $this->doesClaimExist($claim) ) return true ;
@@ -546,6 +633,8 @@ Claims are used like this:
 		} else if ( $claim['type'] == 'string' ) {
 			$value = json_encode($claim['text']) ;
 //			$value = '{"type":"string","value":'.json_encode($claim['text']).'}' ;
+		} else if ( $claim['type'] == 'date' ) {
+			$value = '{"time":"'.$claim['date'].'","timezone": 0,"before": 0,"after": 0,"precision": '.$claim['prec'].',"calendarmodel": "http://www.wikidata.org/entity/Q1985727"}' ;
 		}
 	
 
@@ -557,11 +646,64 @@ Claims are used like this:
 			'property' => 'P' . str_replace('P','',$claim['prop'].'') ,
 			'value' => $value ,
 			'token' => $token,
+			'bot' => 1
 		), $ch );
 		
 		if ( isset ( $_REQUEST['test'] ) ) {
 			print "<pre>" ; print_r ( $claim ) ; print "</pre>" ;
 			print "<pre>" ; print_r ( $res ) ; print "</pre>" ;
+		}
+
+		$this->last_res = $res ;
+		if ( isset ( $res->error ) ) return false ;
+
+		
+/*
+		if ( $claim['type'] == 'string' ) {
+			echo 'API edit result: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			echo '<hr>';
+		}
+*/		
+		return true ;
+	}
+
+	function mergeItems ( $q_from , $q_to ) {
+
+		// Next fetch the edit token
+		$ch = null;
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'tokens',
+			'type' => 'edit',
+		), $ch );
+		if ( !isset( $res->tokens->edittoken ) ) {
+			header( "HTTP/1.1 500 Internal Server Error" );
+			echo 'Bad API response[setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			return false ;
+		}
+		$token = $res->tokens->edittoken;
+	
+	
+	
+
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'wbmergeitems',
+			'fromid' => $q_from ,
+			'toid' => $q_to ,
+			'ignoreconflicts' => 'label|description|sitelink' ,
+			'token' => $token,
+			'bot' => 1
+		), $ch );
+		
+		if ( isset ( $_REQUEST['test'] ) ) {
+			print "1<pre>" ; print_r ( $claim ) ; print "</pre>" ;
+			print "2<pre>" ; print_r ( $res ) ; print "</pre>" ;
+		}
+		
+		if ( isset ( $res->error ) ) {
+			$this->error = $res->error->info ;
+			return false ;
 		}
 		
 /*
@@ -573,7 +715,53 @@ Claims are used like this:
 		return true ;
 	}
 
+	function deletePage ( $page , $reason ) {
+
+		// Next fetch the edit token
+		$ch = null;
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'tokens',
+			'type' => 'edit',
+		), $ch );
+		if ( !isset( $res->tokens->edittoken ) ) {
+			header( "HTTP/1.1 500 Internal Server Error" );
+			echo 'Bad API response[setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			return false ;
+		}
+		$token = $res->tokens->edittoken;
+		
+		$p = array(
+			'format' => 'json',
+			'action' => 'delete',
+			'title' => $page ,
+			'token' => $token,
+			'bot' => 1
+		) ;
+		if ( $reason != '' ) $p['reason'] = $reason ;
 	
+		$res = $this->doApiQuery( $p , $ch );
+		
+		if ( isset ( $_REQUEST['test'] ) ) {
+			print "1<pre>" ; print_r ( $claim ) ; print "</pre>" ;
+			print "2<pre>" ; print_r ( $res ) ; print "</pre>" ;
+		}
+		
+		if ( isset ( $res->error ) ) {
+			$this->error = $res->error->info ;
+			return false ;
+		}
+		
+/*
+		if ( $claim['type'] == 'string' ) {
+			echo 'API edit result: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			echo '<hr>';
+		}
+*/		
+		return true ;
+	}
+
+		
 	function doUploadFromURL ( $url , $new_file_name , $desc , $comment ) {
 	
 		if ( $new_file_name == '' ) {
@@ -642,6 +830,7 @@ Claims are used like this:
 		$res = $this->doApiQuery( array(
 			'format' => 'json',
 			'action' => 'query',
+			'uiprop' => 'groups|rights' ,
 			'meta' => 'userinfo',
 		), $ch , 'userinfo' );
 

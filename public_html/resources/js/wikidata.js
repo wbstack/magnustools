@@ -65,6 +65,22 @@ function WikiDataItem ( init_wd , init_raw ) {
 		return ret ;
 	}
 
+	this.getAliasesForLanguage = function ( lang , include_labels ) {
+		var self = this ;
+		var ret = [] ;
+		var aliases = {} ;
+		var v1 = ((self.raw.aliases||{})[lang]||{}) ;
+		$.each ( v1 , function ( k2 , v2 ) {
+			aliases[v2.value] = 1 ;
+		} ) ;
+		if ( include_labels ) {
+			var v1 = (self.raw.labels||{})[lang] ;
+			if ( typeof v1 != 'undefined' ) aliases[v1.value] = 1 ;
+		}
+		$.each ( aliases , function ( k , v ) { ret.push ( k ) } ) ;
+		return ret ;
+	}
+
 	this.getStringsForProperty = function ( p ) {
 		return this.getMultimediaFilesForProperty ( p ) ;
 	}
@@ -320,7 +336,7 @@ function WikiData () {
 	this.max_get_entities = 50 ;
 	this.max_get_entities_smaller = 25 ;
 	this.language = 'en' ; // Default
-	this.main_languages = [ 'en' , 'de' , 'fr' , 'es' , 'it' , 'pl' , 'pt' , 'ja' , 'ru' , 'hu' ] ;
+	this.main_languages = [ 'en' , 'de' , 'fr' , 'nl' , 'es' , 'it' , 'pl' , 'pt' , 'ja' , 'ru' , 'hu' , 'sv' , 'fi' ] ;
 	this.items = {} ;
 	
 	// Constructor
