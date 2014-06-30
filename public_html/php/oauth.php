@@ -392,6 +392,12 @@ Claims are used like this:
 				if ( !isset($v->mainsnak->datavalue->value) ) continue ;
 				if ( $v->mainsnak->datavalue->value->$nid != str_replace('Q','',$claim['target'].'') ) continue ;
 				$does_exist = true ;
+			} else if ( $claim['type'] == 'string' ) {
+				if ( !isset($v->mainsnak) ) continue ;
+				if ( !isset($v->mainsnak->datavalue) ) continue ;
+				if ( !isset($v->mainsnak->datavalue->value) ) continue ;
+				if ( $v->mainsnak->datavalue->value != $claim['text'] ) continue ;
+				$does_exist = true ;
 			}
 		}
 	
@@ -608,7 +614,9 @@ Claims are used like this:
 	}
 
 	function setClaim ( $claim ) {
-		if ( $this->doesClaimExist($claim) ) return true ;
+		if ( !isset ( $claim['claim'] ) ) { // Only for non-qualifier action; should that be fixed?
+			if ( $this->doesClaimExist($claim) ) return true ;
+		}
 
 		// Next fetch the edit token
 		$ch = null;
@@ -636,18 +644,25 @@ Claims are used like this:
 		} else if ( $claim['type'] == 'date' ) {
 			$value = '{"time":"'.$claim['date'].'","timezone": 0,"before": 0,"after": 0,"precision": '.$claim['prec'].',"calendarmodel": "http://www.wikidata.org/entity/Q1985727"}' ;
 		}
-	
-
-		$res = $this->doApiQuery( array(
+		
+		$params = array(
 			'format' => 'json',
 			'action' => 'wbcreateclaim',
-			'entity' => $claim['q'],
 			'snaktype' => 'value' ,
 			'property' => 'P' . str_replace('P','',$claim['prop'].'') ,
 			'value' => $value ,
 			'token' => $token,
 			'bot' => 1
-		), $ch );
+		) ;
+	
+		if ( isset ( $claim['claim'] ) ) { // Set qualifier
+			$params['action'] = 'wbsetqualifier' ;
+			$params['claim'] = $claim['claim'] ;
+		} else {
+			$params['entity'] = $claim['q'] ;
+		}
+
+		$res = $this->doApiQuery( $params, $ch );
 		
 		if ( isset ( $_REQUEST['test'] ) ) {
 			print "<pre>" ; print_r ( $claim ) ; print "</pre>" ;

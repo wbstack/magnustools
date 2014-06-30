@@ -38,6 +38,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 		} ) ;
 		if ( o.add_q ) h += "q='" + self.raw.title + "' " ;
 		if ( undefined !== o.desc ) h += "title='" + self.getDesc() + "' " ;
+		else h += "title='" + self.raw.title + "' " ;
 		var url = self.getURL() ;
 		h += "href='" + url + "'>" ;
 		if ( o.title !== undefined ) h += o.title ;

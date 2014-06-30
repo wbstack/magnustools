@@ -71,6 +71,16 @@ function openToolDB ( $dbname = '' , $server = '' , $force_user = '' ) {
 	return $db ;
 }
 
+function openDBwiki ( $wiki ) {
+	preg_match ( '/^(.+)(wik.+)$/' , $wiki , $m ) ;
+	if ( $m == null ) {
+		print "Cannot parse $wiki\n" ;
+		return ;
+	}
+	if ( $m[2] == 'wiki' ) $m[2] = 'wikipedia' ;
+	return openDB ( $m[1] , $m[2] ) ;
+}
+
 function openDB ( $language , $project ) {
 	global $mysql_user , $mysql_password , $o , $common_db_cache , $use_db_cache ;
 	
