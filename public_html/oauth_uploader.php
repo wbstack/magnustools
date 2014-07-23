@@ -2,6 +2,7 @@
 
 $out = array ( 'error' => 'OK' , 'data' => array() ) ;
 $botmode = isset ( $_REQUEST['botmode'] ) ;
+$test = isset ( $_REQUEST['test'] ) ;
 if ( $botmode ) {
 	header ( 'application/json' ) ; // text/plain
 } else {
@@ -14,7 +15,15 @@ require_once ( 'php/common.php' ) ;
 
 
 // https://www.mediawiki.org/wiki/Special:OAuthConsumerRegistration/list
-$oa = new MW_OAuth ( 'magnustools' , 'commons' , 'wikimedia' ) ; // OAuth Uploader
+$project = 'wikimedia' ;
+$language = 'commons' ;
+$site = get_request ( 'site' , 'commons.wikimedia.org' ) ;
+if ( false !== preg_match ( '/^(.+)\.(.+)\.org$/' , $site , $m ) ) {
+	$language = $m[1] ;
+	$project = $m[2] ;
+}
+
+$oa = new MW_OAuth ( 'magnustools' , $language , $project ) ; // OAuth Uploader
 
 function error ( $e ) {
 	global $out , $botmode ;
@@ -49,10 +58,11 @@ function uploadFromURL () {
 	$new_file_name = trim ( get_request ( "newfile" , '' ) ) ;
 	$desc = trim ( get_request ( "desc" , '' ) ) ;
 	$comment = trim ( get_request ( "comment" , '' ) ) ;
+	$ignorewarnings = isset ( $_REQUEST['ignorewarnings'] ) ;
 	
 	if ( $url == '' ) return error ( "No URL given" ) ;
 	
-	if ( !$oa->doUploadFromURL ( $url , $new_file_name , $desc , $comment ) ) {
+	if ( !$oa->doUploadFromURL ( $url , $new_file_name , $desc , $comment , $ignorewarnings ) ) {
 		$out['res'] = $oa->last_res ;
 		return error ( $oa->error ) ;
 	}
@@ -85,7 +95,8 @@ switch ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : '' ) {
 	case 'checkauth':
 		if ( !$oa->isAuthOK() ) error ( "Auth not OK: " . $oa->error ) ;
 		else {
-			print "Auth OK!" ;
+			if ( $botmode ) $out['error'] = 'OK' ;
+			else print "Auth OK!" ;
 		}
 		break;
 	case 'setpagetext':

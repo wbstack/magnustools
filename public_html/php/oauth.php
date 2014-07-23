@@ -398,6 +398,14 @@ Claims are used like this:
 				if ( !isset($v->mainsnak->datavalue->value) ) continue ;
 				if ( $v->mainsnak->datavalue->value != $claim['text'] ) continue ;
 				$does_exist = true ;
+			} else if ( $claim['type'] == 'date' ) {
+				if ( !isset($v->mainsnak) ) continue ;
+				if ( !isset($v->mainsnak->datavalue) ) continue ;
+				if ( !isset($v->mainsnak->datavalue->value) ) continue ;
+				if ( !isset($v->mainsnak->datavalue->value->time) ) continue ;
+				if ( $v->mainsnak->datavalue->value->time != $claim['date'] ) continue ;
+				if ( $v->mainsnak->datavalue->value->precision != $claim['prec'] ) continue ;
+				$does_exist = true ;
 			}
 		}
 	
@@ -612,6 +620,57 @@ Claims are used like this:
 		
 		return true ;
 	}
+	
+	
+	
+	
+	
+	
+	function setSource ( $statement , $snaks_json ) {
+
+		// Next fetch the edit token
+		$ch = null;
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'tokens',
+			'type' => 'edit',
+		), $ch );
+		if ( !isset( $res->tokens->edittoken ) ) {
+			header( "HTTP/1.1 500 Internal Server Error" );
+			echo 'Bad API response[setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			return false ;
+		}
+		$token = $res->tokens->edittoken;
+
+		$params = array(
+			'format' => 'json',
+			'action' => 'wbsetreference',
+			'statement' => $statement ,
+			'snaks' => $snaks_json ,
+			'token' => $token,
+			'bot' => 1
+		) ;
+		
+		// TODO : baserevid
+
+		$res = $this->doApiQuery( $params, $ch );
+		
+		if ( isset ( $_REQUEST['test'] ) ) {
+			print "<pre>" ; print_r ( $claim ) ; print "</pre>" ;
+			print "<pre>" ; print_r ( $res ) ; print "</pre>" ;
+		}
+
+		$this->last_res = $res ;
+		if ( isset ( $res->error ) ) return false ;
+
+		return true ;
+
+	}
+
+
+
+
+
 
 	function setClaim ( $claim ) {
 		if ( !isset ( $claim['claim'] ) ) { // Only for non-qualifier action; should that be fixed?
@@ -777,7 +836,7 @@ Claims are used like this:
 	}
 
 		
-	function doUploadFromURL ( $url , $new_file_name , $desc , $comment ) {
+	function doUploadFromURL ( $url , $new_file_name , $desc , $comment , $ignorewarnings ) {
 	
 		if ( $new_file_name == '' ) {
 			$a = explode ( '/' , $url ) ;
@@ -814,6 +873,8 @@ Claims are used like this:
 			'token' => $token ,
 			'file' => '@' . $tmpfile
 		) ;
+		
+		if ( $ignorewarnings ) $params['ignorewarnings'] = 1 ;
 		
 		$res = $this->doApiQuery( $params , $ch , 'upload' );
 
