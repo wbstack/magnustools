@@ -41,15 +41,15 @@ function getDBpassword () {
 function getDBname ( $language , $project ) {
 	$ret = $language ;
 	if ( $language == 'commons' ) $ret = 'commonswiki_p' ;
-	else if ( $language == 'wikidata' || $project == 'wikidata' ) $ret = 'wikidatawiki_p' ;
-	else if ( $project == 'wikipedia' ) $ret .= 'wiki_p' ;
-	else if ( $project == 'wikisource' ) $ret .= 'wikisource_p' ;
-	else if ( $project == 'wiktionary' ) $ret .= 'wiktionary_p' ;
-	else if ( $project == 'wikibooks' ) $ret .= 'wikibooks_p' ;
-	else if ( $project == 'wikinews' ) $ret .= 'wikinews_p' ;
-	else if ( $project == 'wikiversity' ) $ret .= 'wikiversity_p' ;
-	else if ( $project == 'wikivoyage' ) $ret .= 'wikivoyage_p' ;
-	else if ( $project == 'wikiquote' ) $ret .= 'wikiquote_p' ;
+	elseif ( $language == 'wikidata' || $project == 'wikidata' ) $ret = 'wikidatawiki_p' ;
+	elseif ( $project == 'wikipedia' ) $ret .= 'wiki_p' ;
+	elseif ( $project == 'wikisource' ) $ret .= 'wikisource_p' ;
+	elseif ( $project == 'wiktionary' ) $ret .= 'wiktionary_p' ;
+	elseif ( $project == 'wikibooks' ) $ret .= 'wikibooks_p' ;
+	elseif ( $project == 'wikinews' ) $ret .= 'wikinews_p' ;
+	elseif ( $project == 'wikiversity' ) $ret .= 'wikiversity_p' ;
+	elseif ( $project == 'wikivoyage' ) $ret .= 'wikivoyage_p' ;
+	elseif ( $project == 'wikiquote' ) $ret .= 'wikiquote_p' ;
 	else die ( "Cannot construct database name for $language.$project - aborting." ) ;
 	return $ret ;
 }
@@ -95,7 +95,7 @@ function openDB ( $language , $project ) {
 	
 	$l = str_replace ( 'classic' , 'classical' , $language ) ;
 	if ( $l == 'commons' ) $p = 'wiki' ;
-	else if ( $l == 'wikidata' or $project == 'wikidata' ) $p = 'wiki' ;
+	elseif ( $l == 'wikidata' or $project == 'wikidata' ) $p = 'wiki' ;
 	$server = "$l$p.labsdb" ;
 
 	$db = new mysqli($server, $mysql_user, $mysql_password, $dbname);
@@ -418,7 +418,7 @@ function cGetEditButton ( $text , $title , $lang , $project , $summary , $button
 
 	$url = "//{$lang}.{$project}.org/w/index.php?title=" . myurlencode ( $title ) . '&action=edit' ;
 	if ( $add ) $url .= '&section=new' ;
-	else if ( $section >= 0 ) $url .= "&section=$section" ;
+	elseif ( $section >= 0 ) $url .= "&section=$section" ;
 	$ncb = "<form id='upload' method=post enctype='multipart/form-data'" ;
 	if ( $new_window ) $ncb .= " target='_blank'" ;
 	$ncb .= " action='{$url}' style='display:inline'>" ;

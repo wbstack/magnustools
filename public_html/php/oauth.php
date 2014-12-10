@@ -17,7 +17,7 @@ class MW_OAuth {
 		$this->ini_file = "/data/project/$t/oauth.ini" ;
 		
 		if ( $l == 'wikidata' ) $this->apiUrl = 'https://www.wikidata.org/w/api.php' ;
-		else if ( $l == 'commons' ) $this->apiUrl = 'https://commons.wikimedia.org/w/api.php' ;
+		elseif ( $l == 'commons' ) $this->apiUrl = 'https://commons.wikimedia.org/w/api.php' ;
 		else $this->apiUrl = "https://$l.$p.org/w/api.php" ;
 
 		$this->loadIniFile() ;
@@ -65,7 +65,7 @@ class MW_OAuth {
 		if ( isset( $_SESSION['tokenKey'] ) ) {
 			$this->gTokenKey = $_SESSION['tokenKey'];
 			$this->gTokenSecret = $_SESSION['tokenSecret'];
-		} else if ( $this->use_cookies and isset( $_COOKIE['tokenKey'] ) ) {
+		} elseif ( $this->use_cookies and isset( $_COOKIE['tokenKey'] ) ) {
 			$this->gTokenKey = $_COOKIE['tokenKey'];
 			$this->gTokenSecret = $_COOKIE['tokenSecret'];
 		}
@@ -398,13 +398,13 @@ Claims are used like this:
 				if ( !isset($v->mainsnak->datavalue->value) ) continue ;
 				if ( $v->mainsnak->datavalue->value->$nid != str_replace('Q','',$claim['target'].'') ) continue ;
 				$does_exist = true ;
-			} else if ( $claim['type'] == 'string' ) {
+			} elseif ( $claim['type'] == 'string' ) {
 				if ( !isset($v->mainsnak) ) continue ;
 				if ( !isset($v->mainsnak->datavalue) ) continue ;
 				if ( !isset($v->mainsnak->datavalue->value) ) continue ;
 				if ( $v->mainsnak->datavalue->value != $claim['text'] ) continue ;
 				$does_exist = true ;
-			} else if ( $claim['type'] == 'date' ) {
+			} elseif ( $claim['type'] == 'date' ) {
 				if ( !isset($v->mainsnak) ) continue ;
 				if ( !isset($v->mainsnak->datavalue) ) continue ;
 				if ( !isset($v->mainsnak->datavalue->value) ) continue ;
@@ -891,10 +891,10 @@ Claims are used like this:
 		$value = "" ;
 		if ( $claim['type'] == 'item' ) {
 			$value = '{"entity-type":"item","numeric-id":'.str_replace('Q','',$claim['target'].'').'}' ;
-		} else if ( $claim['type'] == 'string' ) {
+		} elseif ( $claim['type'] == 'string' ) {
 			$value = json_encode($claim['text']) ;
 //			$value = '{"type":"string","value":'.json_encode($claim['text']).'}' ;
-		} else if ( $claim['type'] == 'date' ) {
+		} elseif ( $claim['type'] == 'date' ) {
 			$value = '{"time":"'.$claim['date'].'","timezone": 0,"before": 0,"after": 0,"precision": '.$claim['prec'].',"calendarmodel": "http://www.wikidata.org/entity/Q1985727"}' ;
 		} else if ( $claim['type'] == 'location' ) {
 			$value = '{"latitude":'.$claim['lat'].',"precision":0.000001,"longitude": '.$claim['lon'].',"globe": "http://www.wikidata.org/entity/Q2"}' ;

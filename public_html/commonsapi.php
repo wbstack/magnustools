@@ -126,9 +126,9 @@ function get_same_level_html ( $t ) {
     
     if ( $t[$pos] == '<' ) {
       if ( $t[$pos+1] == '/' ) $cnt-- ; // Closing
-      else if ( $t[$pos+1] == '!' ) ; // Comment
+      elseif ( $t[$pos+1] == '!' ) ; // Comment
       else $cnt++ ; // Opening
-    } else if ( $t[$pos] == '>' ) {
+    } elseif ( $t[$pos] == '>' ) {
       if ( $t[$pos-1] == '/' ) $cnt-- ; // Self-closing
     }
     
@@ -385,7 +385,7 @@ foreach ( $imagelist AS $img ) {
 		}
 	
 		if ( !isset ( $desc[$m] ) ) $desc[$m] = $t ;
-		else if ( $desc[$m] != $t ) $desc[$m] .= "<br/>\n$t" ;
+		elseif ( $desc[$m] != $t ) $desc[$m] .= "<br/>\n$t" ;
 	}
 	if ( !isset ( $desc['default'] ) && isset ( $desc['en'] ) ) $desc['default'] = $desc['en'] ;
 
@@ -432,9 +432,9 @@ foreach ( $imagelist AS $img ) {
 		$c = strtolower ( $cat ) ;
 		$lic = false ;
 		if ( substr ( $c , 0 , 2 ) == 'pd' ) $lic = true ;
-		else if ( substr ( $c , 0 , 4 ) == 'gfdl' ) $lic = true ;
-		else if ( substr ( $c , 0 , 3 ) == 'cc-' ) $lic = true ;
-		else if ( isset ( $license_data[$cat] ) ) $lic = true ;
+		elseif ( substr ( $c , 0 , 4 ) == 'gfdl' ) $lic = true ;
+		elseif ( substr ( $c , 0 , 3 ) == 'cc-' ) $lic = true ;
+		elseif ( isset ( $license_data[$cat] ) ) $lic = true ;
 	
 		if ( $lic && substr ( $c , -5 ) == '-self' ) { 
 		$self_made = ' selfmade="1"' ;
