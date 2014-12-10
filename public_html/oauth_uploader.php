@@ -44,7 +44,7 @@ function setPageText () {
 	
 	if ( $text == '' ) {
 		return error ( "No text given" ) ;
-	} else if ( ! $oa->setPageText ( $page , $text ) ) {
+	} elseif ( ! $oa->setPageText ( $page , $text ) ) {
 		return error ( $oa->error ) ;
 	}
 }
