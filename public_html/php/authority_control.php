@@ -17,7 +17,7 @@ if ( $_REQUEST['query'] == 'viaf' ) {
 	$key = $_REQUEST['key'] ;
 	$url = "http://viaf.org/viaf/search?query=local.names+all+%22" . urlencode($key) . "%22&maximumRecords=10&sortKeys=holdingscount&httpAccept=text/xml" ;
 	$o['result'] = file_get_contents ( $url , false , $context ) ;
-} else if ( $_REQUEST['query'] == 'gnd' ) {
+} elseif ( $_REQUEST['query'] == 'gnd' ) {
 	$key = $_REQUEST['key'] ;
 	for ( $i = 0 ; $i < 1 ; $i++ ) {
 		$t = file_get_contents ( "https://portal.dnb.de/opac.htm?method=showFullRecord&currentResultId=" . urlencode ( $key ) . "%26any%26persons&currentPosition=$i" ) ;

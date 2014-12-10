@@ -96,7 +96,7 @@ function html2wiki_tables($str, $row_delim = 1, $oneline = false, $escape = fals
             case '|': # cell start
                 if ($prevcell && $str{$pos+2} == ' ') {
                     $str = substr_replace($str, ' |', $pos, 1); # s/\n/ |/
-                } else if ($str{$pos+2} == ' ') {
+                } elseif ($str{$pos+2} == ' ') {
                     $prevcell = true;
                 } else {
                     $prevcell = false;
