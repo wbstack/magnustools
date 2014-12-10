@@ -22,14 +22,175 @@ $infoboxes["person"] = array ( "name", "image", "image_size", "caption", "birth_
 $infoboxes["writer"] = array ( "name", "image", "imagesize", "caption", "pseudonym", "birth_date", "birth_place", "death_date", "death_place", "occupation", "nationality", "period", "genre", "subject", "movement", "debut_works", "influences", "influenced", "signature", "website", "footnotes" ) ;
 
 
+$wd = array() ;
+$wd_api = array() ;
+
 function get_form_row ( $title , $note = '' ) {
+	global $wd ;
 	$key = strtolower ( str_replace ( ' ' , '' , $title ) ) ;
-	$value = get_request ( $key , '' ) ;
+	$s = '' ;
+	if ( isset ( $wd[$key] ) ) $s = $wd[$key] ;
+	$value = get_request ( $key , $s ) ;
 	return "<tr><th>{$title}</th><td><input type='text' name='{$key}' value='$value' style='width:400px'/></td><td><i>{$note}</i></td></tr>\n" ;
 }
 
+
+function getWdApi ( $url ) {
+	global $wd_api ;
+	if ( !isset ( $wd_api[$url] ) ) {
+		$wd_api[$url] = json_decode ( file_get_contents ( $url ) ) ;
+	}
+	return $wd_api[$url] ;
+}
+
+function setLabel ( $field , $prop , $lang , $j , $all ) {
+	global $wd ;
+	if ( isset ( $wd[$field] ) ) return ;
+	if ( !isset ( $j->claims ) ) return ;
+	if ( !isset ( $j->claims->$prop ) ) return ;
+	$d = $j->claims->$prop ;
+	$labels = array() ;
+	foreach ( $d AS $v ) {
+		$d2 = $v->mainsnak->datavalue->value ;
+		$nid = 'numeric-id' ;
+		$q = 'Q' . $d2->$nid ;
+		$url = "http://www.wikidata.org/w/api.php?action=wbgetentities&ids=$q&format=json" ;
+		$j1 = getWdApi($url) ;
+		if ( !isset($j1->entities->$q) ) return ;
+		$j2 = $j1->entities->$q ;
+		if ( isset ( $j2->labels->$lang ) ) {
+			$l = $j2->labels->$lang->value ;
+			$labels[] = $l ;
+		}
+	}
+	if ( count($labels) == 0 ) return ;
+	if ( $all ) $wd[$field] = implode ( ', ' , $labels ) ;
+	else $wd[$field] = $labels[0] ;
+}
+
+function setFromDate ( $k1 , $k2 , $prop , $j ) {
+	global $wd ;
+	if ( isset ( $wd[$k1] ) ) return ;
+	if ( isset ( $wd[$k2] ) ) return ;
+	if ( !isset ( $j->claims ) ) return ;
+	if ( !isset ( $j->claims->$prop ) ) return ;
+	$d = $j->claims->$prop ;
+	$d2 = $d[0]->mainsnak->datavalue->value ;
+
+	$year = substr ( $d2->time , 0 , 12 ) * 1 ;
+	$wd[$k2] = $year ;
+	if ( $d2->precision*1 == 11 ) {
+		$months = array ( 'January' , 'February' , 'March' , 'April' , 'May' , 'June' , 'July' , 'August' , 'September' , 'October' , 'November' , 'December' ) ;
+		$month = substr ( $d2->time , 13 , 2 ) * 1 ;
+		$day = substr ( $d2->time , 16 , 2 ) * 1 ;
+		$wd[$k1] = $months[$month-1] . " " . $day ;
+//		print "<pre>" ; print_r ( $month.'/'.$day ) ; print "</pre>" ;
+	}
+}
+
+function addAC ( $key , $prop , $j , &$ac ) {
+	if ( !isset ( $j->claims ) ) return ;
+	if ( !isset ( $j->claims->$prop ) ) return ;
+	$d = $j->claims->$prop ;
+	$s = $d[0]->mainsnak->datavalue->value ;
+	$ac[] = "$key=$s" ;
+	return $s ;
+}
+
+function seed_from_wd () {
+	global $wd ;
+	$q = get_request('q','') ;
+	if ( $q == '' ) return ;
+	$q = 'Q' . preg_replace('/\D/','',$q) ;
+	$url = "http://www.wikidata.org/w/api.php?action=wbgetentities&ids=$q&format=json" ;
+	$j = json_decode ( file_get_contents ( $url ) ) ;
+//	print "<pre>" ; print_r ( $j ) ; print "</pre>" ;
+	if ( !isset($j->entities->$q) ) return ;
+	$j = $j->entities->$q ;
+	
+	setFromDate ( 'dayofbirth' , 'yearofbirth' , 'P569' , $j ) ;
+	setFromDate ( 'dayofdeath' , 'yearofdeath' , 'P570' , $j ) ;
+	
+	$ac = array() ;
+	addAC ( 'VIAF' , 'P214' , $j , $ac ) ;
+	addAC ( 'LCCN' , 'P244' , $j , $ac ) ;
+	addAC ( 'ISNI' , 'P213' , $j , $ac ) ;
+	addAC ( 'ORCID' , 'P496' , $j , $ac ) ;
+	addAC ( 'GND' , 'P227' , $j , $ac ) ;
+	addAC ( 'SELIBR' , 'P906' , $j , $ac ) ;
+	addAC ( 'BNF' , 'P268' , $j , $ac ) ;
+	addAC ( 'BPN' , 'P651' , $j , $ac ) ;
+	addAC ( 'RID' , 'P1053' , $j , $ac ) ;
+	addAC ( 'BIBSYS' , 'P1015' , $j , $ac ) ;
+	addAC ( 'ULAN' , 'P245' , $j , $ac ) ;
+	addAC ( 'MBA' , 'P434' , $j , $ac ) ;
+	addAC ( 'NLA' , 'P409' , $j , $ac ) ;
+	addAC ( 'NDL' , 'P349' , $j , $ac ) ;
+	if ( count ( $ac ) > 0 ) {
+		$wd['authoritycontrol'] = implode ( '|' , $ac ) ;
+	}
+	
+	$dummy = array() ;
+	$i = addAC ( '' , 'P18' , $j , $dummy ) ;
+	if ( isset ( $i ) ) $wd['image'] = $i ;
+	
+	if ( isset ( $j->claims ) ) {
+		$urls = array() ;
+		foreach ( $j->claims AS $p => $cl ) {
+			foreach ( $cl AS $c ) {
+				if ( !isset($c->references) ) continue ;
+				foreach ( $c->references AS $refs ) {
+					foreach ( $refs->snaks AS $rp => $ref ) {
+						foreach ( $ref AS $r ) {
+							if ( $r->property != 'P854' ) continue ;
+							if ( $r->datatype != 'url' ) continue ;
+//						print "<pre>" ; print_r ( $r ) ; print "</pre>" ;
+							$u = $r->datavalue->value ;
+							$urls[$u] = $u ;
+						}
+					}
+				}
+			}
+		}
+		if ( count($urls) > 0 ) {
+			$wd['externallinks'] = implode ( "\n" , $urls ) ;
+		}
+	}
+
+	$langs = array ( 'en','de','fr','es','it','nl' ) ;
+	foreach ( $langs AS $lang ) {
+		if ( !isset($wd['lastname']) and isset ( $j->labels->$lang ) ) {
+			$l = $j->labels->$lang->value ;
+			if ( preg_match ( '/^(.+)\s(\S+)$/' , $l , $m ) ) {
+				$wd['firstname(s)'] = $m[1] ;
+				$wd['lastname'] = $m[2] ;
+			}
+		}
+		if ( !isset($wd['alternativename(s)']) and isset ( $j->aliases->$lang ) ) {
+			$l = array() ;
+			foreach ( $j->aliases->$lang AS $a ) $l[] = $a->value ;
+			$wd['alternativename(s)'] = implode ( "; " , $l ) ;
+		}
+		if ( !isset($wd['description']) and isset ( $j->descriptions->$lang ) ) {
+			$wd['description'] = $j->descriptions->$lang->value ;
+		}
+		setLabel ( 'occupation' , 'P106' , $lang , $j ) ;
+		setLabel ( 'occupations' , 'P106' , $lang , $j , true ) ;
+		setLabel ( 'nationality' , 'P27' , $lang , $j ) ;
+		setLabel ( 'placeofbirth' , 'P19' , $lang , $j ) ;
+		setLabel ( 'placeofdeath' , 'P20' , $lang , $j ) ;
+		if ( !isset($wd['description']) ) $wd['description'] = $wd['occupations'] . " from " . $wd['nationality'] ;
+	}
+}
+
 function get_form () {
-	$ret = '<form method="post" class="form-inline">' ;
+	global $wd ;
+	seed_from_wd() ;
+	$externallinks = $wd['externallinks'] ;
+	if ( !isset($externallinks) ) $externallinks = get_request('externallinks','') ;
+	$ret = '' ;
+	$ret .= '<form method="get" class="form-inline" style="padding-bottom:20px;margin-bottom:20px;border-bottom:1px solid #DDD">Optional: <input style="width:300px" name="q" type="text" placeholder="Qxxx; e.g. Q42 for Douglas Adams"/> <input type="submit" class="btn btn-primary" value="Pre-fill from Wikidata" /></form>' ;
+	$ret .= '<form method="post" class="form-inline">' ;
 	$ret .= '<table>' ;
 	$ret .= get_form_row ( 'Last name' , 'Required' ) ;
 	$ret .= get_form_row ( 'First name(s)' ) ;
@@ -43,8 +204,10 @@ function get_form () {
 	$ret .= get_form_row ( 'Day of death' , 'MONTH DAY; month can be abbreviated' ) ;
 	$ret .= get_form_row ( 'Year of death' ) ;
 	$ret .= get_form_row ( 'Place of death' ) ;
+	$ret .= get_form_row ( 'Image' ) ;
+	$ret .= get_form_row ( 'Authority control' , 'VIAF=xxx|ORCID=xxx|...' ) ;
 	$ret .= '<tr><th valign="top">Categories</th><td><textarea name="categories" rows="3" style="width:100%"></textarea></td></tr>' ;
-	$ret .= '<tr><th valign="top">External links</th><td><textarea name="externallinks" rows="3" style="width:100%"></textarea></td></tr>' ;
+	$ret .= '<tr><th valign="top">External links</th><td><textarea name="externallinks" rows="3" style="width:100%">' . $externallinks . '</textarea></td></tr>' ;
 #	$ret .= '<tr><th>Gender</th><td><input type="radio" name="gender" value="male" checked>Male ' .
 #			'<input type="radio" name="gender" value="female">Female</td></tr>' ;
   $ret .= '<tr><td/><td colspan="2">' ;
@@ -155,6 +318,9 @@ function get_text () {
 		if ( $occupation != '' ) $ret .= '{{' . $occupation . "-stub}}\n" ;
 	}
 	
+	$ac = get_request ( 'authoritycontrol' , '' ) ;
+	if ( $ac != '' ) $ret .= "\n{{Authority control|$ac}}\n" ;
+	
 	$name2 = trim ( q('Last name') . ", " . q('First Name(s)') ) ;
 	$ret .= "\n{{DEFAULTSORT:{$name2}}}\n" ;
 	if ( q('Year of birth') != '' ) $ret .= '[[Category:' . q('Year of birth') . " births]]\n" ;
@@ -203,6 +369,9 @@ function get_text () {
     $ib["death_date"] = $deathdate ;
     $ib["death_place"] = q('Place of death',true) ;
     $ib["nationality"] = $nationlink ;
+    
+    $image = get_request ( 'image' , '' ) ;
+    if ( $image != '' ) $ib["image"] = $image ;
     
     foreach ( $ib AS $k => $v ) {
       $v = trim ( $v ) ;

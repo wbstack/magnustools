@@ -100,6 +100,8 @@ class WikiQuery {
 		$url .= 'titles=' . myurlencode ( $image ) ;
 		$data = $this->get_result ( $url ) ;
 		
+//		print "<pre>" ; print_r ( $data ) ; print "</pre>" ;
+		
 		if ( !isset ( $data['query'] ) ) return false ; $data = $data['query'] ;
 		if ( !isset ( $data['pages'] ) ) return false ; $data = $data['pages'] ;
 

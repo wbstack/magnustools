@@ -15,7 +15,7 @@ function ucFirst(string) {
 }
 
 function sanitizeID ( id ) {
-	return escattr ( id.replace(/\s/g,'_').replace(/[,.+@?:"/')(|]/g,'_') ) ;
+	return escattr ( id.replace(/\s/g,'_').replace(/[,.+&@?:"/')(|]/g,'_') ) ;
 }
 
 function escattr ( s ) {

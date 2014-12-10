@@ -332,6 +332,12 @@ class MW_OAuth {
 		}
 
 
+		if ( isset($_REQUEST['test']) ) {
+			print "RESULT:<hr/>" ;
+			print_r ( $data ) ;
+			print "<hr/>" ;
+		}
+
 		if ( !$data ) {
 		return ;
 //			if ( $mode != 'userinfo' ) header( "HTTP/1.1 500 Internal Server Error" );
@@ -406,6 +412,22 @@ Claims are used like this:
 				if ( $v->mainsnak->datavalue->value->time != $claim['date'] ) continue ;
 				if ( $v->mainsnak->datavalue->value->precision != $claim['prec'] ) continue ;
 				$does_exist = true ;
+			} else if ( $claim['type'] == 'monolingualtext' ) {
+				if ( !isset($v->mainsnak) ) continue ;
+				if ( !isset($v->mainsnak->datavalue) ) continue ;
+				if ( !isset($v->mainsnak->datavalue->value) ) continue ;
+				if ( !isset($v->mainsnak->datavalue->value->text) ) continue ;
+				if ( $v->mainsnak->datavalue->value->text != $claim['text'] ) continue ;
+				if ( $v->mainsnak->datavalue->value->language != $claim['language'] ) continue ;
+				$does_exist = true ;
+			} else if ( $claim['type'] == 'quantity' ) {
+				if ( !isset($v->mainsnak) ) continue ;
+				if ( !isset($v->mainsnak->datavalue) ) continue ;
+				if ( !isset($v->mainsnak->datavalue->value) ) continue ;
+				if ( !isset($v->mainsnak->datavalue->value->amount) ) continue ;
+				if ( $v->mainsnak->datavalue->value->amount != $claim['amount'] ) continue ;
+				if ( $v->mainsnak->datavalue->value->unit != $claim['unit'] ) continue ;
+				$does_exist = true ;
 			}
 		}
 	
@@ -434,15 +456,14 @@ Claims are used like this:
 		$ch = null;
 		$res = $this->doApiQuery( array(
 			'format' => 'json',
-			'action' => 'tokens',
-			'type' => 'edit',
+			'action' => 'query' ,
+			'meta' => 'tokens'
 		), $ch );
-		if ( !isset( $res->tokens->edittoken ) ) {
-			header( "HTTP/1.1 500 Internal Server Error" );
-			echo 'Bad API response [setLabel]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+		if ( !isset( $res->query->tokens->csrftoken ) ) {
+			$this->error = 'Bad API response [setLabel]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
-		$token = $res->tokens->edittoken;
+		$token = $res->query->tokens->csrftoken;
 
 		// Now do that!
 		$res = $this->doApiQuery( array(
@@ -464,21 +485,126 @@ Claims are used like this:
 	}
 	
 	
+	function setSitelink ( $q , $site , $title ) {
+
+		// Fetch the edit token
+		$ch = null;
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'query' ,
+			'meta' => 'tokens'
+		), $ch );
+		if ( !isset( $res->query->tokens->csrftoken ) ) {
+			$this->error = 'Bad API response [setLabel]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			return false ;
+		}
+		$token = $res->query->tokens->csrftoken;
+
+		// Now do that!
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'wbsetsitelink',
+			'id' => $q,
+			'linksite' => $site,
+			'linktitle' => $title,
+			'token' => $token,
+			'bot' => 1
+		), $ch );
+		
+		if ( isset ( $res->error ) ) {
+			$this->error = $res->error->info ;
+			return false ;
+		}
+
+		return true ;
+	}
+	
+	
+	function setDesc ( $q , $text , $language ) {
+
+		// Fetch the edit token
+		$ch = null;
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'query' ,
+			'meta' => 'tokens'
+		), $ch );
+		if ( !isset( $res->query->tokens->csrftoken ) ) {
+			$this->error = 'Bad API response [setLabel]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			return false ;
+		}
+		$token = $res->query->tokens->csrftoken;
+
+		// Now do that!
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'wbsetdescription',
+			'id' => $q,
+			'language' => $language ,
+			'value' => $text ,
+			'token' => $token,
+			'bot' => 1
+		), $ch );
+		
+		if ( isset ( $res->error ) ) {
+			$this->error = $res->error->info ;
+			return false ;
+		}
+
+		return true ;
+	}
+	
+	
+	function set_Alias ( $q , $text , $language , $mode ) {
+
+		// Fetch the edit token
+		$ch = null;
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'query' ,
+			'meta' => 'tokens'
+		), $ch );
+		if ( !isset( $res->query->tokens->csrftoken ) ) {
+			$this->error = 'Bad API response [setLabel]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			return false ;
+		}
+		$token = $res->query->tokens->csrftoken;
+
+		// Now do that!
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'wbsetaliases',
+			$mode => $text ,
+			'id' => $q,
+			'language' => $language ,
+//			'value' => $text ,
+			'token' => $token,
+			'bot' => 1
+		), $ch );
+		
+		if ( isset ( $res->error ) ) {
+			$this->error = $res->error->info ;
+			return false ;
+		}
+
+		return true ;
+	}
+	
+	
 	function setPageText ( $page , $text ) {
 
 		// Fetch the edit token
 		$ch = null;
 		$res = $this->doApiQuery( array(
 			'format' => 'json',
-			'action' => 'tokens',
-			'type' => 'edit',
+			'action' => 'query' ,
+			'meta' => 'tokens'
 		), $ch );
-		if ( !isset( $res->tokens->edittoken ) ) {
-			header( "HTTP/1.1 500 Internal Server Error" );
-			echo 'Bad API response[setPageText]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+		if ( !isset( $res->query->tokens->csrftoken ) ) {
+			$this->error = 'Bad API response [setPageText]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
-		$token = $res->tokens->edittoken;
+		$token = $res->query->tokens->csrftoken;
 		
 		// Now do that!
 		$res = $this->doApiQuery( array(
@@ -504,15 +630,14 @@ Claims are used like this:
 		$ch = null;
 		$res = $this->doApiQuery( array(
 			'format' => 'json',
-			'action' => 'tokens',
-			'type' => 'edit',
+			'action' => 'query' ,
+			'meta' => 'tokens'
 		), $ch );
-		if ( !isset( $res->tokens->edittoken ) ) {
-			header( "HTTP/1.1 500 Internal Server Error" );
-			echo 'Bad API response[setPageText]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+		if ( !isset( $res->query->tokens->csrftoken ) ) {
+			$this->error = 'Bad API response [setPageText]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
-		$token = $res->tokens->edittoken;
+		$token = $res->query->tokens->csrftoken;
 		
 		$p = array(
 			'format' => 'json',
@@ -538,6 +663,41 @@ Claims are used like this:
 		return true ;
 	}
 	
+	function createItem () {
+	
+		// Next fetch the edit token
+		$ch = null;
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'query' ,
+			'meta' => 'tokens'
+		), $ch );
+		if ( !isset( $res->query->tokens->csrftoken ) ) {
+			$this->error = 'Bad API response [createItem]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			return false ;
+		}
+		$token = $res->query->tokens->csrftoken;
+
+
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'wbeditentity',
+			'new' => 'item' ,
+			'data' => '{}' ,
+			'token' => $token,
+			'bot' => 1
+		), $ch );
+		
+		if ( isset ( $_REQUEST['test'] ) ) {
+			print "<pre>" ; print_r ( $res ) ; print "</pre>" ;
+		}
+
+		$this->last_res = $res ;
+		if ( isset ( $res->error ) ) return false ;
+
+		return true ;
+	}
+
 	function createItemFromPage ( $site , $page ) {
 		$page = str_replace ( ' ' , '_' , $page ) ;
 	
@@ -545,15 +705,14 @@ Claims are used like this:
 		$ch = null;
 		$res = $this->doApiQuery( array(
 			'format' => 'json',
-			'action' => 'tokens',
-			'type' => 'edit',
+			'action' => 'query' ,
+			'meta' => 'tokens'
 		), $ch );
-		if ( !isset( $res->tokens->edittoken ) ) {
-			header( "HTTP/1.1 500 Internal Server Error" );
-			echo 'Bad API response[createItemFromPage]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+		if ( !isset( $res->query->tokens->csrftoken ) ) {
+			$this->error = 'Bad API response [createItemFromPage]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
-		$token = $res->tokens->edittoken;
+		$token = $res->query->tokens->csrftoken;
 
 
 		$data = array ( 
@@ -562,7 +721,9 @@ Claims are used like this:
 		$m = array () ;
 		if ( preg_match ( '/^(.+)wiki$/' , $site , $m ) ) {
 			$nice_title = preg_replace ( '/\s+\(.+$/' , '' , str_replace ( '_' , ' ' , $page ) ) ;
-			$data['labels'] = array ( array ( 'language' => $m[1] , 'value' => $nice_title ) ) ;
+			$lang = $m[1] ;
+			if ( $lang == 'no' ) $lang = 'nb' ;
+			$data['labels'] = array ( array ( 'language' => $lang , 'value' => $nice_title ) ) ;
 		}
 //		print "<pre>" ; print_r ( json_encode ( $data ) ) ; print " </pre>" ; return true ;
 
@@ -590,15 +751,14 @@ Claims are used like this:
 		$ch = null;
 		$res = $this->doApiQuery( array(
 			'format' => 'json',
-			'action' => 'tokens',
-			'type' => 'edit',
+			'action' => 'query' ,
+			'meta' => 'tokens'
 		), $ch );
-		if ( !isset( $res->tokens->edittoken ) ) {
-			header( "HTTP/1.1 500 Internal Server Error" );
-			echo 'Bad API response[setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+		if ( !isset( $res->query->tokens->csrftoken ) ) {
+			$this->error = 'Bad API response [setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
-		$token = $res->tokens->edittoken;
+		$token = $res->query->tokens->csrftoken;
 	
 	
 	
@@ -632,15 +792,14 @@ Claims are used like this:
 		$ch = null;
 		$res = $this->doApiQuery( array(
 			'format' => 'json',
-			'action' => 'tokens',
-			'type' => 'edit',
+			'action' => 'query' ,
+			'meta' => 'tokens'
 		), $ch );
-		if ( !isset( $res->tokens->edittoken ) ) {
-			header( "HTTP/1.1 500 Internal Server Error" );
-			echo 'Bad API response[setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+		if ( !isset( $res->query->tokens->csrftoken ) ) {
+			$this->error = 'Bad API response [setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
-		$token = $res->tokens->edittoken;
+		$token = $res->query->tokens->csrftoken;
 
 		$params = array(
 			'format' => 'json',
@@ -668,7 +827,41 @@ Claims are used like this:
 	}
 
 
+	
+	function createRedirect ( $from , $to ) {
+		// Next fetch the edit token
+		$ch = null;
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'query' ,
+			'meta' => 'tokens'
+		), $ch );
+		if ( !isset( $res->query->tokens->csrftoken ) ) {
+			$this->error = 'Bad API response [setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			return false ;
+		}
+		$token = $res->query->tokens->csrftoken;
 
+		$params = array(
+			'format' => 'json',
+			'action' => 'wbcreateredirect',
+			'from' => $from ,
+			'to' => $to ,
+			'token' => $token,
+			'bot' => 1
+		) ;
+
+		$res = $this->doApiQuery( $params, $ch );
+		
+		if ( isset ( $_REQUEST['test'] ) ) {
+			print "<pre>" ; print_r ( $res ) ; print "</pre>" ;
+		}
+
+		$this->last_res = $res ;
+		if ( isset ( $res->error ) ) return false ;
+
+		return true ;
+	}
 
 
 
@@ -681,17 +874,18 @@ Claims are used like this:
 		$ch = null;
 		$res = $this->doApiQuery( array(
 			'format' => 'json',
-			'action' => 'tokens',
-			'type' => 'edit',
+			'action' => 'query' ,
+			'meta' => 'tokens'
 		), $ch );
-		if ( !isset( $res->tokens->edittoken ) ) {
-			header( "HTTP/1.1 500 Internal Server Error" );
-			echo 'Bad API response[setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+		if ( !isset( $res->query->tokens->csrftoken ) ) {
+			$this->error = 'Bad API response [setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
-		$token = $res->tokens->edittoken;
+		$token = $res->query->tokens->csrftoken;
 	
-	
+//		if ( $claim['amount'] > 0 ) $claim['amount'] = '+'.$claim['amount'] ;
+//		if ( $claim['upper'] > 0 ) $claim['upper'] = '+'.$claim['upper'] ;
+//		if ( $claim['lower'] > 0 ) $claim['lower'] = '+'.$claim['lower'] ;
 	
 		// Now do that!
 		$value = "" ;
@@ -702,6 +896,12 @@ Claims are used like this:
 //			$value = '{"type":"string","value":'.json_encode($claim['text']).'}' ;
 		} else if ( $claim['type'] == 'date' ) {
 			$value = '{"time":"'.$claim['date'].'","timezone": 0,"before": 0,"after": 0,"precision": '.$claim['prec'].',"calendarmodel": "http://www.wikidata.org/entity/Q1985727"}' ;
+		} else if ( $claim['type'] == 'location' ) {
+			$value = '{"latitude":'.$claim['lat'].',"precision":0.000001,"longitude": '.$claim['lon'].',"globe": "http://www.wikidata.org/entity/Q2"}' ;
+		} else if ( $claim['type'] == 'quantity' ) {
+			$value = '{"amount":'.$claim['amount'].',"unit": "'.$claim['unit'].'","upperBound":'.$claim['upper'].',"lowerBound":'.$claim['lower'].'}' ;
+		} else if ( $claim['type'] == 'monolingualtext' ) {
+			$value = '{"text":' . json_encode($claim['text']) . ',"language":' . json_encode($claim['language']) . '}' ;
 		}
 		
 		$params = array(
@@ -729,7 +929,10 @@ Claims are used like this:
 		}
 
 		$this->last_res = $res ;
-		if ( isset ( $res->error ) ) return false ;
+		if ( isset ( $res->error ) ) {
+			$this->error = $res->error->info ;
+			return false ;
+		}
 
 		
 /*
@@ -747,15 +950,14 @@ Claims are used like this:
 		$ch = null;
 		$res = $this->doApiQuery( array(
 			'format' => 'json',
-			'action' => 'tokens',
-			'type' => 'edit',
+			'action' => 'query' ,
+			'meta' => 'tokens'
 		), $ch );
-		if ( !isset( $res->tokens->edittoken ) ) {
-			header( "HTTP/1.1 500 Internal Server Error" );
-			echo 'Bad API response[setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+		if ( !isset( $res->query->tokens->csrftoken ) ) {
+			$this->error = 'Bad API response [setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
-		$token = $res->tokens->edittoken;
+		$token = $res->query->tokens->csrftoken;
 	
 	
 	
@@ -795,15 +997,14 @@ Claims are used like this:
 		$ch = null;
 		$res = $this->doApiQuery( array(
 			'format' => 'json',
-			'action' => 'tokens',
-			'type' => 'edit',
+			'action' => 'query' ,
+			'meta' => 'tokens'
 		), $ch );
-		if ( !isset( $res->tokens->edittoken ) ) {
-			header( "HTTP/1.1 500 Internal Server Error" );
-			echo 'Bad API response[setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+		if ( !isset( $res->query->tokens->csrftoken ) ) {
+			$this->error = 'Bad API response [setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
-		$token = $res->tokens->edittoken;
+		$token = $res->query->tokens->csrftoken;
 		
 		$p = array(
 			'format' => 'json',
@@ -854,15 +1055,15 @@ Claims are used like this:
 		$ch = null;
 		$res = $this->doApiQuery( array(
 			'format' => 'json',
-			'action' => 'tokens',
-			'type' => 'edit',
+			'action' => 'query' ,
+			'meta' => 'tokens'
 		), $ch );
-		if ( !isset( $res->tokens->edittoken ) ) {
-			$this->error = 'Bad API response[uploadFromURL]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>' ;
+		if ( !isset( $res->query->tokens->csrftoken ) ) {
+			$this->error = 'Bad API response [uploadFromURL]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>' ;
 			unlink ( $tmpfile ) ;
 			return false ;
 		}
-		$token = $res->tokens->edittoken;
+		$token = $res->query->tokens->csrftoken;
 
 		$params = array(
 			'format' => 'json',
@@ -923,7 +1124,7 @@ Claims are used like this:
 				print_r ( $info ) ;
 				print "</pre>" ;
 			}*/
-			$this->error = 'Not authorized (bad API response[isAuthOK]: ' . htmlspecialchars( json_encode( $res) ) . ')' ;
+			$this->error = 'Not authorized (bad API response [isAuthOK]: ' . htmlspecialchars( json_encode( $res) ) . ')' ;
 			return false ;
 		}
 		if ( isset( $res->query->userinfo->anon ) ) {

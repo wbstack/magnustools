@@ -15,7 +15,7 @@ $tools_webproxy = 'tools-webproxy' ;
 $tusc_url = "http://$tools_webproxy/tusc/tusc.php" ; // http://tools-webserver-01/ // tools.wmflabs.org
 $use_db_cache = false ;
 $common_db_cache = array() ;
-$wdq_internal_url = 'http://wikidata-wdq-mm.eqiad.wmflabs/api' ; //'http://wdq.wmflabs.org/api' ;
+$wdq_internal_url = 'http://wdq.wmflabs.org/api' ; // 'http://wikidata-wdq-mm.eqiad.wmflabs/api'
 
 function myurlencode ( $t ) {
 	$t = str_replace ( " " , "_" , $t ) ;
@@ -111,6 +111,7 @@ function openDB ( $language , $project ) {
 function get_db_safe ( $s , $fixup = false ) {
 	global $db ;
 	if ( $fixup ) $s = str_replace ( ' ' , '_' , trim ( ucfirst ( $s ) ) ) ;
+	if ( !isset($db) ) return addslashes ( str_replace ( ' ' , '_' , $s ) ) ;
 	return $db->real_escape_string ( str_replace ( ' ' , '_' , $s ) ) ;
 }
 
@@ -125,7 +126,7 @@ function findSubcats ( $db , $root , &$subcats , $depth = -1 ) {
 	foreach ( $root AS $r ) {
 		if ( isset ( $subcats[$r] ) ) continue ;
 		$subcats[$r] = get_db_safe ( $r ) ;
-		$c[] = str_replace ( ' ' , '_' , $db->escape_string ( $r ) ) ;
+		$c[] = get_db_safe($r); //str_replace ( ' ' , '_' , $db->escape_string ( $r ) ) ;
 	}
 	if ( count ( $c ) == 0 ) return ;
 	if ( $depth == 0 ) return ;
@@ -166,7 +167,7 @@ function getPagesInCategory ( $db , $category , $depth = 0 , $namespace = 0 , $n
 
 function get_common_header ( $script , $title , $p = array() ) {
 	if ( !headers_sent() ) {
-		header('Content-type: text/html');
+		header('Content-type: text/html; charset=UTF-8'); // UTF8 test
 		header("Cache-Control: no-cache, must-revalidate");
 	}
 	$s = file_get_contents ( '/data/project/magnustools/public_html/resources/html/dummy_header.html' ) ;
@@ -508,6 +509,13 @@ function get_initial_paragraph ( &$text , $language = '' ) {
 	return $s ;
 }
 
+function fix_language_code ( $s ) {
+	return strtolower ( preg_replace ( '/[^a-z-]/' , '' , $s ) ) ;
+}
+
+function check_project_name ( $s ) {
+	return strtolower ( preg_replace ( '/[^a-z]/' , '' , $s ) ) ;
+}
 
 // UPLOAD FILE VIA API
 
