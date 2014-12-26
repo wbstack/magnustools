@@ -121,5 +121,3 @@ if ( $botmode ) {
 } else {
 	print get_common_footer() ;
 }
-
-?>

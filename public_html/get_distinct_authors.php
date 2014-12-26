@@ -57,6 +57,3 @@ if ( count ( $pages ) == 0 ) {
 	header('Content-type: text/plain; charset=utf-8');
 	foreach ( $authors AS $a ) print "$a\n" ;
 }
-
-
-?>

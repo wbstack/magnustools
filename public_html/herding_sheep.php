@@ -89,5 +89,3 @@ if ( isset ( $_REQUEST['doit'] ) ) {
 }
 
 print get_common_footer() ;
-
-?>

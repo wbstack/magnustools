@@ -229,5 +229,3 @@ print "This is a slightly altered mirror of a script by Borislav Manolov, releas
 print " The original script is <a href=\"http://www.uni-bonn.de/~manfear/html2wiki-tables.php\">here</a>.<br/>" ;
 print_form ( $html, $row_delim , $oneline , $escape , $otherhtml , $wiki ) ;
 print get_common_footer() ;
-
-?>

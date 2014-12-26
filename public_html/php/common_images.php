@@ -162,5 +162,3 @@ function get_flickr_image_table ( $f , $username = "" , $include_flickr_id = fal
   
   return $ret ;
 }
-
-?>

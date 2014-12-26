@@ -47,5 +47,3 @@ print "</form>" ;
 
 
 print get_common_footer() ;
-
-?>
