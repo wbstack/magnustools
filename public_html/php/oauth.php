@@ -225,6 +225,7 @@ class MW_OAuth {
 			exit(0);
 		}
 		curl_close( $ch );
+//print_r ( $data ) ; exit ( 0 ) ; // SHOW MEDIAWIKI ERROR
 		$token = json_decode( $data );
 		if ( is_object( $token ) && isset( $token->error ) ) {
 			header( "HTTP/1.1 500 Internal Server Error" );
@@ -511,6 +512,7 @@ Claims are used like this:
 			'bot' => 1
 		), $ch );
 		
+		$this->last_res = $res ;
 		if ( isset ( $res->error ) ) {
 			$this->error = $res->error->info ;
 			return false ;

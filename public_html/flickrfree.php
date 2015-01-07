@@ -1,9 +1,11 @@
 <?PHP
+//error_reporting(E_ERROR|E_CORE_ERROR|E_ALL|E_COMPILE_ERROR);
+//ini_set('display_errors', 'On');
 
 include_once ( "php/common.php" ) ;
 
 $fk = trim ( file_get_contents ( "../flickr_key.txt" ) ) ;
-$url = "http://api.flickr.com/services/rest/?method=flickr.photos.getRecent&api_key=$fk&extras=license,date_upload,owner_name,icon_server,geo,tags&per_page=500" ;
+$url = "https://api.flickr.com/services/rest/?method=flickr.photos.getRecent&api_key=$fk&extras=license,date_upload,owner_name,icon_server,geo,tags&per_page=500" ;
 $data = file_get_contents ( $url ) ;
 $lines = explode ( "/>" , $data ) ;
 
@@ -33,13 +35,13 @@ foreach ( $lines AS $l ) {
 	preg_match ( '/id="([^"]+)"/' , $l , $matches ) ; $id = $matches[1] ;
 
 	# Get thumbnail
-	$url = "http://api.flickr.com/services/rest/?method=flickr.photos.getSizes&api_key=$fk&photo_id=$id" ;
+	$url = "https://api.flickr.com/services/rest/?method=flickr.photos.getSizes&api_key=$fk&photo_id=$id" ;
 	$data = file_get_contents ( $url ) ;
 	$data = array_pop ( explode ( 'width="100"' , $data , 2 ) ) ;
 	$data = array_shift ( explode ( '/>' , $data , 2 ) ) ;
 	preg_match ( '/source="([^"]+)"/' , $data , $matches ) ; $thumb_url = $matches[1] ;
 	
-	$flickr_owner_url = "http://flickr.com/photos/$owner" ;
+	$flickr_owner_url = "https://flickr.com/photos/$owner" ;
 	$flickr_url = "$flickr_owner_url/$id" ;
 	
 	$nn = $id ;

@@ -50,6 +50,7 @@ function getDBname ( $language , $project ) {
 	elseif ( $project == 'wikiversity' ) $ret .= 'wikiversity_p' ;
 	elseif ( $project == 'wikivoyage' ) $ret .= 'wikivoyage_p' ;
 	elseif ( $project == 'wikiquote' ) $ret .= 'wikiquote_p' ;
+	elseif ( $language == 'meta' ) $ret .= 'metawiki_p' ;
 	else die ( "Cannot construct database name for $language.$project - aborting." ) ;
 	return $ret ;
 }
