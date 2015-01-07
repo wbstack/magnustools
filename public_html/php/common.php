@@ -43,6 +43,7 @@ function getDBname ( $language , $project ) {
 	if ( $language == 'commons' ) $ret = 'commonswiki_p' ;
 	elseif ( $language == 'wikidata' || $project == 'wikidata' ) $ret = 'wikidatawiki_p' ;
 	elseif ( $language == 'mediawiki' || $project == 'mediawiki' ) $ret = 'mediawikiwiki_p' ;
+	elseif ( $language == 'meta' && $project == 'wikimedia' ) $ret = 'metawiki_p' ;
 	elseif ( $project == 'wikipedia' ) $ret .= 'wiki_p' ;
 	elseif ( $project == 'wikisource' ) $ret .= 'wikisource_p' ;
 	elseif ( $project == 'wiktionary' ) $ret .= 'wiktionary_p' ;
