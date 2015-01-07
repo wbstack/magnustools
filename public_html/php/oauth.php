@@ -1214,5 +1214,3 @@ switch ( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
 </html>
 
 */
-
-?>

@@ -28,6 +28,3 @@ if ( isset ( $_REQUEST['callback'] ) ) print $_REQUEST['callback']."(" ;
 print json_encode ( $o ) ;
 if ( isset ( $_REQUEST['callback'] ) ) print ");" ;
 print "\n" ;
-
-?>
-

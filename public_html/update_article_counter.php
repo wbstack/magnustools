@@ -75,5 +75,3 @@ if ( $page != '' ) {
 print "</body>" ;
 print "</html>\n" ;
 myflush() ;
-
-?>

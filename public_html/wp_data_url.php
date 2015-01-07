@@ -34,5 +34,3 @@ if ( isset ( $title ) and isset ( $lang ) ) {
 	
 	
 }
-
-?>

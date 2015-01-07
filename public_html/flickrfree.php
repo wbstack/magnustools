@@ -67,5 +67,3 @@ foreach ( $lines AS $l ) {
 
 print "</table>" ;
 print get_common_footer() ;
-
-?>

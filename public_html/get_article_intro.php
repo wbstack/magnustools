@@ -90,5 +90,3 @@ if ( $title == '' ) {
 	print json_encode ( $p ) ;
 	print ");" ;
 }
-
-?>

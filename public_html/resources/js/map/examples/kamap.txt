@@ -505,4 +505,3 @@ fclose($fpLockFile);
 umask($orig_umask);
 
 exit;
-?>

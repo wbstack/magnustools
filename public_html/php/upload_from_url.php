@@ -108,5 +108,3 @@ if ( ! do_direct_upload ( $url , $new_name , $desc ) ) {
 
 print json_encode ( $o ) ;
 myflush() ;
-
-?>

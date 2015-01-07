@@ -31,5 +31,3 @@ if ( $title != "" ) {
 print $html ;
 
 print get_common_footer() ;
-
-?>

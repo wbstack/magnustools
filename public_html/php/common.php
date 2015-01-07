@@ -567,7 +567,3 @@ function uploadFileViaAPI ( $username , $userpass , $local_file , $new_file_name
 	if ( $file_upload_api_result['upload']['result'] == 'Warning' ) return false ;
 	return true ; // TODO 
 }
-
-
-
-?>

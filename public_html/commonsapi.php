@@ -568,5 +568,3 @@ foreach ( $imagelist AS $img ) {
 }
 
 	print '</response>' ;
-
-?>
