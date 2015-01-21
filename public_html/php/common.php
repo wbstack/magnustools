@@ -369,28 +369,14 @@ function strip_html_comments ( &$text ) {
 }
 
 function get_image_url ( $lang , $image , $project = "wikipedia" ) {
-	if ( $lang == 'commons' ) $project = 'wikipedia' ;
-	$image = utf8_encode ( $image ) ;
-	$image2 = ucfirst ( str_replace ( " " , "_" , $image ) ) ;
-	$m = md5( $image2 ) ;
-	$m1 = substr ( $m , 0 , 1 ) ;
-	$m2 = substr ( $m , 0 , 2 ) ;
-	
-	$url = "http://upload.wikimedia.org/{$project}/{$lang}/{$m1}/{$m2}/" . myurlencode ( $image ) ;
+	if ( $lang == 'commons' ) $project = 'wikimedia' ;
+	$url = "//{$lang}.{$project}.org/wiki/Special:Redirect/file/" . myurlencode ( $image );
 	return $url ;
 }
 
 function get_thumbnail_url ( $lang , $image , $width , $project = "wikipedia" ) {
-	$image = $image ; #utf8_encode (  $image ) ;
-	$image2 = ucfirst ( str_replace ( " " , "_" , $image ) ) ;
-	$m = md5( $image2 ) ;
-	$m1 = substr ( $m , 0 , 1 ) ;
-	$m2 = substr ( $m , 0 , 2 ) ;
-	$project='wikipedia' ;
-
-	$url = "//upload.wikimedia.org/{$project}/{$lang}/thumb/{$m1}/{$m2}/" . myurlencode ( $image ) ;
-	$url .= '/' . $width . 'px-' . myurlencode ( $image ) ;
-	if ( strtolower ( substr ( $image , -4 , 4 ) ) == '.svg' ) $url .= '.png' ;
+	if ( $lang == 'commons' ) $project = 'wikimedia' ;
+	$url = "//{$lang}.{$project}.org/wiki/Special:Redirect/file/" . myurlencode ( $image ) . "?width=". $width;
 	return $url ;
 }
 
