@@ -152,6 +152,10 @@ function WikiDataItem ( init_wd , init_raw ) {
 				o.type = 'time' ;
 				$.extend ( true , o , s.datavalue.value ) ;
 				o.key = o.time ; // TODO FIXME
+			} else if ( s.datavalue.type == 'globecoordinate' ) {
+				o.type = 'globecoordinate' ;
+				$.extend ( true , o , s.datavalue.value ) ;
+				o.key = o.latitude+'/'+o.longitude ; // TODO FIXME
 			} else if ( s.datavalue.type == 'quantity' ) {
 				o.type = 'quantity' ;
 				$.extend ( true , o , s.datavalue.value ) ;
