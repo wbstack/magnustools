@@ -93,13 +93,7 @@ function openDB ( $language , $project ) {
 	getDBpassword() ;
 	$dbname = getDBname ( $language , $project ) ;
 
-	$p = $project ;
-	if ( $p == "wikipedia" ) $p = "wiki" ;
-	
-	$l = str_replace ( 'classic' , 'classical' , $language ) ;
-	if ( $l == 'commons' ) $p = 'wiki' ;
-	elseif ( $l == 'wikidata' or $project == 'wikidata' ) $p = 'wiki' ;
-	$server = "$l$p.labsdb" ;
+	$server = substr( $dbname, 0, -2 ) . '.labsdb';
 
 	$db = new mysqli($server, $mysql_user, $mysql_password, $dbname);
 	if($db->connect_errno > 0) {
