@@ -29,12 +29,12 @@ function getDBpassword () {
 	else $user = str_replace ( 'tools.' , '' , get_current_user() ) ;
 	$passwordfile = '/data/project/' . $user . '/replica.my.cnf' ;
 	if ( $user == 'magnus' ) $passwordfile = '/home/' . $user . '/replica.my.cnf' ; // Command-line usage
-	$t = file_get_contents ( $passwordfile ) ;
-	$lines = explode ( "\n" , $t ) ;
-	foreach ( $lines AS $l ) {
-		$l = explode ( '=' , trim ( str_replace ( "'" , '' , $l  ) ) , 2 ) ;
-		if ( $l[0] == 'user' ) $mysql_user = $l[1] ;
-		if ( $l[0] == 'password' ) $mysql_password = $l[1] ;
+	$config = parse_ini_file( $passwordfile );
+	if ( isset( $config['user'] ) ) {
+		$mysql_user = $config['user'];
+	}
+	if ( isset( $config['password'] ) ) {
+		$mysql_password = $config['password'];
 	}
 }
 
