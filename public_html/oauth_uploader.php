@@ -110,6 +110,7 @@ switch ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : '' ) {
 			print "<h3>Tools using OAuth Uploader</h3>
 <ul>
 <li><a href='/flickr2commons/index.html'>Flickr2Commons</a></li>
+<li><a href='/url2commons/index.html'>Url2Commons</a></li>
 </ul>" ;
 		} else {
 			$out['error'] = "Unknown action '$action'" ;
