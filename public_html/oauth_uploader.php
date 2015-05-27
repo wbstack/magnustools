@@ -83,7 +83,7 @@ function bot_out () {
 
 if ( !$botmode ) {
 	print get_common_header ( '' , 'OAuth file uploader' ) ;
-	print "<p>This tool facilitates file uploads to Wikimedia Commons, under jour user name. " ;
+	print "<p>This tool facilitates file uploads to Wikimedia Commons, under your user name. " ;
 	print "You will have to <a href='".htmlspecialchars( $_SERVER['SCRIPT_NAME'] )."?action=authorize'>authorise</a> it first.</p>" ;
 }
 
