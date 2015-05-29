@@ -341,8 +341,9 @@ function WikiData () {
 	this.max_get_entities = 50 ;
 	this.max_get_entities_smaller = 25 ;
 	this.language = 'en' ; // Default
-	this.main_languages = [ 'en' , 'de' , 'fr' , 'nl' , 'es' , 'it' , 'pl' , 'pt' , 'ja' , 'ru' , 'hu' , 'sv' , 'fi' ] ;
+	this.main_languages = [ 'en' , 'de' , 'fr' , 'nl' , 'es' , 'it' , 'pl' , 'pt' , 'ja' , 'ru' , 'hu' , 'sv' , 'fi' , 'da' , 'cs' , 'sk' , 'et' , 'tr' ] ;
 	this.items = {} ;
+	this.default_props = 'info|aliases|labels|descriptions|claims|sitelinks|datatype' ;
 	
 	// Constructor
 //	this.clear() ;
@@ -398,15 +399,19 @@ function WikiData () {
 	
 	this.getItemBatch = function ( item_list , callback , props ) {
 		var self = this ;
-		if ( props === undefined ) props = 'info|aliases|labels|descriptions|claims|sitelinks|datatype' ;
+		if ( props === undefined ) props = self.default_props ;
 		var ids = [ [] ] ;
 		self.loaded_count = 0 ;
 		self.loading_count = 0 ;
-		max_per_batch = item_list.length > 100 ? self.max_get_entities : self.max_get_entities_smaller ; // Smaller batch size for small list
+//		max_per_batch = item_list.length > 100 ? self.max_get_entities : self.max_get_entities_smaller ; // Smaller batch size for small list
+		max_per_batch = self.max_get_entities ;
+		var hadthat = {} ;
 		$.each ( item_list , function ( dummy , q ) {
 			if ( typeof q == 'number' ) q = 'Q' + q ;
 			if ( self.items[q] !== undefined ) return ; // Have that one
-			if ( -1 != $.inArray ( q , ids ) ) return ; // Already planning to load that one
+			if ( typeof hadthat[q] != 'undefined' ) return ;
+			hadthat[q] = 1 ;
+//			if ( -1 != $.inArray ( q , ids ) ) return ; // Already planning to load that one
 			if ( ids[ids.length-1].length >= max_per_batch ) ids.push ( [] ) ;
 			ids[ids.length-1].push ( q ) ;
 			self.loading_count++ ;
@@ -428,12 +433,26 @@ function WikiData () {
 
 		var running = ids.length ;
 		$.each ( ids , function ( dummy , id_list ) {
-			$.getJSON ( self.api , {
+			var api_params = {
 				action : 'wbgetentities' ,
 				ids : id_list.join('|') ,
 				props : props ,
 				format : 'json'
-			} , function ( data ) {
+			} ;
+			if ( self.restrict_to_langs ) {
+				var had_lang = {} ;
+				var sites = [] ;
+				var languages = [] ;
+				$.each ( self.main_languages , function ( k , l ) {
+					if ( had_lang[l] ) return ;
+					had_lang[l] = true ;
+					sites.push ( l+'wiki' ) ;
+					languages.push ( l ) ;
+				} ) ;
+				api_params.sites = sites.join('|') ;
+				api_params.languages = languages.join('|') ;
+			}
+			$.getJSON ( self.api , api_params , function ( data ) {
 				
 				$.each ( (data.entities||[]) , function ( k , v ) {
 					var q = self.getUnifiedID ( k ) ;

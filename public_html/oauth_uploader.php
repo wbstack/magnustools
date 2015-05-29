@@ -35,9 +35,32 @@ function error ( $e ) {
 	return false ;
 }
 
+$auth_is_ok = false ;
+
+function checkAuth () {
+	global $auth_is_ok , $oa ;
+	if ( $auth_is_ok ) return $auth_is_ok ; // Cached, OK
+	if ( !$oa->isAuthOK() ) return false ;
+	
+	$d = $oa->getConsumerRights() ;
+	if ( !isset($d->query->userinfo->groups) ) return false ;
+	if ( !in_array('autoconfirmed',$d->query->userinfo->groups) ) return false ; # Requires autoconfirmed
+	
+	if ( isset($_REQUEST['test']) ) {
+		print "!!!!<pre>" ;
+		print_r ( $d->query->userinfo->groups ) ;
+		print "</pre>" ;
+	}
+
+	
+	$auth_is_ok = true ;
+	return true ;
+// $oa->getConsumerRights()
+}
+
 function setPageText () {
 	global $out , $oa , $botmode ;
-	if ( !$oa->isAuthOK() ) return error ( $oa->error ) ;
+	if ( !checkAuth() ) return error ( $oa->error ) ;
 
 	$page = trim ( get_request ( "page" , '' ) ) ;
 	$text = trim ( get_request ( "text" , '' ) ) ;
@@ -52,7 +75,7 @@ function setPageText () {
 
 function uploadFromURL () {
 	global $out , $oa , $botmode ;
-	if ( !$oa->isAuthOK() ) return error ( "Auth not OK: " . $oa->error ) ;
+	if ( !checkAuth() ) return error ( "Auth not OK: " . $oa->error ) ;
 
 	$url = trim ( get_request ( "url" , '' ) ) ;
 	$new_file_name = trim ( get_request ( "newfile" , '' ) ) ;
@@ -93,7 +116,7 @@ switch ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : '' ) {
 		$oa->doAuthorizationRedirect();
 		break;
 	case 'checkauth':
-		if ( !$oa->isAuthOK() ) error ( "Auth not OK: " . $oa->error ) ;
+		if ( !checkAuth() ) error ( "Auth not OK: " . $oa->error ) ;
 		else {
 			if ( $botmode ) $out['error'] = 'OK' ;
 			else print "Auth OK!" ;
@@ -111,6 +134,7 @@ switch ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : '' ) {
 <ul>
 <li><a href='/flickr2commons/index.html'>Flickr2Commons</a></li>
 <li><a href='/url2commons/index.html'>Url2Commons</a></li>
+<li><a href='/geograph2commons/index.html'>Geograph2Commons</a></li>
 </ul>" ;
 		} else {
 			$out['error'] = "Unknown action '$action'" ;

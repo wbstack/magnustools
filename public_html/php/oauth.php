@@ -191,13 +191,13 @@ class MW_OAuth {
 	 * Request authorization
 	 * @return void
 	 */
-	function doAuthorizationRedirect() {
+	function doAuthorizationRedirect($callback) {
 		// First, we need to fetch a request token.
 		// The request is signed with an empty token secret and no token key.
 		$this->gTokenSecret = '';
 		$url = $this->mwOAuthUrl . '/initiate';
 		$url .= strpos( $url, '?' ) ? '&' : '?';
-		$url .= http_build_query( array(
+		$query = array(
 			'format' => 'json',
 		
 			// OAuth information
@@ -209,7 +209,9 @@ class MW_OAuth {
 
 			// We're using secret key signatures here.
 			'oauth_signature_method' => 'HMAC-SHA1',
-		) );
+		) ;
+		if ( isset($callback) ) $query['callback'] = $callback ;
+		$url .= http_build_query( $query );
 		$signature = $this->sign_request( 'GET', $url );
 		$url .= "&oauth_signature=" . urlencode( $signature );
 		$ch = curl_init();
@@ -822,7 +824,10 @@ Claims are used like this:
 		}
 
 		$this->last_res = $res ;
-		if ( isset ( $res->error ) ) return false ;
+		if ( isset ( $res->error ) ) {
+			if ( $res->error->code == 'modification-failed' ) return true ; // Already exists, no real error
+			return false ;
+		}
 
 		return true ;
 
@@ -926,6 +931,7 @@ Claims are used like this:
 		$res = $this->doApiQuery( $params, $ch );
 		
 		if ( isset ( $_REQUEST['test'] ) ) {
+			print "!!!!!<pre>" ; print_r ( $params ) ; print "</pre>" ;
 			print "<pre>" ; print_r ( $claim ) ; print "</pre>" ;
 			print "<pre>" ; print_r ( $res ) ; print "</pre>" ;
 		}

@@ -1,6 +1,7 @@
 <?PHP
 
-include_once ( 'php/common.php' ) ;
+//include_once ( 'php/common.php' ) ;
+include_once ( 'common.php' ) ;
 
 # ______________________________________________________________________
 # BEGIN OF CLASS WikiQuery
@@ -10,6 +11,7 @@ class WikiQuery {
 	
 	function WikiQuery ( $language , $project = 'wikipedia' ) {
 		if ( $language == 'commons' ) $project = 'wikimedia' ;
+		if ( $language == 'wikidata' ) { $project = $language ; $language = 'www' ; }
 		if ( $language == "xxx" ) $language = "" ;
 		$this->language = $language ;
 		$this->project = $project ;

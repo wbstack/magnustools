@@ -113,7 +113,9 @@ function clone ( o ) {
 
 
 function loadMenuBarAndContent ( o ) {
-	$('#menubar').load ( '/magnustools/resources/html/menubar.html' , function () {
+	var mb = '/magnustools/resources/html/menubar.html' ;
+	if ( typeof o.mb != 'undefined' ) mb = o.mb ;
+	$('#menubar').load ( mb , function () {
 		if ( undefined !== o.toolname ) $('#toolname').html ( o.toolname ) ;
 		if ( undefined !== o.meta ) $('#discuss_link').attr ( 'href' , '//meta.wikimedia.org/wiki/'+o.meta ) ;
 		else $('#discuss_link').html('Talk').attr ( 'href' , '//en.wikipedia.org/wiki/User_talk:Magnus_Manske' ) ;
@@ -213,7 +215,7 @@ var tusc = {
 		$('#tusc_container').show() ;
 		
 		var c = $.cookie('tusc') ;
-		if ( null != c ) {
+		if ( 'null' != c && null != c ) {
 			c = JSON.parse ( c ) ;
 			if ( c.logged_in ) {
 				$('#tusc_user').val ( c.user ) ;

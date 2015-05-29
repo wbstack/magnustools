@@ -365,6 +365,7 @@ function strip_html_comments ( &$text ) {
 
 function get_image_url ( $lang , $image , $project = "wikipedia" ) {
 	if ( $lang == 'commons' ) $project = 'wikimedia' ;
+#	$image = ucfirst ( str_replace ( " " , "_" , $image ) ) ;
 	$url = "//{$lang}.{$project}.org/wiki/Special:Redirect/file/" . myurlencode ( $image );
 	return $url ;
 }
