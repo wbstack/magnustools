@@ -160,6 +160,9 @@ function WikiDataItem ( init_wd , init_raw ) {
 				o.type = 'quantity' ;
 				$.extend ( true , o , s.datavalue.value ) ;
 				o.key = o.amount ; // TODO FIXME
+			} else if ( s.datavalue.type == 'monolingualtext' ) {
+				o.type = 'monolingualtext' ;
+				$.extend ( true , o , s.datavalue.value ) ;
 			}
 		}
 		return o ;
