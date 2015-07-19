@@ -210,7 +210,8 @@ class WikiQuery {
 		$data = $data['categorymembers'] ;
 		foreach ( $data AS $d ) {
 			$key = $d['title'] ;
-			$key = array_pop ( explode ( ':' , $key , 2 ) ) ;
+			$key = explode ( ':' , $key , 2 ) ;
+			$key = array_pop ( $key ) ;
 			$subret = $this->get_pages_in_category ( $key , $namespace , $depth - 1 ) ;
 			foreach ( $subret AS $k => $v ) {
 				if ( isset ( $ret[$k] ) ) continue ; # Have that one already
