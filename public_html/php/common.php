@@ -16,11 +16,25 @@ $tusc_url = "http://$tools_webproxy/tusc/tusc.php" ; // http://tools-webserver-0
 $use_db_cache = false ;
 $common_db_cache = array() ;
 $wdq_internal_url = 'http://wdq.wmflabs.org/api' ; // 'http://wikidata-wdq-mm.eqiad.wmflabs/api'
+$pagepile_enabeled = true ; //isset($_REQUEST['pagepile_enabeled']) ;
 
 function myurlencode ( $t ) {
 	$t = str_replace ( " " , "_" , $t ) ;
 	$t = urlencode ( $t ) ;
 	return $t ;
+}
+
+function getWebserverForWiki ( $wiki ) {
+	$wiki = preg_replace ( '/_p$/' , '' , $wiki ) ; // Paranoia
+	if ( $wiki == 'commonswiki' ) return "commons.wikimedia.org" ;
+	if ( $wiki == 'wikidatawiki' ) return "www.wikidata.org" ;
+	if ( preg_match ( '/^(.+)wiki$/' , $wiki , $m ) ) return $m[1].".wikipedia.org" ;
+	if ( preg_match ( '/^(.+)wik(.+)$/' , $wiki , $m ) ) return $m[1].".".$m[2].".org" ;
+	return '' ;
+}
+
+function escape_attribute ( $s ) {
+	return preg_replace ( "/'/" , '&quot;' , $s ) ;
 }
 
 function getDBpassword () {

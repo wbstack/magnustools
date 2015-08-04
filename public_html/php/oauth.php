@@ -263,6 +263,95 @@ class MW_OAuth {
 	}
 
 
+	function doIdentify() {
+
+		$url = $this->mwOAuthUrl . '/identify';
+		$headerArr = array(
+			// OAuth information
+			'oauth_consumer_key' => $this->gConsumerKey,
+			'oauth_token' => $this->gTokenKey,
+			'oauth_version' => '1.0',
+			'oauth_nonce' => md5( microtime() . mt_rand() ),
+			'oauth_timestamp' => time(),
+
+			// We're using secret key signatures here.
+			'oauth_signature_method' => 'HMAC-SHA1',
+		);
+		$signature = $this->sign_request( 'GET', $url, $headerArr );
+		$headerArr['oauth_signature'] = $signature;
+
+		$header = array();
+		foreach ( $headerArr as $k => $v ) {
+			$header[] = rawurlencode( $k ) . '="' . rawurlencode( $v ) . '"';
+		}
+		$header = 'Authorization: OAuth ' . join( ', ', $header );
+
+		$ch = curl_init();
+		curl_setopt( $ch, CURLOPT_URL, $url );
+		curl_setopt( $ch, CURLOPT_HTTPHEADER, array( $header ) );
+		//curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
+		curl_setopt( $ch, CURLOPT_USERAGENT, $this->gUserAgent );
+		curl_setopt( $ch, CURLOPT_HEADER, 0 );
+		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
+		$data = curl_exec( $ch );
+		if ( !$data ) {
+			header( "HTTP/1.1 $errorCode Internal Server Error" );
+			echo 'Curl error: ' . htmlspecialchars( curl_error( $ch ) );
+			exit(0);
+		}
+		$err = json_decode( $data );
+		if ( is_object( $err ) && isset( $err->error ) && $err->error === 'mwoauthdatastore-access-token-not-found' ) {
+			// We're not authorized!
+#			echo 'You haven\'t authorized this application yet! Go <a href="' . htmlspecialchars( $_SERVER['SCRIPT_NAME'] ) . '?action=authorize">here</a> to do that.';
+#			echo '<hr>';
+			return (object) array('is_authorized'=>false) ;
+		}
+		
+		// There are three fields in the response
+		$fields = explode( '.', $data );
+		if ( count( $fields ) !== 3 ) {
+			header( "HTTP/1.1 $errorCode Internal Server Error" );
+			echo 'Invalid identify response: ' . htmlspecialchars( $data );
+			exit(0);
+		}
+
+		// Validate the header. MWOAuth always returns alg "HS256".
+		$header = base64_decode( strtr( $fields[0], '-_', '+/' ), true );
+		if ( $header !== false ) {
+			$header = json_decode( $header );
+		}
+		if ( !is_object( $header ) || $header->typ !== 'JWT' || $header->alg !== 'HS256' ) {
+			header( "HTTP/1.1 $errorCode Internal Server Error" );
+			echo 'Invalid header in identify response: ' . htmlspecialchars( $data );
+			exit(0);
+		}
+
+		// Verify the signature
+		$sig = base64_decode( strtr( $fields[2], '-_', '+/' ), true );
+		$check = hash_hmac( 'sha256', $fields[0] . '.' . $fields[1], $this->gConsumerSecret, true );
+		if ( $sig !== $check ) {
+			header( "HTTP/1.1 $errorCode Internal Server Error" );
+			echo 'JWT signature validation failed: ' . htmlspecialchars( $data );
+			echo '<pre>'; var_dump( base64_encode($sig), base64_encode($check) ); echo '</pre>';
+			exit(0);
+		}
+
+		// Decode the payload
+		$payload = base64_decode( strtr( $fields[1], '-_', '+/' ), true );
+		if ( $payload !== false ) {
+			$payload = json_decode( $payload );
+		}
+		if ( !is_object( $payload ) ) {
+			header( "HTTP/1.1 $errorCode Internal Server Error" );
+			echo 'Invalid payload in identify response: ' . htmlspecialchars( $data );
+			exit(0);
+		}
+		
+		$payload->is_authorized = true ;
+		return $payload ;
+	}
+
+
 
 	/**
 	 * Send an API query with OAuth authorization
@@ -290,7 +379,9 @@ class MW_OAuth {
 		} else {
 			$to_sign = $post + $headerArr ;
 		}
-		$signature = $this->sign_request( 'POST', $this->apiUrl, $to_sign );
+		$url = $this->apiUrl ;
+		if ( $mode == 'identify' ) $url .= '/identify' ;
+		$signature = $this->sign_request( 'POST', $url, $to_sign );
 		$headerArr['oauth_signature'] = $signature;
 
 		$header = array();
@@ -304,9 +395,6 @@ class MW_OAuth {
 			$ch = curl_init();
 			
 		}
-		
-		$url = $this->apiUrl ;
-//		if ( $mode == 'userinfo' ) $url = $this->mwOAuthUrl ;
 		
 		$post_fields = '' ;
 		if ( $mode == 'upload' ) {
