@@ -5,13 +5,6 @@
 include_once ( "php/common.php" ) ;
 
 $fk = trim ( file_get_contents ( "../flickr_key.txt" ) ) ;
-$url = "https://api.flickr.com/services/rest/?method=flickr.photos.getRecent&api_key=$fk&extras=license,date_upload,owner_name,icon_server,geo,tags&per_page=500" ;
-$data = file_get_contents ( $url ) ;
-$lines = explode ( "/>" , $data ) ;
-
-print get_common_header ( "flickrfree.php" , 'FlickrFree' ) ;
-print "<p>Recent free images uploaded on flickr</p>" ;
-print "<table class='table table-condensed table-striped'>" ;
 
 $licenses = array () ;
 $licenses[4] = 'CC-BY 2.0' ;
@@ -23,50 +16,46 @@ $licenses[10] = 'Public Domain Mark' ;
 
 $tdtop = "style='border-top:2px solid black'" ;
 $top = '' ;
-foreach ( $lines AS $l ) {
-	$matches = array () ;
-	preg_match ( '/license="(.)"/' , $l , $matches ) ;
-	$license = $matches[1] ;
-	if ( $license != 4 /*CC-BY*/ and $license != 5 /*CC-BY-SA*/ and $license != 7 /*PD*/ ) continue ;
-	
-	preg_match ( '/farm="([^"]+)"/' , $l , $matches ) ; $farm = $matches[1] ;
-	preg_match ( '/server="([^"]+)"/' , $l , $matches ) ; $server = $matches[1] ;
-	preg_match ( '/title="([^"]+)"/' , $l , $matches ) ; $title = $matches[1] ;
-	preg_match ( '/owner="([^"]+)"/' , $l , $matches ) ; $owner = $matches[1] ;
-	preg_match ( '/ownername="([^"]+)"/' , $l , $matches ) ; $ownername = $matches[1] ;
-	preg_match ( '/tags="([^"]+)"/' , $l , $matches ) ; $tags = $matches[1] ;
-	preg_match ( '/id="([^"]+)"/' , $l , $matches ) ; $id = $matches[1] ;
+$page = 1 ;
+$id_cache = array() ;
 
-	# Get thumbnail
-	$url = "https://api.flickr.com/services/rest/?method=flickr.photos.getSizes&api_key=$fk&photo_id=$id" ;
-	$data = file_get_contents ( $url ) ;
-	$data = array_pop ( explode ( 'width="100"' , $data , 2 ) ) ;
-	$data = array_shift ( explode ( '/>' , $data , 2 ) ) ;
-	preg_match ( '/source="([^"]+)"/' , $data , $matches ) ; $thumb_url = $matches[1] ;
+print get_common_header ( "flickrfree.php" , 'FlickrFree' ) ;
+print "<p>Recent free images uploaded on flickr</p>" ;
+print "<table class='table table-condensed table-striped'>" ;
+
+while ( 1 ) {
+	$url = "https://api.flickr.com/services/rest/?method=flickr.photos.getRecent&api_key=$fk&extras=license,date_upload,owner_name,url_t,geo,tags&per_page=500&&format=json&nojsoncallback=1&page=$page" ;
+	$j = json_decode ( file_get_contents ( $url ) ) ;
+
+	foreach ( $j->photos->photo AS $f ) {
+		$license = $f->license ;
+		if ( !isset($licenses[$license]) ) continue ;
+		if ( isset ( $id_cache[$f->id] ) ) continue ;
+		$id_cache[$f->id] = 1 ;
 	
-	$flickr_owner_url = "https://flickr.com/photos/$owner" ;
-	$flickr_url = "$flickr_owner_url/$id" ;
+		$flickr_owner_url = "https://flickr.com/photos/" . $f->owner ;
+		$flickr_url = "$flickr_owner_url/" . $f->id ;
 	
-	$nn = $id ;
-	if ( $title != '' ) $nn = $title ;
-	$nn = urlencode ( "$nn.jpg" ) ;
-	$f2c = "//tools.wmflabs.org/flickr2commons/?photoid=$id" ;
+		print "<tr>" ;
+		print "<td $top><a href='$flickr_url' target='_blank'><img border='0' width='100' src='{$f->url_t}' /></a></td>" ;
+		print "<td $top>" ;
+		print "<b>{$f->title}</b><br/>" ;
+		print "By user <i><a target='_blank' href='$flickr_owner_url'>{$f->ownername}</a></i><br/>" ;
+		print "Tags : <i>{$f->tags}</i><br/>" ;
+		print "License : <i>" . $licenses[$license] . "</i>" ;
+		print "</td><td $top><a target='_blank' href='//tools.wmflabs.org/flickr2commons/?photoid={$f->id}'>Upload to Commons</a>" ;
+		print "</td>" ;
+		print "</tr>" ;
 	
-	print "<tr>" ;
-	print "<td $top><a href='$flickr_url' target='_blank'><img border='0' width='100' src='$thumb_url' /></a></td>" ;
-	print "<td $top>" ;
-	print "<b>$title</b><br/>" ;
-	print "By user <i><a target='_blank' href='$flickr_owner_url'>$ownername</a></i><br/>" ;
-	print "Tags : <i>$tags</i><br/>" ;
-	print "License : <i>" . $licenses[$license] . "</i>" ;
-	print "</td><td $top><a target='_blank' href='$f2c'>Upload to Commons</a>" ;
-	print "</td>" ;
-	print "</tr>" ;
-	myflush() ;
+		$top = $tdtop ;
+	}
 	
-	$top = $tdtop ;
-#	print htmlentities ( $l ) . "<br/>" ;
+	$page++ ;
+	if ( $page > 2 ) break ; // Max 2 pages available
 }
 
 print "</table>" ;
 print get_common_footer() ;
+myflush() ;
+
+?>

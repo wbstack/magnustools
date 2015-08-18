@@ -85,7 +85,7 @@ function get_flickr_hits ( $title , $flickrresults = 5 ) {
 	$flickr_key = get_flickr_key() ;
 	# Search flickr for the possible titles
 	$found = array () ;
-    $url = "https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key={$flickr_key}&sort=relevance&per_page={$flickrresults}&license=4,5,7&tag_mode=all&extras=tags&text=" . urlencode ( $title ) ;
+    $url = "https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key={$flickr_key}&sort=relevance&per_page={$flickrresults}&license=4,5,7,8,9,10&tag_mode=all&extras=tags&text=" . urlencode ( $title ) ;
 #    print "TESTING, IGNORE : $url<br/>" ;
     $xml = file_get_contents ( $url ) ;
 
