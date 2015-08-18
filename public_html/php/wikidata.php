@@ -22,11 +22,31 @@ class WDI {
 	}
 	
 	function getLabel ( $lang = '' ) {
+		global $wikidata_preferred_langs ;
+		if ( !isset ( $this->j->labels ) ) return $this->q ;
 		if ( isset ( $this->j->labels->$lang ) ) return $this->j->labels->$lang->value ; // Shortcut
 		
 		$score = 9999 ;
 		$best = $this->q ;
 		foreach ( $this->j->labels AS $v ) {
+			$p = array_search ( $v->language , $wikidata_preferred_langs ) ;
+			if ( $p === false ) $p = 999 ;
+			$p *= 1 ;
+			if ( $p >= $score ) continue ;
+			$score = $p ;
+			$best = $v->value ;
+		}
+		return $best ;
+	}
+	
+	function getDesc ( $lang = '' ) {
+		global $wikidata_preferred_langs ;
+		if ( !isset ( $this->j->descriptions ) ) return '' ;
+		if ( isset ( $this->j->descriptions->$lang ) ) return $this->j->descriptions->$lang->value ; // Shortcut
+		
+		$score = 9999 ;
+		$best = '' ;
+		foreach ( $this->j->descriptions AS $v ) {
 			$p = array_search ( $v->language , $wikidata_preferred_langs ) ;
 			if ( $p === false ) $p = 999 ;
 			if ( $p*1 >= $score*1 ) continue ;
@@ -64,6 +84,7 @@ class WDI {
 	function getClaims ( $p ) {
 		$ret = array() ;
 		$p = $this->sanitizeProp ( $p ) ;
+		if ( !isset($this->j) ) return $ret ;
 		if ( !isset($this->j->claims) ) return $ret ;
 		if ( !isset($this->j->claims->$p) ) return $ret ;
 		return $this->j->claims->$p ;
@@ -71,6 +92,14 @@ class WDI {
 	
 	function hasClaims ( $p ) {
 		return count($this->getClaims($p)) > 0 ;
+	}
+	
+	function getProps () {
+		$ret = array() ;
+		if ( !isset($this->j) ) return $ret ;
+		if ( !isset($this->j->claims) ) return $ret ;
+		foreach ( $this->j->claims AS $p => $v ) $ret[] = $p ;
+		return $ret ;
 	}
 	
 	function getClaimByID ( $id ) {
@@ -90,7 +119,11 @@ class WikidataItemList {
 	var $items = array() ;
 
 	function sanitizeQ ( &$q ) {
-		$q = 'Q'.preg_replace('/\D/','',''.$q) ;
+		if ( preg_match ( '/^P\d+$/i' , $q ) ) {
+			$q = strtoupper ( $q ) ;
+		} else {
+			$q = 'Q'.preg_replace('/\D/','',''.$q) ;
+		}
 	}
 		
     function loadItems ( $list ) {
