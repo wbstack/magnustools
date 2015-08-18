@@ -17,6 +17,9 @@ $licenses = array () ;
 $licenses[4] = 'CC-BY 2.0' ;
 $licenses[5] = 'CC-BY-SA 2.0' ;
 $licenses[7] = 'Public domain' ;
+$licenses[8] = 'U.S. Government' ;
+$licenses[9] = 'CC-0' ;
+$licenses[10] = 'Public Domain Mark' ;
 
 $tdtop = "style='border-top:2px solid black'" ;
 $top = '' ;
