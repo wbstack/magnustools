@@ -50,7 +50,7 @@ foreach ( $lines AS $l ) {
 	$f2c = "//tools.wmflabs.org/flickr2commons/?photoid=$id" ;
 	
 	print "<tr>" ;
-	print "<td $top><a href='$flickr_url' target='_blank'><img border='0' src='$thumb_url' /></a></td>" ;
+	print "<td $top><a href='$flickr_url' target='_blank'><img border='0' width='100' src='$thumb_url' /></a></td>" ;
 	print "<td $top>" ;
 	print "<b>$title</b><br/>" ;
 	print "By user <i><a target='_blank' href='$flickr_owner_url'>$ownername</a></i><br/>" ;
