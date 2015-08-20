@@ -41,7 +41,7 @@ while ( 1 ) {
 		$flickr_url = "$flickr_owner_url/" . $f->id ;
 	
 		print "<tr>" ;
-		print "<td $top><a href='$flickr_url' target='_blank'><img border='0' width='100' src='{$f->url_t}' /></a></td>" ;
+		print "<td $top nowrap><a href='$flickr_url' target='_blank'><img style='min-width:100px;' border='0' src='{$f->url_t}' /></a></td>" ;
 		print "<td $top>" ;
 		print "<b>$display_title</b><br/>" ;
 		print "By user <i><a target='_blank' href='$flickr_owner_url'>{$f->ownername}</a></i> on " . date ( 'r' , $f->dateupload ) . "<br/>" ;

@@ -617,3 +617,5 @@ function WikiData () {
 	}
 	
 }
+
+if ( typeof exports != 'undefined' ) exports.wd = new WikiData() ;
