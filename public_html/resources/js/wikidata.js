@@ -411,6 +411,7 @@ function WikiData () {
 		var hadthat = {} ;
 		$.each ( item_list , function ( dummy , q ) {
 			if ( typeof q == 'number' ) q = 'Q' + q ;
+			if ( !q.match(/^[PQ]\d+/i) ) return ; // Not an item/property
 			if ( self.items[q] !== undefined ) return ; // Have that one
 			if ( typeof hadthat[q] != 'undefined' ) return ;
 			hadthat[q] = 1 ;
@@ -467,6 +468,8 @@ function WikiData () {
 				
 				running-- ;
 				if ( running == 0 ) callback ( ids ) ;
+			} ) .fail(function() {
+				if ( typeof self.getjson_error_handler != 'undefined' ) self.getjson_error_handler () ;
 			} ) ;
 		} ) ;
 		

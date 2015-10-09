@@ -959,6 +959,52 @@ Claims are used like this:
 	}
 
 
+	function genericAction ( $j ) {
+		if ( !isset($j->action) ) { // Paranoia
+			$this->error = "No action in " . json_encode ( $j ) ;
+			return false ;
+		}
+		
+		
+		// Next fetch the edit token
+		$ch = null;
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'query' ,
+			'meta' => 'tokens'
+		), $ch );
+		if ( !isset( $res->query->tokens->csrftoken ) ) {
+			$this->error = 'Bad API response [genericAction]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			return false ;
+		}
+
+		$j->token = $res->query->tokens->csrftoken;
+		$j->format = 'json' ;
+		$j->bot = 1 ;
+		
+		$params = array() ;
+		foreach ( $j AS $k => $v ) $params[$k] = $v ;
+		
+		if ( isset ( $_REQUEST['test'] ) ) {
+			print "!!!!!<pre>" ; print_r ( $params ) ; print "</pre>" ;
+		}
+
+		$res = $this->doApiQuery( $params, $ch );
+		
+		if ( isset ( $_REQUEST['test'] ) ) {
+			print "<pre>" ; print_r ( $claim ) ; print "</pre>" ;
+			print "<pre>" ; print_r ( $res ) ; print "</pre>" ;
+		}
+
+		$this->last_res = $res ;
+		if ( isset ( $res->error ) ) {
+			$this->error = $res->error->info ;
+			return false ;
+		}
+		
+		return true ;
+	}
+
 
 	function setClaim ( $claim ) {
 		if ( !isset ( $claim['claim'] ) ) { // Only for non-qualifier action; should that be fixed?

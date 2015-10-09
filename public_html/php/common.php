@@ -40,7 +40,7 @@ function escape_attribute ( $s ) {
 
 function getDBpassword () {
 	global $mysql_user , $mysql_password , $tool_user_name ;
-	if ( isset ( $tool_user_name ) ) $user = $tool_user_name ;
+	if ( isset ( $tool_user_name ) and $tool_user_name != '' ) $user = $tool_user_name ;
 	else $user = str_replace ( 'tools.' , '' , get_current_user() ) ;
 	$passwordfile = '/data/project/' . $user . '/replica.my.cnf' ;
 	if ( $user == 'magnus' ) $passwordfile = '/home/' . $user . '/replica.my.cnf' ; // Command-line usage

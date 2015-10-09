@@ -1,6 +1,7 @@
 <?PHP
 
 $wikidata_preferred_langs = array ('en','de','nl','fr','es','it','zh') ;
+$wikidata_api_url = 'https://www.wikidata.org/w/api.php' ;
 
 class WDI {
 
@@ -8,10 +9,11 @@ class WDI {
 	var $j ;
 	
 	function WDI ( $q = '' ) {
+		global $wikidata_api_url ;
 		if ( $q != '' ) {
 			$q = 'Q' . preg_replace ( '/\D/' , '' , "$q" ) ;
 			$this->q = $q ;
-			$url = "https://www.wikidata.org/w/api.php?action=wbgetentities&ids=$q&format=json" ;
+			$url = "$wikidata_api_url?action=wbgetentities&ids=$q&format=json" ;
 			$j = json_decode ( file_get_contents ( $url ) ) ;
 			$this->j = $j->entities->$q ;
 		}
@@ -94,6 +96,13 @@ class WDI {
 		return count($this->getClaims($p)) > 0 ;
 	}
 	
+	function getSitelink ( $wiki ) {
+		if ( !isset($this->j) ) return ;
+		if ( !isset($this->j->sitelinks) ) return ;
+		if ( !isset($this->j->sitelinks->$wiki) ) return ;
+		return $this->j->sitelinks->$wiki->title ;
+	}
+	
 	function getProps () {
 		$ret = array() ;
 		if ( !isset($this->j) ) return $ret ;
@@ -127,6 +136,7 @@ class WikidataItemList {
 	}
 		
     function loadItems ( $list ) {
+    	global $wikidata_api_url ;
     	$qs = array(array()) ;
     	foreach ( $list AS $q ) {
     		$this->sanitizeQ($q) ;
@@ -138,7 +148,7 @@ class WikidataItemList {
     	if ( count($qs) == 1 and count($qs[0]) == 0 ) return ;
     	
     	foreach ( $qs AS $sublist ) {
-			$url = "https://www.wikidata.org/w/api.php?action=wbgetentities&ids=" . implode('|',$sublist) . "&format=json" ;
+			$url = "$wikidata_api_url?action=wbgetentities&ids=" . implode('|',$sublist) . "&format=json" ;
 			$j = json_decode ( file_get_contents ( $url ) ) ;
 			foreach ( $j->entities AS $q => $v ) {
 				$this->items[$q] = new WDI ;
