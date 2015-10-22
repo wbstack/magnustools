@@ -82,6 +82,27 @@ class WDI {
 	function sanitizeProp ( $p ) {
 		return 'P' . preg_replace ( '/\D/' , '' , "$p" ) ;
 	}
+	
+	function getStrings ( $p ) {
+		$ret = array() ;
+		if ( !$this->hasClaims($p) ) return $ret ;
+		$claims = $this->getClaims($p) ;
+		foreach ( $claims AS $c ) {
+			if ( !isset($c->mainsnak) ) continue ;
+			if ( !isset($c->mainsnak->datavalue) ) continue ;
+			if ( !isset($c->mainsnak->datavalue->value) ) continue ;
+			if ( !isset($c->mainsnak->datavalue->type) ) continue ;
+			if ( $c->mainsnak->datavalue->type != 'string' ) continue ;
+			$ret[] = $c->mainsnak->datavalue->value ;
+		}
+		return $ret ;
+	}
+	
+	function getFirstString ( $p ) {
+		$strings = $this->getStrings ( $p ) ;
+		if ( count($strings) == 0 ) return '' ;
+		return $strings[0] ;
+	}
 
 	function getClaims ( $p ) {
 		$ret = array() ;
@@ -148,8 +169,10 @@ class WikidataItemList {
     	if ( count($qs) == 1 and count($qs[0]) == 0 ) return ;
     	
     	foreach ( $qs AS $sublist ) {
+    		if ( count ( $sublist ) == 0 ) continue ;
 			$url = "$wikidata_api_url?action=wbgetentities&ids=" . implode('|',$sublist) . "&format=json" ;
 			$j = json_decode ( file_get_contents ( $url ) ) ;
+			if ( !isset($j) or !isset($j->entities) ) continue ;
 			foreach ( $j->entities AS $q => $v ) {
 				$this->items[$q] = new WDI ;
 				$this->items[$q]->q = $q ;
@@ -164,6 +187,7 @@ class WikidataItemList {
     
     function getItem ( $q ) {
     	$this->sanitizeQ($q) ;
+    	if ( !isset($this->items[$q]) ) return ;
     	return $this->items[$q] ;
     }
     

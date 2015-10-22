@@ -1186,12 +1186,21 @@ Claims are used like this:
 			$new_file_name = array_pop ( $a ) ;
 		}
 		$new_file_name = ucfirst ( str_replace ( ' ' , '_' , $new_file_name ) ) ;
-		
+
 		// Download file
 		$basedir = '/data/project/magnustools/tmp' ;
 		$tmpfile = tempnam ( $basedir , 'doUploadFromURL' ) ;
 		copy($url, $tmpfile) ;
 
+		if ( isset ( $_REQUEST['test'] ) ) {
+//			$new_file_name = utf8_decode ( $new_file_name ) ;
+			print "<hr/>$new_file_name<br/>\n" ;
+			print "$url<br/>\n" ;
+			print "Size: " . filesize($tmpfile) . "<br/>\n" ;
+			unlink ( $tmpfile ) ;
+			exit ( 0 ) ;
+		}
+		
 
 		// Next fetch the edit token
 		$ch = null;

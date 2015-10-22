@@ -44,7 +44,9 @@ function WiDaR ( callback ) {
 			botmode:1
 		} , function ( d ) {
 			if ( typeof callback != 'undefined' ) callback ( d ) ;
-		} , 'json' ) ;
+		} , 'json' ) . fail ( function () {
+			if ( typeof callback != 'undefined' ) callback () ;
+		} ) ;
 	}
 	
 	

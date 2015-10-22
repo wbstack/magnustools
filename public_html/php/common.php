@@ -67,6 +67,7 @@ function getDBname ( $language , $project ) {
 	elseif ( $project == 'wikiversity' ) $ret .= 'wikiversity_p' ;
 	elseif ( $project == 'wikivoyage' ) $ret .= 'wikivoyage_p' ;
 	elseif ( $project == 'wikiquote' ) $ret .= 'wikiquote_p' ;
+	elseif ( $project == 'wikispecies' ) $ret = 'specieswiki_p' ;
 	elseif ( $language == 'meta' ) $ret .= 'metawiki_p' ;
 	else if ( $project == 'wikimedia' ) $ret .= $language.$project."_p" ;
 	else die ( "Cannot construct database name for $language.$project - aborting." ) ;
@@ -110,7 +111,7 @@ function openDB ( $language , $project ) {
 	$dbname = getDBname ( $language , $project ) ;
 
 	$server = substr( $dbname, 0, -2 ) . '.labsdb';
-
+	
 	$db = new mysqli($server, $mysql_user, $mysql_password, $dbname);
 	if($db->connect_errno > 0) {
 		$o['msg'] = 'Unable to connect to database [' . $db->connect_error . ']';

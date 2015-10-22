@@ -3,7 +3,11 @@
 $out = array ( 'error' => 'OK' , 'data' => array() ) ;
 $botmode = isset ( $_REQUEST['botmode'] ) ;
 $test = isset ( $_REQUEST['test'] ) ;
-if ( $botmode ) {
+if ( $test ) {
+	header('Content-type: text/html; charset=UTF-8'); // UTF8 test
+	header("Cache-Control: no-cache, must-revalidate");
+	print "<html>\n<head><meta http-equiv='Content-Type' content='text/html; charset=utf-8' /></head><body>" ;
+} else if ( $botmode ) {
 	header ( 'application/json' ) ; // text/plain
 } else {
 	error_reporting(E_ERROR|E_CORE_ERROR|E_ALL|E_COMPILE_ERROR);
