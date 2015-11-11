@@ -28,6 +28,7 @@ function getWebserverForWiki ( $wiki ) {
 	$wiki = preg_replace ( '/_p$/' , '' , $wiki ) ; // Paranoia
 	if ( $wiki == 'commonswiki' ) return "commons.wikimedia.org" ;
 	if ( $wiki == 'wikidatawiki' ) return "www.wikidata.org" ;
+	if ( $wiki == 'specieswiki' ) return "species.wikimedia.org" ;
 	$wiki = preg_replace ( '/_/' , '-' , $wiki ) ;
 	if ( preg_match ( '/^(.+)wiki$/' , $wiki , $m ) ) return $m[1].".wikipedia.org" ;
 	if ( preg_match ( '/^(.+)(wik.+)$/' , $wiki , $m ) ) return $m[1].".".$m[2].".org" ;

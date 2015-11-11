@@ -191,7 +191,7 @@ class MW_OAuth {
 	 * Request authorization
 	 * @return void
 	 */
-	function doAuthorizationRedirect($callback) {
+	function doAuthorizationRedirect($callback='') {
 		// First, we need to fetch a request token.
 		// The request is signed with an empty token secret and no token key.
 		$this->gTokenSecret = '';
@@ -210,7 +210,7 @@ class MW_OAuth {
 			// We're using secret key signatures here.
 			'oauth_signature_method' => 'HMAC-SHA1',
 		) ;
-		if ( isset($callback) ) $query['callback'] = $callback ;
+		if ( $callback!='' ) $query['callback'] = $callback ;
 		$url .= http_build_query( $query );
 		$signature = $this->sign_request( 'GET', $url );
 		$url .= "&oauth_signature=" . urlencode( $signature );
@@ -227,8 +227,10 @@ class MW_OAuth {
 			exit(0);
 		}
 		curl_close( $ch );
-//print_r ( $data ) ; exit ( 0 ) ; // SHOW MEDIAWIKI ERROR
 		$token = json_decode( $data );
+		if ( $token === NULL ) {
+			print_r ( $data ) ; exit ( 0 ) ; // SHOW MEDIAWIKI ERROR
+		}
 		if ( is_object( $token ) && isset( $token->error ) ) {
 			header( "HTTP/1.1 500 Internal Server Error" );
 			echo 'Error retrieving token: ' . htmlspecialchars( $token->error );
@@ -814,6 +816,7 @@ Claims are used like this:
 		if ( preg_match ( '/^(.+)wiki$/' , $site , $m ) ) {
 			$nice_title = preg_replace ( '/\s+\(.+$/' , '' , str_replace ( '_' , ' ' , $page ) ) ;
 			$lang = $m[1] ;
+			if ( $lang == 'species' ) $lang = 'en' ; // Default language for specieswiki
 			if ( $lang == 'no' ) $lang = 'nb' ;
 			$data['labels'] = array ( array ( 'language' => $lang , 'value' => $nice_title ) ) ;
 		}
@@ -1109,7 +1112,7 @@ Claims are used like this:
 			'action' => 'wbmergeitems',
 			'fromid' => $q_from ,
 			'toid' => $q_to ,
-			'ignoreconflicts' => 'label|description|sitelink' ,
+			'ignoreconflicts' => 'description|sitelink' ,
 			'token' => $token,
 			'bot' => 1
 		), $ch );
