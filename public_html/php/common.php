@@ -588,4 +588,29 @@ function strtolower_utf8($string){
   return str_replace($convert_from, $convert_to, $string);
 } 
 
+function getSPARQL ( $cmd ) {
+	$sparql = "PREFIX wdt: <http://www.wikidata.org/prop/direct/>\n" ;
+	$sparql .= "PREFIX wd: <http://www.wikidata.org/entity/>\n" ;
+	$sparql .= "PREFIX wikibase: <http://wikiba.se/ontology#>\n" ;
+	$sparql .= "PREFIX p: <http://www.wikidata.org/prop/>\n" ;
+	$sparql .= "PREFIX v: <http://www.wikidata.org/prop/statement/>\n" ;
+	$sparql .= "PREFIX q: <http://www.wikidata.org/prop/qualifier/>\n" ;
+	$sparql .= "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" ;
+	$sparql .= $cmd ;
+#print "$sparql\n" ;
+	$url = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=" . urlencode($sparql) ;
+	return json_decode ( file_get_contents ( $url ) ) ;
+}
+
+function getSPARQLitems ( $cmd ) {
+	$ret = array() ;
+	$j = getSPARQL ( $cmd ) ;
+#print_r ( $j ) ;
+	if ( !isset($j->results) or !isset($j->results->bindings) or count($j->results->bindings) == 0 ) return $ret ;
+	foreach ( $j->results->bindings AS $v ) {
+		$ret[] = preg_replace ( '/^.+\/Q/' , '' , $v->q->value ) ;
+	}
+	return $ret ;
+}
+
 ?>

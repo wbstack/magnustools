@@ -1102,51 +1102,75 @@ function getViewStatsCallback () {
 	var m = view_stats_cache.shift() ;
 	var me = m.page ;
 	var o = m.o ;
-	var url = 'http://' + wikiSettings.stats_grok + '/json/' ; // jsonp
-	url += me.lang + wikiDataCache.pv_proj2stats[me.project] + '/' + o.date + '/' ;
-	url += encodeURI ( me.title ) .replace ( /\?/g , '%3F' ) ;
+
+//	https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/user/Richard_Dawkins/daily/20150901/20150930
+
+	function daysInMonth(month,year) { return new Date(year, month, 0).getDate();}
+
+	var year = o.date.substr(0,4) ;
+	var month = o.date.substr(4,2) ;
+	var use_wmf_api = false ;
+	if ( year*1>=2015 && month*1>=9 ) use_wmf_api = true ;
+	
+	var url = '' ;
+	var get_url = '' ;
+	var options = {} ;
+	var sg_project = me.lang + wikiDataCache.pv_proj2stats[me.project] ;
+	if ( use_wmf_api ) {
+		var new_api_project = me.lang + '.' + me.project ;
+		var days = ''+daysInMonth(month,year) ;
+		url = 'https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/' ;
+		url += new_api_project ;
+		url += '/all-access/user/' ;
+		url += encodeURIComponent ( me.title.replace(/ /g,'_') ) ;
+		url += '/daily/' + year+month+'01/' + year+month+days ;
+		get_url = url ;
+	} else {
+		get_url = '../proxy.php' ;
+		url = 'http://' + wikiSettings.stats_grok + '/json/' ; // jsonp
+		url += sg_project + '/' + o.date + '/' ;
+		url += encodeURI ( me.title ) .replace ( /\?/g , '%3F' ) ;
+		options = { url:url } ;
+	}
+
+//	console.log ( '!' , use_wmf_api , year*1 , month*1 , url ) ;
 
 	var k = me.lang + wikiDataCache.pv_proj2stats[me.project] + '|' + me.title + '|' + o.date ;
 //	console.log ( "Starting : " + url ) ;
 	
-	$.post ( '../proxy.php' , {
-		url:url
-	} , function ( d ) {
+	$.get ( get_url , options , function ( d ) {
 //			console.log ( "Success!" ) ;
 			view_stats_running-- ;
-			d.monthly_views = 0 
-			$.each ( d.daily_views , function ( k , v ) { d.monthly_views += v } ) ;
+			d.monthly_views = 0 ;
+			
+			if ( use_wmf_api ) {
+				var dummy = { daily_views : {} , monthly_views:0 , project:sg_project , month:year+month , rank:-1 , title:me.title } ;
+				$.each ( d.items , function ( k , v ) {
+					dummy.monthly_views += v.views*1 ;
+					var the_date = v.timestamp.substr(0,4)+'-'+v.timestamp.substr(4,2)+'-'+v.timestamp.substr(6,2) ;
+					dummy.daily_views[the_date] = v.views*1 ;
+				} ) ;
+				d = dummy ;
+			} else {
+				$.each ( d.daily_views , function ( k , v ) { d.monthly_views += v } ) ;
+			}
 			d.project = me.project ;
 			d.lang = me.lang ;
 			o.callback ( { data : d , options : o } ) ;
 			getViewStatsCallback() ;
 	} , 'json' ) . fail ( function (xOptions, textStatus) {
 			view_stats_running-- ;
-			console.log ( "ERROR : " + textStatus ) ;
-			getViewStatsCallback() ;
-	} ) ;
-	
-/*
-	$.jsonp ( {
-		url : url ,
-		callback : 'pageviewsCallback' ,
-		timeout : 10000 ,
-		success : function ( d , textStatus ) {
-			console.log ( "Success!" ) ;
-			view_stats_running-- ;
-			d.monthly_views = 0 
-			$.each ( d.daily_views , function ( k , v ) { d.monthly_views += v } ) ;
+//			console.log ( "ERROR : " + textStatus ) ;
+			var d = { daily_views : {} , monthly_views:0 , project:sg_project , month:year+month , rank:-1 , title:me.title } ;
+			for ( var i = 1 ; i < 31 ; i++ ) {
+				var the_date = year + '-' + month + '-' + (i<10?'0':'') + i ;
+				d.daily_views[the_date] = 0 ;
+			}
+			d.project = me.project ;
+			d.lang = me.lang ;
 			o.callback ( { data : d , options : o } ) ;
 			getViewStatsCallback() ;
-		} ,
-		error : function (xOptions, textStatus) {
-			view_stats_running-- ;
-			console.log ( "ERROR : " + textStatus ) ;
-			getViewStatsCallback() ;
-//			setTimeout ( function () { me.getViewStats ( o ) } , 500 ) ;
-		}
 	} ) ;
-*/
 }
 
 

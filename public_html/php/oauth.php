@@ -816,7 +816,7 @@ Claims are used like this:
 		if ( preg_match ( '/^(.+)wiki$/' , $site , $m ) ) {
 			$nice_title = preg_replace ( '/\s+\(.+$/' , '' , str_replace ( '_' , ' ' , $page ) ) ;
 			$lang = $m[1] ;
-			if ( $lang == 'species' ) $lang = 'en' ; // Default language for specieswiki
+			if ( $lang == 'species' or $lang == 'meta' or $lang == 'wikidata' ) $lang = 'en' ; // Default language
 			if ( $lang == 'no' ) $lang = 'nb' ;
 			$data['labels'] = array ( array ( 'language' => $lang , 'value' => $nice_title ) ) ;
 		}

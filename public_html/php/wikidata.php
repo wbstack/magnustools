@@ -149,10 +149,10 @@ class WikidataItemList {
 	var $items = array() ;
 
 	function sanitizeQ ( &$q ) {
-		if ( preg_match ( '/^P\d+$/i' , $q ) ) {
+		if ( preg_match ( '/^P\d+$/i' , "$q" ) ) {
 			$q = strtoupper ( $q ) ;
 		} else {
-			$q = 'Q'.preg_replace('/\D/','',''.$q) ;
+			$q = 'Q'.preg_replace('/\D/','',"$q") ;
 		}
 	}
 		
