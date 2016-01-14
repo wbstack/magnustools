@@ -2,7 +2,8 @@ var flicker_license = {
 	'4' : 'Attribution License' ,
 	'5' : 'Attribution-ShareAlike License' ,
 	'7' : 'No known copyright restrictions' ,
-	'8' : 'United States Government Work'
+	'8' : 'United States Government Work' ,
+	'9' : 'Cc-zero'
 }
 var flickr_api_key = 'd5abcf21d0111581ce258176f0ff92a1' ;
 
@@ -1091,7 +1092,9 @@ WikiPage.prototype.getViewStats = function  ( o ) {
 
 var view_stats_cache = [] ;
 var view_stats_running = 0 ;
-var view_stats_running_max = 4 ;
+var view_stats_running_max = 400 ;
+
+function daysInMonth(month,year) { return new Date(year, month, 0).getDate();}
 
 function getViewStatsCallback () {
 //	console.log ( "Trying to run, " + view_stats_running + " left in queue" ) ;
@@ -1105,7 +1108,6 @@ function getViewStatsCallback () {
 
 //	https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/user/Richard_Dawkins/daily/20150901/20150930
 
-	function daysInMonth(month,year) { return new Date(year, month, 0).getDate();}
 
 	var year = o.date.substr(0,4) ;
 	var month = o.date.substr(4,2) ;

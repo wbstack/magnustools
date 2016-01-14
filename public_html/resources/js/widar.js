@@ -3,6 +3,7 @@ function WiDaR ( callback ) {
 	this.is_logged_in = false ;
 	this.api = '/widar/index.php' ;
 	this.userinfo = {} ;
+	this.tool_hashtag = '' ;
 	
 	this.isLoggedIn = function () {
 		return this.is_logged_in ;
@@ -41,6 +42,7 @@ function WiDaR ( callback ) {
 		$.get ( me.api , {
 			action:'generic',
 			json:JSON.stringify(o) ,
+			tool_hashtag:me.tool_hashtag ,
 			botmode:1
 		} , function ( d ) {
 			if ( typeof callback != 'undefined' ) callback ( d ) ;

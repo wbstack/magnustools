@@ -261,9 +261,10 @@ class WikiQuery {
     	$ret = array() ;
 		$url = $this->get_api_base_url ( 'links' ) ;
 		$url .= 'pllimit=500&titles=' . myurlencode ( $title ) ;
-		if ( $cont != '' ) $url .= "&rawcontinue=1&plcontinue=" . $cont ;
+		$url .= '&rawcontinue=1' ;
+		if ( $cont != '' ) $url .= "&plcontinue=" . $cont ;
 		if ( isset ( $ns ) ) $url .= '&plnamespace=' . $ns ;
-		
+
 		$data = $this->get_result ( $url ) ;
 		if ( !isset ( $data['query'] ) ) return $ret ;
 
@@ -341,7 +342,8 @@ class WikiQuery {
 		  $url .= 'iutitle=' . myurlencode ( $image ) ;
 		  $url .= '&iunamespace=' . myurlencode ( $ns ) ;
 		  $url .= '&iulimit=500&list=imageusage&action=query' ;
-		  if ( $iucontinue != "" ) $url .= "&rawcontinue=1&iucontinue=" . urlencode ( $iucontinue ) ;
+			$url .= '&rawcontinue=1' ;
+		  if ( $iucontinue != "" ) $url .= "&iucontinue=" . urlencode ( $iucontinue ) ;
 	
 		  $data = $this->get_result ( $url ) ;
 		  if ( !isset ( $data['query'] ) ) return $ret ;

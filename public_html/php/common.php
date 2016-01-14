@@ -596,19 +596,21 @@ function getSPARQL ( $cmd ) {
 	$sparql .= "PREFIX v: <http://www.wikidata.org/prop/statement/>\n" ;
 	$sparql .= "PREFIX q: <http://www.wikidata.org/prop/qualifier/>\n" ;
 	$sparql .= "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" ;
+	$sparql .= "PREFIX schema: <http://schema.org/>\n" ;
+	$sparql .= "PREFIX psv: <http://www.wikidata.org/prop/statement/value/>\n" ;
 	$sparql .= $cmd ;
 #print "$sparql\n" ;
 	$url = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=" . urlencode($sparql) ;
 	return json_decode ( file_get_contents ( $url ) ) ;
 }
 
-function getSPARQLitems ( $cmd ) {
+function getSPARQLitems ( $cmd , $varname = 'q' ) {
 	$ret = array() ;
 	$j = getSPARQL ( $cmd ) ;
 #print_r ( $j ) ;
 	if ( !isset($j->results) or !isset($j->results->bindings) or count($j->results->bindings) == 0 ) return $ret ;
 	foreach ( $j->results->bindings AS $v ) {
-		$ret[] = preg_replace ( '/^.+\/Q/' , '' , $v->q->value ) ;
+		$ret[] = preg_replace ( '/^.+\/Q/' , '' , $v->$varname->value ) ;
 	}
 	return $ret ;
 }

@@ -558,8 +558,7 @@ Claims are used like this:
 		}
 		$token = $res->query->tokens->csrftoken;
 
-		// Now do that!
-		$res = $this->doApiQuery( array(
+		$params = array(
 			'format' => 'json',
 			'action' => 'wbsetlabel',
 			'id' => $q,
@@ -567,7 +566,14 @@ Claims are used like this:
 			'value' => $text ,
 			'token' => $token,
 			'bot' => 1
-		), $ch );
+		) ;
+
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+
+		// Now do that!
+		$res = $this->doApiQuery( $params , $ch );
 		
 		if ( isset ( $res->error ) ) {
 			$this->error = $res->error->info ;
@@ -593,8 +599,7 @@ Claims are used like this:
 		}
 		$token = $res->query->tokens->csrftoken;
 
-		// Now do that!
-		$res = $this->doApiQuery( array(
+		$params = array(
 			'format' => 'json',
 			'action' => 'wbsetsitelink',
 			'id' => $q,
@@ -602,7 +607,14 @@ Claims are used like this:
 			'linktitle' => $title,
 			'token' => $token,
 			'bot' => 1
-		), $ch );
+		) ;
+
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+
+		// Now do that!
+		$res = $this->doApiQuery( $params , $ch );
 		
 		$this->last_res = $res ;
 		if ( isset ( $res->error ) ) {
@@ -629,8 +641,7 @@ Claims are used like this:
 		}
 		$token = $res->query->tokens->csrftoken;
 
-		// Now do that!
-		$res = $this->doApiQuery( array(
+		$params = array(
 			'format' => 'json',
 			'action' => 'wbsetdescription',
 			'id' => $q,
@@ -638,7 +649,14 @@ Claims are used like this:
 			'value' => $text ,
 			'token' => $token,
 			'bot' => 1
-		), $ch );
+		) ;
+
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+
+		// Now do that!
+		$res = $this->doApiQuery( $params , $ch );
 		
 		if ( isset ( $res->error ) ) {
 			$this->error = $res->error->info ;
@@ -664,8 +682,7 @@ Claims are used like this:
 		}
 		$token = $res->query->tokens->csrftoken;
 
-		// Now do that!
-		$res = $this->doApiQuery( array(
+		$params = array(
 			'format' => 'json',
 			'action' => 'wbsetaliases',
 			$mode => $text ,
@@ -674,7 +691,14 @@ Claims are used like this:
 //			'value' => $text ,
 			'token' => $token,
 			'bot' => 1
-		), $ch );
+		) ;
+
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+
+		// Now do that!
+		$res = $this->doApiQuery( $params , $ch );
 		
 		if ( isset ( $res->error ) ) {
 			$this->error = $res->error->info ;
@@ -699,16 +723,23 @@ Claims are used like this:
 			return false ;
 		}
 		$token = $res->query->tokens->csrftoken;
-		
-		// Now do that!
-		$res = $this->doApiQuery( array(
+
+		$params = array(
 			'format' => 'json',
 			'action' => 'edit',
 			'title' => $page,
 			'text' => $text ,
 			'minor' => '' ,
 			'token' => $token,
-		), $ch );
+		) ;
+		
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+
+		
+		// Now do that!
+		$res = $this->doApiQuery( $params, $ch );
 		
 		if ( isset ( $res->error ) ) {
 			$this->error = $res->error->info ;
@@ -744,7 +775,10 @@ Claims are used like this:
 		) ;
 		
 		if ( isset ( $section ) and $section != '' ) $p['section'] = $section ;
-		if ( $summary != '' ) $p['summary'] = $summary ;
+
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
 		
 		// Now do that!
 		$res = $this->doApiQuery( $p , $ch );
@@ -773,14 +807,20 @@ Claims are used like this:
 		$token = $res->query->tokens->csrftoken;
 
 
-		$res = $this->doApiQuery( array(
+		$params = array(
 			'format' => 'json',
 			'action' => 'wbeditentity',
 			'new' => 'item' ,
 			'data' => '{}' ,
 			'token' => $token,
 			'bot' => 1
-		), $ch );
+		) ;
+		
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+
+		$res = $this->doApiQuery( $params , $ch );
 		
 		if ( isset ( $_REQUEST['test'] ) ) {
 			print "<pre>" ; print_r ( $res ) ; print "</pre>" ;
@@ -822,14 +862,21 @@ Claims are used like this:
 		}
 //		print "<pre>" ; print_r ( json_encode ( $data ) ) ; print " </pre>" ; return true ;
 
-		$res = $this->doApiQuery( array(
+		$params = array(
 			'format' => 'json',
 			'action' => 'wbeditentity',
 			'new' => 'item' ,
 			'data' => json_encode ( $data ) ,
 			'token' => $token,
 			'bot' => 1
-		), $ch );
+		) ;
+		
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+
+		$res = $this->doApiQuery( $params , $ch );
+
 		
 		if ( isset ( $_REQUEST['test'] ) ) {
 			print "<pre>" ; print_r ( $res ) ; print "</pre>" ;
@@ -866,6 +913,12 @@ Claims are used like this:
 			'bot' => 1
 		) ;
 		if ( isset ( $baserev ) and $baserev != '' ) $params['baserevid'] = $baserev ;
+
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+
+
 		$res = $this->doApiQuery( $params , $ch );
 		
 		if ( isset ( $_REQUEST['test'] ) ) {
@@ -904,6 +957,10 @@ Claims are used like this:
 			'token' => $token,
 			'bot' => 1
 		) ;
+
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
 		
 		// TODO : baserevid
 
@@ -927,6 +984,8 @@ Claims are used like this:
 
 	
 	function createRedirect ( $from , $to ) {
+		# No summary option!
+	
 		// Next fetch the edit token
 		$ch = null;
 		$res = $this->doApiQuery( array(
@@ -1057,6 +1116,11 @@ Claims are used like this:
 			'token' => $token,
 			'bot' => 1
 		) ;
+
+
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
 	
 		if ( isset ( $claim['claim'] ) ) { // Set qualifier
 			$params['action'] = 'wbsetqualifier' ;
@@ -1089,7 +1153,7 @@ Claims are used like this:
 		return true ;
 	}
 
-	function mergeItems ( $q_from , $q_to ) {
+	function mergeItems ( $q_from , $q_to , $summary = '' ) {
 
 		// Next fetch the edit token
 		$ch = null;
@@ -1104,10 +1168,7 @@ Claims are used like this:
 		}
 		$token = $res->query->tokens->csrftoken;
 	
-	
-	
-
-		$res = $this->doApiQuery( array(
+		$opt = array(
 			'format' => 'json',
 			'action' => 'wbmergeitems',
 			'fromid' => $q_from ,
@@ -1115,8 +1176,16 @@ Claims are used like this:
 			'ignoreconflicts' => 'description|sitelink' ,
 			'token' => $token,
 			'bot' => 1
-		), $ch );
+		) ;
+			
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( $summary != '' ) $opt['summary'] = $summary ;
 		
+	
+
+		$res = $this->doApiQuery( $opt, $ch );
+
 		if ( isset ( $_REQUEST['test'] ) ) {
 			print "1<pre>" ; print_r ( $claim ) ; print "</pre>" ;
 			print "2<pre>" ; print_r ( $res ) ; print "</pre>" ;
@@ -1137,6 +1206,8 @@ Claims are used like this:
 	}
 
 	function deletePage ( $page , $reason ) {
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $reason = isset($reason) ? trim("$reason #$tool_hashtag") : "#$tool_hashtag" ;
 
 		// Next fetch the edit token
 		$ch = null;
@@ -1183,6 +1254,8 @@ Claims are used like this:
 
 		
 	function doUploadFromURL ( $url , $new_file_name , $desc , $comment , $ignorewarnings ) {
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $comment = isset($comment) ? trim("$desc #$tool_hashtag") : "#$tool_hashtag" ;
 	
 		if ( $new_file_name == '' ) {
 			$a = explode ( '/' , $url ) ;

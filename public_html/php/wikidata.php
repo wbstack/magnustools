@@ -79,8 +79,12 @@ class WDI {
 		return false ; // DUMMY
 	}
 
-	function sanitizeProp ( $p ) {
+	function sanitizeP ( $p ) {
 		return 'P' . preg_replace ( '/\D/' , '' , "$p" ) ;
+	}
+
+	function sanitizeQ ( &$q ) {
+		$q = 'Q'.preg_replace('/\D/','',"$q") ;
 	}
 	
 	function getStrings ( $p ) {
@@ -106,11 +110,22 @@ class WDI {
 
 	function getClaims ( $p ) {
 		$ret = array() ;
-		$p = $this->sanitizeProp ( $p ) ;
+		$p = $this->sanitizeP ( $p ) ;
 		if ( !isset($this->j) ) return $ret ;
 		if ( !isset($this->j->claims) ) return $ret ;
 		if ( !isset($this->j->claims->$p) ) return $ret ;
 		return $this->j->claims->$p ;
+	}
+	
+	function hasTarget ( $p , $q ) {
+		$this->sanitizeP ( $p ) ;
+		$this->sanitizeQ ( $q ) ;
+		$claims = $this->getClaims($p) ;
+		foreach ( $claims AS $c ) {
+			$target = $this->getTarget($c) ;
+			if ( $target == $q ) return true ;
+		}
+		return false ;
 	}
 	
 	function hasClaims ( $p ) {
