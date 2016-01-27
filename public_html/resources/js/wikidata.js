@@ -344,7 +344,7 @@ function WikiData () {
 	this.max_get_entities = 50 ;
 	this.max_get_entities_smaller = 25 ;
 	this.language = 'en' ; // Default
-	this.main_languages = [ 'en' , 'de' , 'fr' , 'nl' , 'es' , 'it' , 'pl' , 'pt' , 'ja' , 'ru' , 'hu' , 'sv' , 'fi' , 'da' , 'cs' , 'sk' , 'et' , 'tr' , 'az' ] ;
+	this.main_languages = [ 'en' , 'de' , 'fr' , 'nl' , 'es' , 'it' , 'pl' , 'pt' , 'ja' , 'ru' , 'hu' , 'sv' , 'fi' , 'da' , 'cs' , 'sk' , 'et' , 'tr' , 'az' , 'zh' ] ;
 	this.items = {} ;
 	this.default_props = 'info|aliases|labels|descriptions|claims|sitelinks|datatype' ;
 	
