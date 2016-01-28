@@ -314,21 +314,30 @@ class WikiQuery {
 	
 	function get_images_on_page ( $title , $check_ignore = 0 ) {
 	    $ret = array() ;
-		$url = $this->get_api_base_url ( 'images' ) ;
-		$url .= 'imlimit=500&titles=' . myurlencode ( $title ) ;
+	    $imcontinue = '' ;
+	    
+	    do {
+			$url = $this->get_api_base_url ( 'images' ) ;
+			$url .= 'imlimit=500&titles=' . myurlencode ( $title ) ;
+//			$url .= '&rawcontinue=1' ; // NO!
+			if ( $imcontinue != "" ) $url .= "&imcontinue=" . urlencode ( $imcontinue ) ;
 
-		$data = $this->get_result ( $url ) ;
-		if ( !isset ( $data['query'] ) ) return $ret ;
-		$data = $data['query'] ;
-		$data = $data['pages'] ;
-		$data = array_shift ( $data ) ;
-		if ( !isset ( $data['images'] ) ) return $ret ;
-		$data = $data['images'] ;
-		foreach ( $data AS $i ) {
-			$image = $i['title'] ;
-			if ( $check_ignore and is_image_ignored ( $image , $this->language , $this->project ) ) continue ;
-			$ret[$image] = $image ; # Avoids double listing
-		}
+			$data = $this->get_result ( $url ) ;
+			if ( isset($data['continue']) and isset($data['continue']['imcontinue']) ) $imcontinue = $data['continue']['imcontinue'] ;
+			else $imcontinue = '' ;
+			if ( !isset ( $data['query'] ) ) return $ret ;
+			$data = $data['query'] ;
+			$data = $data['pages'] ;
+			$data = array_shift ( $data ) ;
+			if ( !isset ( $data['images'] ) ) return $ret ;
+			$data = $data['images'] ;
+			foreach ( $data AS $i ) {
+				$image = $i['title'] ;
+				if ( $check_ignore and is_image_ignored ( $image , $this->language , $this->project ) ) continue ;
+				$ret[$image] = $image ; # Avoids double listing
+			}
+		} while ( $imcontinue != '' ) ;
+
 #		print_r ( $data ) ;
 		return $ret ;
 	}
