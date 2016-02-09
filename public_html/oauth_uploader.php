@@ -136,10 +136,13 @@ switch ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : '' ) {
 		if ( !$botmode ) {
 			print "<h3>Tools using OAuth Uploader</h3>
 <ul>
+<li><a href='/commonshelper/index.php'>CommonsHelper</a></li>
 <li><a href='/flickr2commons/index.html'>Flickr2Commons</a></li>
 <li><a href='/url2commons/index.html'>Url2Commons</a></li>
 <li><a href='/geograph2commons/index.html'>Geograph2Commons</a></li>
-</ul>" ;
+</ul><br>
+See also: <i><a href='https://commons.wikimedia.org/wiki/Special:MyLanguage/Commons:OAuth_Uploader'>Commons:OAuth Uploader</a></i>
+" ;
 		} else {
 			$out['error'] = "Unknown action '$action'" ;
 		}
