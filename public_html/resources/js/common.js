@@ -10,6 +10,36 @@ var flickr_api_key = 'd5abcf21d0111581ce258176f0ff92a1' ;
 
 //________________________________________________________________________________________________
 
+// Converts a WDQ input box to SPARQL via wdq2sparql, if possible
+function wdq2sparql ( wdq_selector , sparql_selector ) {
+	var wdq = $.trim ( $(wdq_selector).val() ) ;
+	if ( wdq == '' ) {
+		alert ( "Please enter a WDQ string to convert!" ) ;
+		return false ;
+	}
+	
+	$(wdq_selector).prop('disabled', true);
+	$(sparql_selector).prop('disabled', true);
+	
+	$.get ( '/wdq2sparql/w2s.php' , {
+		wdq:wdq
+	} , function ( d ) {
+		$(wdq_selector).prop('disabled', false);
+		$(sparql_selector).prop('disabled', false);
+		if ( d.match ( /^<!DOCTYPE/ ) ) {
+			alert ( "Sorry, that WDQ conversion is not supported yet. Feel free to bug Stas about it!" ) ;
+			return ;
+		}
+		d = d.replace ( /^prefix.+$/mig , '' ) ;
+		d = d.replace ( /\s+/g , ' ' ) ;
+		d = $.trim ( d ) ;
+		$(sparql_selector).val ( d ) ;
+		$(wdq_selector).val ( '' ) ;
+	} ) ;
+	
+	return false ;
+}
+
 function ucFirst(string) {
 	if ( typeof string == 'undefined' ) return '' ;
 	return string.substring(0, 1).toUpperCase() + string.substring(1);
