@@ -1153,6 +1153,10 @@ function getViewStatsCallback () {
 	var sg_project = me.lang + wikiDataCache.pv_proj2stats[me.project] ;
 	if ( use_wmf_api ) {
 		var new_api_project = me.lang + '.' + me.project ;
+		// wikidata does not follow this pattern
+		if ( me.project === 'wikidata' ) {
+			new_api_project = me.project ;
+		}
 		var days = ''+daysInMonth(month,year) ;
 		url = 'https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/' ;
 		url += new_api_project ;
