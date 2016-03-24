@@ -2,12 +2,43 @@ var flicker_license = {
 	'4' : 'Attribution License' ,
 	'5' : 'Attribution-ShareAlike License' ,
 	'7' : 'No known copyright restrictions' ,
-	'8' : 'United States Government Work'
+	'8' : 'United States Government Work' ,
+	'9' : 'Cc-zero'
 }
 var flickr_api_key = 'd5abcf21d0111581ce258176f0ff92a1' ;
 
 
 //________________________________________________________________________________________________
+
+// Converts a WDQ input box to SPARQL via wdq2sparql, if possible
+function wdq2sparql ( wdq_selector , sparql_selector ) {
+	var wdq = $.trim ( $(wdq_selector).val() ) ;
+	if ( wdq == '' ) {
+		alert ( "Please enter a WDQ string to convert!" ) ;
+		return false ;
+	}
+	
+	$(wdq_selector).prop('disabled', true);
+	$(sparql_selector).prop('disabled', true);
+	
+	$.get ( '/wdq2sparql/w2s.php' , {
+		wdq:wdq
+	} , function ( d ) {
+		$(wdq_selector).prop('disabled', false);
+		$(sparql_selector).prop('disabled', false);
+		if ( d.match ( /^<!DOCTYPE/ ) ) {
+			alert ( "Sorry, that WDQ conversion is not supported yet. Feel free to bug Stas about it!" ) ;
+			return ;
+		}
+		d = d.replace ( /^prefix.+$/mig , '' ) ;
+		d = d.replace ( /\s+/g , ' ' ) ;
+		d = $.trim ( d ) ;
+		$(sparql_selector).val ( d ) ;
+		$(wdq_selector).val ( '' ) ;
+	} ) ;
+	
+	return false ;
+}
 
 function ucFirst(string) {
 	if ( typeof string == 'undefined' ) return '' ;
@@ -15,7 +46,7 @@ function ucFirst(string) {
 }
 
 function sanitizeID ( id ) {
-	return escattr ( id.replace(/\s/g,'_').replace(/[,.+&@?:"/')(|]/g,'_') ) ;
+	return escattr ( id.replace(/\s/g,'_').replace(/[,.+&@?:"`\/'\)\(\|]/g,'_') ) ;
 }
 
 function escattr ( s ) {
@@ -113,7 +144,9 @@ function clone ( o ) {
 
 
 function loadMenuBarAndContent ( o ) {
-	$('#menubar').load ( '/magnustools/resources/html/menubar.html' , function () {
+	var mb = '/magnustools/resources/html/menubar.html' ;
+	if ( typeof o.mb != 'undefined' ) mb = o.mb ;
+	$('#menubar').load ( mb , function () {
 		if ( undefined !== o.toolname ) $('#toolname').html ( o.toolname ) ;
 		if ( undefined !== o.meta ) $('#discuss_link').attr ( 'href' , '//meta.wikimedia.org/wiki/'+o.meta ) ;
 		else $('#discuss_link').html('Talk').attr ( 'href' , '//en.wikipedia.org/wiki/User_talk:Magnus_Manske' ) ;
@@ -213,7 +246,7 @@ var tusc = {
 		$('#tusc_container').show() ;
 		
 		var c = $.cookie('tusc') ;
-		if ( null != c ) {
+		if ( 'null' != c && null != c ) {
 			c = JSON.parse ( c ) ;
 			if ( c.logged_in ) {
 				$('#tusc_user').val ( c.user ) ;
@@ -1089,7 +1122,9 @@ WikiPage.prototype.getViewStats = function  ( o ) {
 
 var view_stats_cache = [] ;
 var view_stats_running = 0 ;
-var view_stats_running_max = 4 ;
+var view_stats_running_max = 400 ;
+
+function daysInMonth(month,year) { return new Date(year, month, 0).getDate();}
 
 function getViewStatsCallback () {
 //	console.log ( "Trying to run, " + view_stats_running + " left in queue" ) ;
@@ -1100,51 +1135,74 @@ function getViewStatsCallback () {
 	var m = view_stats_cache.shift() ;
 	var me = m.page ;
 	var o = m.o ;
-	var url = 'http://' + wikiSettings.stats_grok + '/json/' ; // jsonp
-	url += me.lang + wikiDataCache.pv_proj2stats[me.project] + '/' + o.date + '/' ;
-	url += encodeURI ( me.title ) .replace ( /\?/g , '%3F' ) ;
+
+//	https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/user/Richard_Dawkins/daily/20150901/20150930
+
+
+	var year = o.date.substr(0,4) ;
+	var month = o.date.substr(4,2) ;
+	var use_wmf_api = false ;
+	if ( year*1>=2015 && month*1>=9 ) use_wmf_api = true ;
+	
+	var url = '' ;
+	var get_url = '' ;
+	var options = {} ;
+	var sg_project = me.lang + wikiDataCache.pv_proj2stats[me.project] ;
+	if ( use_wmf_api ) {
+		var new_api_project = me.lang + '.' + me.project ;
+		var days = ''+daysInMonth(month,year) ;
+		url = 'https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/' ;
+		url += new_api_project ;
+		url += '/all-access/user/' ;
+		url += encodeURIComponent ( me.title.replace(/ /g,'_') ) ;
+		url += '/daily/' + year+month+'01/' + year+month+days ;
+		get_url = url ;
+	} else {
+		get_url = '../proxy.php' ;
+		url = 'http://' + wikiSettings.stats_grok + '/json/' ; // jsonp
+		url += sg_project + '/' + o.date + '/' ;
+		url += encodeURI ( me.title ) .replace ( /\?/g , '%3F' ) ;
+		options = { url:url } ;
+	}
+
+//	console.log ( '!' , use_wmf_api , year*1 , month*1 , url ) ;
 
 	var k = me.lang + wikiDataCache.pv_proj2stats[me.project] + '|' + me.title + '|' + o.date ;
 //	console.log ( "Starting : " + url ) ;
 	
-	$.post ( '../proxy.php' , {
-		url:url
-	} , function ( d ) {
+	$.get ( get_url , options , function ( d ) {
 //			console.log ( "Success!" ) ;
 			view_stats_running-- ;
-			d.monthly_views = 0 
-			$.each ( d.daily_views , function ( k , v ) { d.monthly_views += v } ) ;
+			d.monthly_views = 0 ;
+			
+			if ( use_wmf_api ) {
+				var dummy = { daily_views : {} , monthly_views:0 , project:sg_project , month:year+month , rank:-1 , title:me.title } ;
+				$.each ( d.items , function ( k , v ) {
+					dummy.monthly_views += v.views*1 ;
+					var the_date = v.timestamp.substr(0,4)+'-'+v.timestamp.substr(4,2)+'-'+v.timestamp.substr(6,2) ;
+					dummy.daily_views[the_date] = v.views*1 ;
+				} ) ;
+				d = dummy ;
+			} else {
+				$.each ( d.daily_views , function ( k , v ) { d.monthly_views += v } ) ;
+			}
 			d.project = me.project ;
 			d.lang = me.lang ;
 			o.callback ( { data : d , options : o } ) ;
 			getViewStatsCallback() ;
 	} , 'json' ) . fail ( function (xOptions, textStatus) {
 			view_stats_running-- ;
-			console.log ( "ERROR : " + textStatus ) ;
-			getViewStatsCallback() ;
-	} ) ;
-	
-/*
-	$.jsonp ( {
-		url : url ,
-		callback : 'pageviewsCallback' ,
-		timeout : 10000 ,
-		success : function ( d , textStatus ) {
-			console.log ( "Success!" ) ;
-			view_stats_running-- ;
-			d.monthly_views = 0 
-			$.each ( d.daily_views , function ( k , v ) { d.monthly_views += v } ) ;
+//			console.log ( "ERROR : " + textStatus ) ;
+			var d = { daily_views : {} , monthly_views:0 , project:sg_project , month:year+month , rank:-1 , title:me.title } ;
+			for ( var i = 1 ; i < 31 ; i++ ) {
+				var the_date = year + '-' + month + '-' + (i<10?'0':'') + i ;
+				d.daily_views[the_date] = 0 ;
+			}
+			d.project = me.project ;
+			d.lang = me.lang ;
 			o.callback ( { data : d , options : o } ) ;
 			getViewStatsCallback() ;
-		} ,
-		error : function (xOptions, textStatus) {
-			view_stats_running-- ;
-			console.log ( "ERROR : " + textStatus ) ;
-			getViewStatsCallback() ;
-//			setTimeout ( function () { me.getViewStats ( o ) } , 500 ) ;
-		}
 	} ) ;
-*/
 }
 
 

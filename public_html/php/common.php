@@ -16,6 +16,7 @@ $tusc_url = "http://$tools_webproxy/tusc/tusc.php" ; // http://tools-webserver-0
 $use_db_cache = false ;
 $common_db_cache = array() ;
 $wdq_internal_url = 'http://wdq.wmflabs.org/api' ; // 'http://wikidata-wdq-mm.eqiad.wmflabs/api'
+$pagepile_enabeled = true ; //isset($_REQUEST['pagepile_enabeled']) ;
 
 function myurlencode ( $t ) {
 	$t = str_replace ( " " , "_" , $t ) ;
@@ -23,9 +24,24 @@ function myurlencode ( $t ) {
 	return $t ;
 }
 
+function getWebserverForWiki ( $wiki ) {
+	$wiki = preg_replace ( '/_p$/' , '' , $wiki ) ; // Paranoia
+	if ( $wiki == 'commonswiki' ) return "commons.wikimedia.org" ;
+	if ( $wiki == 'wikidatawiki' ) return "www.wikidata.org" ;
+	if ( $wiki == 'specieswiki' ) return "species.wikimedia.org" ;
+	$wiki = preg_replace ( '/_/' , '-' , $wiki ) ;
+	if ( preg_match ( '/^(.+)wiki$/' , $wiki , $m ) ) return $m[1].".wikipedia.org" ;
+	if ( preg_match ( '/^(.+)(wik.+)$/' , $wiki , $m ) ) return $m[1].".".$m[2].".org" ;
+	return '' ;
+}
+
+function escape_attribute ( $s ) {
+	return preg_replace ( "/'/" , '&quot;' , $s ) ;
+}
+
 function getDBpassword () {
 	global $mysql_user , $mysql_password , $tool_user_name ;
-	if ( isset ( $tool_user_name ) ) $user = $tool_user_name ;
+	if ( isset ( $tool_user_name ) and $tool_user_name != '' ) $user = $tool_user_name ;
 	else $user = str_replace ( 'tools.' , '' , get_current_user() ) ;
 	$passwordfile = '/data/project/' . $user . '/replica.my.cnf' ;
 	if ( $user == 'magnus' ) $passwordfile = '/home/' . $user . '/replica.my.cnf' ; // Command-line usage
@@ -52,6 +68,7 @@ function getDBname ( $language , $project ) {
 	elseif ( $project == 'wikiversity' ) $ret .= 'wikiversity_p' ;
 	elseif ( $project == 'wikivoyage' ) $ret .= 'wikivoyage_p' ;
 	elseif ( $project == 'wikiquote' ) $ret .= 'wikiquote_p' ;
+	elseif ( $project == 'wikispecies' ) $ret = 'specieswiki_p' ;
 	elseif ( $language == 'meta' ) $ret .= 'metawiki_p' ;
 	else if ( $project == 'wikimedia' ) $ret .= $language.$project."_p" ;
 	else die ( "Cannot construct database name for $language.$project - aborting." ) ;
@@ -95,7 +112,7 @@ function openDB ( $language , $project ) {
 	$dbname = getDBname ( $language , $project ) ;
 
 	$server = substr( $dbname, 0, -2 ) . '.labsdb';
-
+	
 	$db = new mysqli($server, $mysql_user, $mysql_password, $dbname);
 	if($db->connect_errno > 0) {
 		$o['msg'] = 'Unable to connect to database [' . $db->connect_error . ']';
@@ -365,6 +382,7 @@ function strip_html_comments ( &$text ) {
 
 function get_image_url ( $lang , $image , $project = "wikipedia" ) {
 	if ( $lang == 'commons' ) $project = 'wikimedia' ;
+#	$image = ucfirst ( str_replace ( " " , "_" , $image ) ) ;
 	$url = "//{$lang}.{$project}.org/wiki/Special:Redirect/file/" . myurlencode ( $image );
 	return $url ;
 }
@@ -549,3 +567,52 @@ function uploadFileViaAPI ( $username , $userpass , $local_file , $new_file_name
 	if ( $file_upload_api_result['upload']['result'] == 'Warning' ) return false ;
 	return true ; // TODO 
 }
+
+
+function strtolower_utf8($string){
+  $convert_to = array(
+    "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u",
+    "v", "w", "x", "y", "z", "à", "á", "â", "ã", "ä", "å", "æ", "ç", "è", "é", "ê", "ë", "ì", "í", "î", "ï",
+    "ð", "ñ", "ò", "ó", "ô", "õ", "ö", "ø", "ù", "ú", "û", "ü", "ý", "а", "б", "в", "г", "д", "е", "ё", "ж",
+    "з", "и", "й", "к", "л", "м", "н", "о", "п", "р", "с", "т", "у", "ф", "х", "ц", "ч", "ш", "щ", "ъ", "ы",
+    "ь", "э", "ю", "я"
+  );
+  $convert_from = array(
+    "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U",
+    "V", "W", "X", "Y", "Z", "À", "Á", "Â", "Ã", "Ä", "Å", "Æ", "Ç", "È", "É", "Ê", "Ë", "Ì", "Í", "Î", "Ï",
+    "Ð", "Ñ", "Ò", "Ó", "Ô", "Õ", "Ö", "Ø", "Ù", "Ú", "Û", "Ü", "Ý", "А", "Б", "В", "Г", "Д", "Е", "Ё", "Ж",
+    "З", "И", "Й", "К", "Л", "М", "Н", "О", "П", "Р", "С", "Т", "У", "Ф", "Х", "Ц", "Ч", "Ш", "Щ", "Ъ", "Ъ",
+    "Ь", "Э", "Ю", "Я"
+  );
+
+  return str_replace($convert_from, $convert_to, $string);
+} 
+
+function getSPARQL ( $cmd ) {
+	$sparql = "PREFIX wdt: <http://www.wikidata.org/prop/direct/>\n" ;
+	$sparql .= "PREFIX wd: <http://www.wikidata.org/entity/>\n" ;
+	$sparql .= "PREFIX wikibase: <http://wikiba.se/ontology#>\n" ;
+	$sparql .= "PREFIX p: <http://www.wikidata.org/prop/>\n" ;
+	$sparql .= "PREFIX v: <http://www.wikidata.org/prop/statement/>\n" ;
+	$sparql .= "PREFIX q: <http://www.wikidata.org/prop/qualifier/>\n" ;
+	$sparql .= "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" ;
+	$sparql .= "PREFIX schema: <http://schema.org/>\n" ;
+	$sparql .= "PREFIX psv: <http://www.wikidata.org/prop/statement/value/>\n" ;
+	$sparql .= $cmd ;
+#print "$sparql\n" ;
+	$url = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=" . urlencode($sparql) ;
+	return json_decode ( file_get_contents ( $url ) ) ;
+}
+
+function getSPARQLitems ( $cmd , $varname = 'q' ) {
+	$ret = array() ;
+	$j = getSPARQL ( $cmd ) ;
+#print_r ( $j ) ;
+	if ( !isset($j->results) or !isset($j->results->bindings) or count($j->results->bindings) == 0 ) return $ret ;
+	foreach ( $j->results->bindings AS $v ) {
+		$ret[] = preg_replace ( '/^.+\/Q/' , '' , $v->$varname->value ) ;
+	}
+	return $ret ;
+}
+
+?>

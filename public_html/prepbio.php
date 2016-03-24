@@ -336,7 +336,7 @@ function get_text () {
 	}
 	
 	while ( substr ( $desc , -1 , 1 ) == '.' ) $desc = substr ( $desc , 0 , -1 ) ;
-	
+/*	
 	$ret .= "\n{{Persondata\n" .
 		'|NAME=' . $name2 . "\n" .
 		'|ALTERNATIVE NAMES=' . $altnames . "\n" .
@@ -346,7 +346,7 @@ function get_text () {
 		'|DATE OF DEATH=' . $deathdate . "\n" .
 		'|PLACE OF DEATH=' . q('Place of death',true) . "\n" .
 		'}}' ;
-	
+*/	
 	
 	$ret = str_replace ( '  ' , ' ' , $ret ) ;
 	

@@ -191,13 +191,13 @@ class MW_OAuth {
 	 * Request authorization
 	 * @return void
 	 */
-	function doAuthorizationRedirect() {
+	function doAuthorizationRedirect($callback='') {
 		// First, we need to fetch a request token.
 		// The request is signed with an empty token secret and no token key.
 		$this->gTokenSecret = '';
 		$url = $this->mwOAuthUrl . '/initiate';
 		$url .= strpos( $url, '?' ) ? '&' : '?';
-		$url .= http_build_query( array(
+		$query = array(
 			'format' => 'json',
 		
 			// OAuth information
@@ -209,7 +209,9 @@ class MW_OAuth {
 
 			// We're using secret key signatures here.
 			'oauth_signature_method' => 'HMAC-SHA1',
-		) );
+		) ;
+		if ( $callback!='' ) $query['callback'] = $callback ;
+		$url .= http_build_query( $query );
 		$signature = $this->sign_request( 'GET', $url );
 		$url .= "&oauth_signature=" . urlencode( $signature );
 		$ch = curl_init();
@@ -225,8 +227,10 @@ class MW_OAuth {
 			exit(0);
 		}
 		curl_close( $ch );
-//print_r ( $data ) ; exit ( 0 ) ; // SHOW MEDIAWIKI ERROR
 		$token = json_decode( $data );
+		if ( $token === NULL ) {
+			print_r ( $data ) ; exit ( 0 ) ; // SHOW MEDIAWIKI ERROR
+		}
 		if ( is_object( $token ) && isset( $token->error ) ) {
 			header( "HTTP/1.1 500 Internal Server Error" );
 			echo 'Error retrieving token: ' . htmlspecialchars( $token->error );
@@ -261,6 +265,95 @@ class MW_OAuth {
 	}
 
 
+	function doIdentify() {
+
+		$url = $this->mwOAuthUrl . '/identify';
+		$headerArr = array(
+			// OAuth information
+			'oauth_consumer_key' => $this->gConsumerKey,
+			'oauth_token' => $this->gTokenKey,
+			'oauth_version' => '1.0',
+			'oauth_nonce' => md5( microtime() . mt_rand() ),
+			'oauth_timestamp' => time(),
+
+			// We're using secret key signatures here.
+			'oauth_signature_method' => 'HMAC-SHA1',
+		);
+		$signature = $this->sign_request( 'GET', $url, $headerArr );
+		$headerArr['oauth_signature'] = $signature;
+
+		$header = array();
+		foreach ( $headerArr as $k => $v ) {
+			$header[] = rawurlencode( $k ) . '="' . rawurlencode( $v ) . '"';
+		}
+		$header = 'Authorization: OAuth ' . join( ', ', $header );
+
+		$ch = curl_init();
+		curl_setopt( $ch, CURLOPT_URL, $url );
+		curl_setopt( $ch, CURLOPT_HTTPHEADER, array( $header ) );
+		//curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
+		curl_setopt( $ch, CURLOPT_USERAGENT, $this->gUserAgent );
+		curl_setopt( $ch, CURLOPT_HEADER, 0 );
+		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
+		$data = curl_exec( $ch );
+		if ( !$data ) {
+			header( "HTTP/1.1 $errorCode Internal Server Error" );
+			echo 'Curl error: ' . htmlspecialchars( curl_error( $ch ) );
+			exit(0);
+		}
+		$err = json_decode( $data );
+		if ( is_object( $err ) && isset( $err->error ) && $err->error === 'mwoauthdatastore-access-token-not-found' ) {
+			// We're not authorized!
+#			echo 'You haven\'t authorized this application yet! Go <a href="' . htmlspecialchars( $_SERVER['SCRIPT_NAME'] ) . '?action=authorize">here</a> to do that.';
+#			echo '<hr>';
+			return (object) array('is_authorized'=>false) ;
+		}
+		
+		// There are three fields in the response
+		$fields = explode( '.', $data );
+		if ( count( $fields ) !== 3 ) {
+			header( "HTTP/1.1 $errorCode Internal Server Error" );
+			echo 'Invalid identify response: ' . htmlspecialchars( $data );
+			exit(0);
+		}
+
+		// Validate the header. MWOAuth always returns alg "HS256".
+		$header = base64_decode( strtr( $fields[0], '-_', '+/' ), true );
+		if ( $header !== false ) {
+			$header = json_decode( $header );
+		}
+		if ( !is_object( $header ) || $header->typ !== 'JWT' || $header->alg !== 'HS256' ) {
+			header( "HTTP/1.1 $errorCode Internal Server Error" );
+			echo 'Invalid header in identify response: ' . htmlspecialchars( $data );
+			exit(0);
+		}
+
+		// Verify the signature
+		$sig = base64_decode( strtr( $fields[2], '-_', '+/' ), true );
+		$check = hash_hmac( 'sha256', $fields[0] . '.' . $fields[1], $this->gConsumerSecret, true );
+		if ( $sig !== $check ) {
+			header( "HTTP/1.1 $errorCode Internal Server Error" );
+			echo 'JWT signature validation failed: ' . htmlspecialchars( $data );
+			echo '<pre>'; var_dump( base64_encode($sig), base64_encode($check) ); echo '</pre>';
+			exit(0);
+		}
+
+		// Decode the payload
+		$payload = base64_decode( strtr( $fields[1], '-_', '+/' ), true );
+		if ( $payload !== false ) {
+			$payload = json_decode( $payload );
+		}
+		if ( !is_object( $payload ) ) {
+			header( "HTTP/1.1 $errorCode Internal Server Error" );
+			echo 'Invalid payload in identify response: ' . htmlspecialchars( $data );
+			exit(0);
+		}
+		
+		$payload->is_authorized = true ;
+		return $payload ;
+	}
+
+
 
 	/**
 	 * Send an API query with OAuth authorization
@@ -288,7 +381,9 @@ class MW_OAuth {
 		} else {
 			$to_sign = $post + $headerArr ;
 		}
-		$signature = $this->sign_request( 'POST', $this->apiUrl, $to_sign );
+		$url = $this->apiUrl ;
+		if ( $mode == 'identify' ) $url .= '/identify' ;
+		$signature = $this->sign_request( 'POST', $url, $to_sign );
 		$headerArr['oauth_signature'] = $signature;
 
 		$header = array();
@@ -302,9 +397,6 @@ class MW_OAuth {
 			$ch = curl_init();
 			
 		}
-		
-		$url = $this->apiUrl ;
-//		if ( $mode == 'userinfo' ) $url = $this->mwOAuthUrl ;
 		
 		$post_fields = '' ;
 		if ( $mode == 'upload' ) {
@@ -466,8 +558,7 @@ Claims are used like this:
 		}
 		$token = $res->query->tokens->csrftoken;
 
-		// Now do that!
-		$res = $this->doApiQuery( array(
+		$params = array(
 			'format' => 'json',
 			'action' => 'wbsetlabel',
 			'id' => $q,
@@ -475,7 +566,14 @@ Claims are used like this:
 			'value' => $text ,
 			'token' => $token,
 			'bot' => 1
-		), $ch );
+		) ;
+
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+
+		// Now do that!
+		$res = $this->doApiQuery( $params , $ch );
 		
 		if ( isset ( $res->error ) ) {
 			$this->error = $res->error->info ;
@@ -501,8 +599,7 @@ Claims are used like this:
 		}
 		$token = $res->query->tokens->csrftoken;
 
-		// Now do that!
-		$res = $this->doApiQuery( array(
+		$params = array(
 			'format' => 'json',
 			'action' => 'wbsetsitelink',
 			'id' => $q,
@@ -510,7 +607,14 @@ Claims are used like this:
 			'linktitle' => $title,
 			'token' => $token,
 			'bot' => 1
-		), $ch );
+		) ;
+
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+
+		// Now do that!
+		$res = $this->doApiQuery( $params , $ch );
 		
 		$this->last_res = $res ;
 		if ( isset ( $res->error ) ) {
@@ -537,8 +641,7 @@ Claims are used like this:
 		}
 		$token = $res->query->tokens->csrftoken;
 
-		// Now do that!
-		$res = $this->doApiQuery( array(
+		$params = array(
 			'format' => 'json',
 			'action' => 'wbsetdescription',
 			'id' => $q,
@@ -546,7 +649,14 @@ Claims are used like this:
 			'value' => $text ,
 			'token' => $token,
 			'bot' => 1
-		), $ch );
+		) ;
+
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+
+		// Now do that!
+		$res = $this->doApiQuery( $params , $ch );
 		
 		if ( isset ( $res->error ) ) {
 			$this->error = $res->error->info ;
@@ -572,8 +682,7 @@ Claims are used like this:
 		}
 		$token = $res->query->tokens->csrftoken;
 
-		// Now do that!
-		$res = $this->doApiQuery( array(
+		$params = array(
 			'format' => 'json',
 			'action' => 'wbsetaliases',
 			$mode => $text ,
@@ -582,7 +691,14 @@ Claims are used like this:
 //			'value' => $text ,
 			'token' => $token,
 			'bot' => 1
-		), $ch );
+		) ;
+
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+
+		// Now do that!
+		$res = $this->doApiQuery( $params , $ch );
 		
 		if ( isset ( $res->error ) ) {
 			$this->error = $res->error->info ;
@@ -607,16 +723,23 @@ Claims are used like this:
 			return false ;
 		}
 		$token = $res->query->tokens->csrftoken;
-		
-		// Now do that!
-		$res = $this->doApiQuery( array(
+
+		$params = array(
 			'format' => 'json',
 			'action' => 'edit',
 			'title' => $page,
 			'text' => $text ,
 			'minor' => '' ,
 			'token' => $token,
-		), $ch );
+		) ;
+		
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+
+		
+		// Now do that!
+		$res = $this->doApiQuery( $params, $ch );
 		
 		if ( isset ( $res->error ) ) {
 			$this->error = $res->error->info ;
@@ -652,7 +775,10 @@ Claims are used like this:
 		) ;
 		
 		if ( isset ( $section ) and $section != '' ) $p['section'] = $section ;
-		if ( $summary != '' ) $p['summary'] = $summary ;
+
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
 		
 		// Now do that!
 		$res = $this->doApiQuery( $p , $ch );
@@ -681,14 +807,20 @@ Claims are used like this:
 		$token = $res->query->tokens->csrftoken;
 
 
-		$res = $this->doApiQuery( array(
+		$params = array(
 			'format' => 'json',
 			'action' => 'wbeditentity',
 			'new' => 'item' ,
 			'data' => '{}' ,
 			'token' => $token,
 			'bot' => 1
-		), $ch );
+		) ;
+		
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+
+		$res = $this->doApiQuery( $params , $ch );
 		
 		if ( isset ( $_REQUEST['test'] ) ) {
 			print "<pre>" ; print_r ( $res ) ; print "</pre>" ;
@@ -724,19 +856,27 @@ Claims are used like this:
 		if ( preg_match ( '/^(.+)wiki$/' , $site , $m ) ) {
 			$nice_title = preg_replace ( '/\s+\(.+$/' , '' , str_replace ( '_' , ' ' , $page ) ) ;
 			$lang = $m[1] ;
+			if ( $lang == 'species' or $lang == 'meta' or $lang == 'wikidata' ) $lang = 'en' ; // Default language
 			if ( $lang == 'no' ) $lang = 'nb' ;
 			$data['labels'] = array ( array ( 'language' => $lang , 'value' => $nice_title ) ) ;
 		}
 //		print "<pre>" ; print_r ( json_encode ( $data ) ) ; print " </pre>" ; return true ;
 
-		$res = $this->doApiQuery( array(
+		$params = array(
 			'format' => 'json',
 			'action' => 'wbeditentity',
 			'new' => 'item' ,
 			'data' => json_encode ( $data ) ,
 			'token' => $token,
 			'bot' => 1
-		), $ch );
+		) ;
+		
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+
+		$res = $this->doApiQuery( $params , $ch );
+
 		
 		if ( isset ( $_REQUEST['test'] ) ) {
 			print "<pre>" ; print_r ( $res ) ; print "</pre>" ;
@@ -773,6 +913,12 @@ Claims are used like this:
 			'bot' => 1
 		) ;
 		if ( isset ( $baserev ) and $baserev != '' ) $params['baserevid'] = $baserev ;
+
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+
+
 		$res = $this->doApiQuery( $params , $ch );
 		
 		if ( isset ( $_REQUEST['test'] ) ) {
@@ -811,6 +957,10 @@ Claims are used like this:
 			'token' => $token,
 			'bot' => 1
 		) ;
+
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
 		
 		// TODO : baserevid
 
@@ -822,7 +972,10 @@ Claims are used like this:
 		}
 
 		$this->last_res = $res ;
-		if ( isset ( $res->error ) ) return false ;
+		if ( isset ( $res->error ) ) {
+			if ( $res->error->code == 'modification-failed' ) return true ; // Already exists, no real error
+			return false ;
+		}
 
 		return true ;
 
@@ -831,6 +984,8 @@ Claims are used like this:
 
 	
 	function createRedirect ( $from , $to ) {
+		# No summary option!
+	
 		// Next fetch the edit token
 		$ch = null;
 		$res = $this->doApiQuery( array(
@@ -865,6 +1020,52 @@ Claims are used like this:
 		return true ;
 	}
 
+
+	function genericAction ( $j ) {
+		if ( !isset($j->action) ) { // Paranoia
+			$this->error = "No action in " . json_encode ( $j ) ;
+			return false ;
+		}
+		
+		
+		// Next fetch the edit token
+		$ch = null;
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'query' ,
+			'meta' => 'tokens'
+		), $ch );
+		if ( !isset( $res->query->tokens->csrftoken ) ) {
+			$this->error = 'Bad API response [genericAction]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			return false ;
+		}
+
+		$j->token = $res->query->tokens->csrftoken;
+		$j->format = 'json' ;
+		$j->bot = 1 ;
+		
+		$params = array() ;
+		foreach ( $j AS $k => $v ) $params[$k] = $v ;
+		
+		if ( isset ( $_REQUEST['test'] ) ) {
+			print "!!!!!<pre>" ; print_r ( $params ) ; print "</pre>" ;
+		}
+
+		$res = $this->doApiQuery( $params, $ch );
+		
+		if ( isset ( $_REQUEST['test'] ) ) {
+			print "<pre>" ; print_r ( $claim ) ; print "</pre>" ;
+			print "<pre>" ; print_r ( $res ) ; print "</pre>" ;
+		}
+
+		$this->last_res = $res ;
+		if ( isset ( $res->error ) ) {
+			$this->error = $res->error->info ;
+			return false ;
+		}
+		
+		return true ;
+	}
 
 
 	function setClaim ( $claim ) {
@@ -915,6 +1116,11 @@ Claims are used like this:
 			'token' => $token,
 			'bot' => 1
 		) ;
+
+
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
 	
 		if ( isset ( $claim['claim'] ) ) { // Set qualifier
 			$params['action'] = 'wbsetqualifier' ;
@@ -926,6 +1132,7 @@ Claims are used like this:
 		$res = $this->doApiQuery( $params, $ch );
 		
 		if ( isset ( $_REQUEST['test'] ) ) {
+			print "!!!!!<pre>" ; print_r ( $params ) ; print "</pre>" ;
 			print "<pre>" ; print_r ( $claim ) ; print "</pre>" ;
 			print "<pre>" ; print_r ( $res ) ; print "</pre>" ;
 		}
@@ -946,7 +1153,7 @@ Claims are used like this:
 		return true ;
 	}
 
-	function mergeItems ( $q_from , $q_to ) {
+	function mergeItems ( $q_from , $q_to , $summary = '' ) {
 
 		// Next fetch the edit token
 		$ch = null;
@@ -961,19 +1168,24 @@ Claims are used like this:
 		}
 		$token = $res->query->tokens->csrftoken;
 	
-	
-	
-
-		$res = $this->doApiQuery( array(
+		$opt = array(
 			'format' => 'json',
 			'action' => 'wbmergeitems',
 			'fromid' => $q_from ,
 			'toid' => $q_to ,
-			'ignoreconflicts' => 'label|description|sitelink' ,
+			'ignoreconflicts' => 'description|sitelink' ,
 			'token' => $token,
 			'bot' => 1
-		), $ch );
+		) ;
+			
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( $summary != '' ) $opt['summary'] = $summary ;
 		
+	
+
+		$res = $this->doApiQuery( $opt, $ch );
+
 		if ( isset ( $_REQUEST['test'] ) ) {
 			print "1<pre>" ; print_r ( $claim ) ; print "</pre>" ;
 			print "2<pre>" ; print_r ( $res ) ; print "</pre>" ;
@@ -994,6 +1206,8 @@ Claims are used like this:
 	}
 
 	function deletePage ( $page , $reason ) {
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $reason = isset($reason) ? trim("$reason #$tool_hashtag") : "#$tool_hashtag" ;
 
 		// Next fetch the edit token
 		$ch = null;
@@ -1040,18 +1254,29 @@ Claims are used like this:
 
 		
 	function doUploadFromURL ( $url , $new_file_name , $desc , $comment , $ignorewarnings ) {
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $comment = isset($comment) ? trim("$desc #$tool_hashtag") : "#$tool_hashtag" ;
 	
 		if ( $new_file_name == '' ) {
 			$a = explode ( '/' , $url ) ;
 			$new_file_name = array_pop ( $a ) ;
 		}
 		$new_file_name = ucfirst ( str_replace ( ' ' , '_' , $new_file_name ) ) ;
-		
+
 		// Download file
 		$basedir = '/data/project/magnustools/tmp' ;
 		$tmpfile = tempnam ( $basedir , 'doUploadFromURL' ) ;
 		copy($url, $tmpfile) ;
 
+		if ( isset ( $_REQUEST['test'] ) ) {
+//			$new_file_name = utf8_decode ( $new_file_name ) ;
+			print "<hr/>$new_file_name<br/>\n" ;
+			print "$url<br/>\n" ;
+			print "Size: " . filesize($tmpfile) . "<br/>\n" ;
+			unlink ( $tmpfile ) ;
+			exit ( 0 ) ;
+		}
+		
 
 		// Next fetch the edit token
 		$ch = null;

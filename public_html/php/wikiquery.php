@@ -1,6 +1,7 @@
 <?PHP
 
-include_once ( 'php/common.php' ) ;
+//include_once ( 'php/common.php' ) ;
+include_once ( 'common.php' ) ;
 
 # ______________________________________________________________________
 # BEGIN OF CLASS WikiQuery
@@ -10,6 +11,7 @@ class WikiQuery {
 	
 	function WikiQuery ( $language , $project = 'wikipedia' ) {
 		if ( $language == 'commons' ) $project = 'wikimedia' ;
+		if ( $language == 'wikidata' ) { $project = $language ; $language = 'www' ; }
 		if ( $language == "xxx" ) $language = "" ;
 		$this->language = $language ;
 		$this->project = $project ;
@@ -208,7 +210,8 @@ class WikiQuery {
 		$data = $data['categorymembers'] ;
 		foreach ( $data AS $d ) {
 			$key = $d['title'] ;
-			$key = array_pop ( explode ( ':' , $key , 2 ) ) ;
+			$key = explode ( ':' , $key , 2 ) ;
+			$key = array_pop ( $key ) ;
 			$subret = $this->get_pages_in_category ( $key , $namespace , $depth - 1 ) ;
 			foreach ( $subret AS $k => $v ) {
 				if ( isset ( $ret[$k] ) ) continue ; # Have that one already
@@ -258,9 +261,10 @@ class WikiQuery {
     	$ret = array() ;
 		$url = $this->get_api_base_url ( 'links' ) ;
 		$url .= 'pllimit=500&titles=' . myurlencode ( $title ) ;
+		$url .= '&rawcontinue=1' ;
 		if ( $cont != '' ) $url .= "&plcontinue=" . $cont ;
 		if ( isset ( $ns ) ) $url .= '&plnamespace=' . $ns ;
-		
+
 		$data = $this->get_result ( $url ) ;
 		if ( !isset ( $data['query'] ) ) return $ret ;
 
@@ -310,21 +314,30 @@ class WikiQuery {
 	
 	function get_images_on_page ( $title , $check_ignore = 0 ) {
 	    $ret = array() ;
-		$url = $this->get_api_base_url ( 'images' ) ;
-		$url .= 'imlimit=500&titles=' . myurlencode ( $title ) ;
+	    $imcontinue = '' ;
+	    
+	    do {
+			$url = $this->get_api_base_url ( 'images' ) ;
+			$url .= 'imlimit=500&titles=' . myurlencode ( $title ) ;
+//			$url .= '&rawcontinue=1' ; // NO!
+			if ( $imcontinue != "" ) $url .= "&imcontinue=" . urlencode ( $imcontinue ) ;
 
-		$data = $this->get_result ( $url ) ;
-		if ( !isset ( $data['query'] ) ) return $ret ;
-		$data = $data['query'] ;
-		$data = $data['pages'] ;
-		$data = array_shift ( $data ) ;
-		if ( !isset ( $data['images'] ) ) return $ret ;
-		$data = $data['images'] ;
-		foreach ( $data AS $i ) {
-			$image = $i['title'] ;
-			if ( $check_ignore and is_image_ignored ( $image , $this->language , $this->project ) ) continue ;
-			$ret[$image] = $image ; # Avoids double listing
-		}
+			$data = $this->get_result ( $url ) ;
+			if ( isset($data['continue']) and isset($data['continue']['imcontinue']) ) $imcontinue = $data['continue']['imcontinue'] ;
+			else $imcontinue = '' ;
+			if ( !isset ( $data['query'] ) ) return $ret ;
+			$data = $data['query'] ;
+			$data = $data['pages'] ;
+			$data = array_shift ( $data ) ;
+			if ( !isset ( $data['images'] ) ) return $ret ;
+			$data = $data['images'] ;
+			foreach ( $data AS $i ) {
+				$image = $i['title'] ;
+				if ( $check_ignore and is_image_ignored ( $image , $this->language , $this->project ) ) continue ;
+				$ret[$image] = $image ; # Avoids double listing
+			}
+		} while ( $imcontinue != '' ) ;
+
 #		print_r ( $data ) ;
 		return $ret ;
 	}
@@ -338,6 +351,7 @@ class WikiQuery {
 		  $url .= 'iutitle=' . myurlencode ( $image ) ;
 		  $url .= '&iunamespace=' . myurlencode ( $ns ) ;
 		  $url .= '&iulimit=500&list=imageusage&action=query' ;
+			$url .= '&rawcontinue=1' ;
 		  if ( $iucontinue != "" ) $url .= "&iucontinue=" . urlencode ( $iucontinue ) ;
 	
 		  $data = $this->get_result ( $url ) ;
