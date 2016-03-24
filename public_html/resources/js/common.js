@@ -1145,7 +1145,7 @@ function getViewStatsCallback () {
 	var year = o.date.substr(0,4) ;
 	var month = o.date.substr(4,2) ;
 	var use_wmf_api = false ;
-	if ( year*1>=2015 && month*1>=9 ) use_wmf_api = true ;
+	if ( year*1>2015 || (year*1==2015 && month*1>=9 ) ) use_wmf_api = true ;
 	
 	var url = '' ;
 	var get_url = '' ;
