@@ -800,7 +800,8 @@ WikiPage.prototype.getLanguageLinks = function ( callback , data ) {
 		titles : me.getFullTitle() ,
 		lllimit : 500 ,
 		redirects : 1 ,
-		format : 'json'
+		format : 'json',
+		rawcontinue : 1
 	} ;
 
 	if ( undefined !== data ) {
@@ -854,7 +855,8 @@ WikiPage.prototype.getGlobalUsage = function ( callback , namespaces , data ) { 
 		guprop : 'pageid|namespace' ,
 		gulimit : 500 ,
 		redirects : 1 ,
-		format : 'json'
+		format : 'json',
+		rawcontinue : 1
 	} ;
 	
 	if ( undefined !== data ) {
@@ -966,7 +968,8 @@ WikiPage.prototype.getExternalLinks = function ( callback , data ) {
 		titles : me.getFullTitle() ,
 		ellimit : 500 ,
 		redirects : 1 ,
-		format : 'json'
+		format : 'json',
+		rawcontinue : 1
 	} ;
 	
 	if ( undefined !== data ) {
@@ -1280,6 +1283,7 @@ WikiPage.prototype.getGenericData = function  ( instance , data ) {
 	
 	var params = instance.params ;
 	params.format = 'json' ;
+	//params.rawcontinue = 1 ;
 
 	if ( undefined !== data ) {
 		if ( undefined !== data.query[instance.queryprop||'pages'] ) {
