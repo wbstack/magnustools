@@ -736,7 +736,8 @@ WikiPage.prototype.getPagesInCategoryTreeViaAPI = function ( o , depth , d ) {
 		cmnamespace : o.use_ns.join('|') ,
 		cmlimit : 500 ,
 		redirects : 1 ,
-		format : 'json'
+		format : 'json',
+		rawcontinue : 1
 	} ;
 	
 	
