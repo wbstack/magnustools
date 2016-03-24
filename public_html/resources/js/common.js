@@ -680,7 +680,6 @@ WikiPage.prototype.getPagesInCategoryTree = function ( o ) {
 	else return this.getPagesInCategoryTreeViaToolserver ( o ) ;
 }
 
-
 WikiPage.prototype.getPagesInCategoryTreeViaToolserver = function ( o ) {
 	var me = this ;
 
@@ -1344,7 +1343,7 @@ WikiPage.prototype.getFilesUploadedByUser = function ( callback ) {
 	me.getGenericData ( {
 		callback : callback ,
 		queryprop : 'logevents' ,
-		k_continue : 'lestart' ,
+		k_continue : 'lecontinue' ,
 		keep : function ( x ) { return x.title } ,
 		params : {
 			action : 'query' ,
