@@ -1283,7 +1283,7 @@ WikiPage.prototype.getGenericData = function  ( instance , data ) {
 	
 	var params = instance.params ;
 	params.format = 'json' ;
-	//params.rawcontinue = 1 ;
+	params.rawcontinue = 1 ;
 
 	if ( undefined !== data ) {
 		if ( undefined !== data.query[instance.queryprop||'pages'] ) {
