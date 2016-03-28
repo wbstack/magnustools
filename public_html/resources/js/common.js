@@ -680,7 +680,6 @@ WikiPage.prototype.getPagesInCategoryTree = function ( o ) {
 	else return this.getPagesInCategoryTreeViaToolserver ( o ) ;
 }
 
-
 WikiPage.prototype.getPagesInCategoryTreeViaToolserver = function ( o ) {
 	var me = this ;
 
@@ -736,7 +735,8 @@ WikiPage.prototype.getPagesInCategoryTreeViaAPI = function ( o , depth , d ) {
 		cmnamespace : o.use_ns.join('|') ,
 		cmlimit : 500 ,
 		redirects : 1 ,
-		format : 'json'
+		format : 'json',
+		rawcontinue : 1
 	} ;
 	
 	
@@ -799,7 +799,8 @@ WikiPage.prototype.getLanguageLinks = function ( callback , data ) {
 		titles : me.getFullTitle() ,
 		lllimit : 500 ,
 		redirects : 1 ,
-		format : 'json'
+		format : 'json',
+		rawcontinue : 1
 	} ;
 
 	if ( undefined !== data ) {
@@ -853,7 +854,8 @@ WikiPage.prototype.getGlobalUsage = function ( callback , namespaces , data ) { 
 		guprop : 'pageid|namespace' ,
 		gulimit : 500 ,
 		redirects : 1 ,
-		format : 'json'
+		format : 'json',
+		rawcontinue : 1
 	} ;
 	
 	if ( undefined !== data ) {
@@ -965,7 +967,8 @@ WikiPage.prototype.getExternalLinks = function ( callback , data ) {
 		titles : me.getFullTitle() ,
 		ellimit : 500 ,
 		redirects : 1 ,
-		format : 'json'
+		format : 'json',
+		rawcontinue : 1
 	} ;
 	
 	if ( undefined !== data ) {
@@ -1142,7 +1145,7 @@ function getViewStatsCallback () {
 	var year = o.date.substr(0,4) ;
 	var month = o.date.substr(4,2) ;
 	var use_wmf_api = false ;
-	if ( year*1>=2015 && month*1>=9 ) use_wmf_api = true ;
+	if ( year*1>2015 || (year*1==2015 && month*1>=9 ) ) use_wmf_api = true ;
 	
 	var url = '' ;
 	var get_url = '' ;
@@ -1150,6 +1153,10 @@ function getViewStatsCallback () {
 	var sg_project = me.lang + wikiDataCache.pv_proj2stats[me.project] ;
 	if ( use_wmf_api ) {
 		var new_api_project = me.lang + '.' + me.project ;
+		// wikidata does not follow this pattern
+		if ( me.project === 'wikidata' ) {
+			new_api_project = me.project ;
+		}
 		var days = ''+daysInMonth(month,year) ;
 		url = 'https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/' ;
 		url += new_api_project ;
@@ -1279,6 +1286,7 @@ WikiPage.prototype.getGenericData = function  ( instance , data ) {
 	
 	var params = instance.params ;
 	params.format = 'json' ;
+	params.rawcontinue = 1 ;
 
 	if ( undefined !== data ) {
 		if ( undefined !== data.query[instance.queryprop||'pages'] ) {
@@ -1339,7 +1347,7 @@ WikiPage.prototype.getFilesUploadedByUser = function ( callback ) {
 	me.getGenericData ( {
 		callback : callback ,
 		queryprop : 'logevents' ,
-		k_continue : 'lestart' ,
+		k_continue : 'lecontinue' ,
 		keep : function ( x ) { return x.title } ,
 		params : {
 			action : 'query' ,
