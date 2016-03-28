@@ -18,6 +18,8 @@ $common_db_cache = array() ;
 $wdq_internal_url = 'http://wdq.wmflabs.org/api' ; // 'http://wikidata-wdq-mm.eqiad.wmflabs/api'
 $pagepile_enabeled = true ; //isset($_REQUEST['pagepile_enabeled']) ;
 
+$petscan_note = "<div style='margin:3px;padding:3px;text-align:center;background-color:#d9edf7;'>Please try <a href='https://petscan.wmflabs.org/'>PetScan</a>, the designated successor to this tool!</div>" ;
+
 function myurlencode ( $t ) {
 	$t = str_replace ( " " , "_" , $t ) ;
 	$t = urlencode ( $t ) ;
@@ -112,6 +114,7 @@ function openDB ( $language , $project ) {
 	$dbname = getDBname ( $language , $project ) ;
 
 	$server = substr( $dbname, 0, -2 ) . '.labsdb';
+//$server = 'c3.labsdb' ; # TEMPORARY HACK TO BYPASS BROKEN labs1002 SERVER
 	
 	$db = new mysqli($server, $mysql_user, $mysql_password, $dbname);
 	if($db->connect_errno > 0) {
@@ -524,9 +527,9 @@ function check_project_name ( $s ) {
 $cookiejar = '' ;
 $file_upload_api_result = array() ;
 
-function do_post_request_curl ( $url , $params ) {
+function do_post_request_curl ( $url , $params , $format = 'php' ) {
 	global $cookiejar ;
-	$params['format'] = 'php' ;
+	$params['format'] = $format ;
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_COOKIEJAR, $cookiejar);
 	curl_setopt($ch, CURLOPT_COOKIEFILE, $cookiejar);
@@ -537,6 +540,7 @@ function do_post_request_curl ( $url , $params ) {
 	$output = curl_exec($ch);
 	$info = curl_getinfo($ch);
 	curl_close($ch);
+	if ( $format != 'php' ) return $output ;
 	return unserialize ( $output ) ;
 }
 
@@ -588,21 +592,37 @@ function strtolower_utf8($string){
   return str_replace($convert_from, $convert_to, $string);
 } 
 
-function getSPARQL ( $cmd ) {
-	$sparql = "PREFIX wdt: <http://www.wikidata.org/prop/direct/>\n" ;
-	$sparql .= "PREFIX wd: <http://www.wikidata.org/entity/>\n" ;
-	$sparql .= "PREFIX wikibase: <http://wikiba.se/ontology#>\n" ;
-	$sparql .= "PREFIX p: <http://www.wikidata.org/prop/>\n" ;
+function getSPARQLprefixes () {
+	$sparql = '' ;
+#	$sparql .= "PREFIX wdt: <http://www.wikidata.org/prop/direct/>\n" ;
+#	$sparql .= "PREFIX wd: <http://www.wikidata.org/entity/>\n" ;
+#	$sparql .= "PREFIX wikibase: <http://wikiba.se/ontology#>\n" ;
+#	$sparql .= "PREFIX p: <http://www.wikidata.org/prop/>\n" ;
 	$sparql .= "PREFIX v: <http://www.wikidata.org/prop/statement/>\n" ;
 	$sparql .= "PREFIX q: <http://www.wikidata.org/prop/qualifier/>\n" ;
-	$sparql .= "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" ;
-	$sparql .= "PREFIX schema: <http://schema.org/>\n" ;
-	$sparql .= "PREFIX psv: <http://www.wikidata.org/prop/statement/value/>\n" ;
+#	$sparql .= "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" ;
+#	$sparql .= "PREFIX schema: <http://schema.org/>\n" ;
+#	$sparql .= "PREFIX psv: <http://www.wikidata.org/prop/statement/value/>\n" ;
+	return $sparql ;
+}
+
+function getSPARQL ( $cmd ) {
+	$sparql = getSPARQLprefixes() ;
 	$sparql .= $cmd ;
 #print "$sparql\n" ;
-	$url = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=" . urlencode($sparql) ;
-	return json_decode ( file_get_contents ( $url ) ) ;
+
+$ctx = stream_context_create(array('http'=>
+    array(
+        'timeout' => 1200,  //1200 Seconds is 20 Minutes
+    )
+));
+
+#	$url = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=" . urlencode($sparql) ;
+	$url = "https://query.wikidata.org/sparql?format=json&query=" . urlencode($sparql) ;
+	$fc = file_get_contents ( $url , false , $ctx ) ;
+	return json_decode ( $fc ) ;
 }
+
 
 function getSPARQLitems ( $cmd , $varname = 'q' ) {
 	$ret = array() ;
