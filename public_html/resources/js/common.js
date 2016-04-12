@@ -3,7 +3,8 @@ var flicker_license = {
 	'5' : 'Attribution-ShareAlike License' ,
 	'7' : 'No known copyright restrictions' ,
 	'8' : 'United States Government Work' ,
-	'9' : 'Cc-zero'
+	'9' : 'Cc-zero' ,
+	'10' : 'Flickr-public domain mark'
 }
 var flickr_api_key = 'd5abcf21d0111581ce258176f0ff92a1' ;
 

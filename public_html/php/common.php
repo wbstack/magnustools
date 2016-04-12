@@ -600,6 +600,8 @@ function getSPARQLprefixes () {
 #	$sparql .= "PREFIX p: <http://www.wikidata.org/prop/>\n" ;
 	$sparql .= "PREFIX v: <http://www.wikidata.org/prop/statement/>\n" ;
 	$sparql .= "PREFIX q: <http://www.wikidata.org/prop/qualifier/>\n" ;
+	$sparql .= "PREFIX ps: <http://www.wikidata.org/prop/statement/>\n" ;
+	$sparql .= "PREFIX pq: <http://www.wikidata.org/prop/qualifier/>\n" ;
 #	$sparql .= "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" ;
 #	$sparql .= "PREFIX schema: <http://schema.org/>\n" ;
 #	$sparql .= "PREFIX psv: <http://www.wikidata.org/prop/statement/value/>\n" ;

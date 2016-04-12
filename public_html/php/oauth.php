@@ -850,7 +850,7 @@ Claims are used like this:
 
 
 		$data = array ( 
-			'sitelinks' => array ( array ( "site" => $site ,"title" => $page ) )
+			'sitelinks' => array ( $site => array ( "site" => $site ,"title" => $page ) )
 		) ;
 		$m = array () ;
 		if ( preg_match ( '/^(.+)wiki$/' , $site , $m ) ) {
@@ -858,7 +858,7 @@ Claims are used like this:
 			$lang = $m[1] ;
 			if ( $lang == 'species' or $lang == 'meta' or $lang == 'wikidata' ) $lang = 'en' ; // Default language
 			if ( $lang == 'no' ) $lang = 'nb' ;
-			$data['labels'] = array ( array ( 'language' => $lang , 'value' => $nice_title ) ) ;
+			$data['labels'] = array ( $lang => array ( 'language' => $lang , 'value' => $nice_title ) ) ;
 		}
 //		print "<pre>" ; print_r ( json_encode ( $data ) ) ; print " </pre>" ; return true ;
 
@@ -875,6 +875,10 @@ Claims are used like this:
 		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
 		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
 
+		if ( isset ( $_REQUEST['test'] ) ) {
+			print "<pre>" ; print_r ( $params ) ; print "</pre>" ;
+		}
+		
 		$res = $this->doApiQuery( $params , $ch );
 
 		
