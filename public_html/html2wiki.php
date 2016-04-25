@@ -201,9 +201,9 @@ function print_form ( $html, $row_delim , $oneline , $escape , $otherhtml , $wik
     rows=\"15\" cols=\"80\" style=\"width:100%\"
     >$wiki</textarea><br />
 
-  <input type=\"submit\" value=\"Convert\"
+  <input type=\"submit\" class=\"btn btn-primary\" value=\"Convert\"
     accesskey=\"x\" title=\"Convert the HTML markup, accesskey 'X'\" />
-  <input type=\"reset\" value=\"Clear\"
+  <input type=\"reset\" class=\"btn\" value=\"Clear\"
     accesskey=\"r\" title=\"Clear the form, accesskey 'R'\" />
 </fieldset>
 </form>" ;

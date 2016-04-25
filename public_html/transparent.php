@@ -37,7 +37,7 @@ if ( isset ( $_REQUEST['doit'] ) ) {
 }
 
 print "<form method='post'>" ;
-print "<table border=1>" ;
+print "<table class='table'>" ;
 print "<tr><th>Project Language</th><td><input type='text' size=100 name='planguage' value='$planguage' /></td></tr>" ;
 print "<tr><th>Project</th><td><input type='text' size=100 name='project' value='$project' /></td></tr>" ;
 print "<tr><th>Other language</th><td><input type='text' size=100 name='tlanguage' value='$tlanguage' /></td></tr>" ;

@@ -11,6 +11,8 @@ set_time_limit ( 60 * 10 ) ; // Seconds
 define('CLI', PHP_SAPI === 'cli');
 ini_set('user_agent','Magnus labs tools'); # Fake user agent
 header("Connection: close");
+$index_file = '/data/project/magnustools/public_html/resources/html/dummy_header_bs4.html' ;
+#$index_file = '/data/project/magnustools/public_html/resources/html/dummy_header.html' ;
 $tools_webproxy = 'tools-webproxy' ;
 $tusc_url = "http://$tools_webproxy/tusc/tusc.php" ; // http://tools-webserver-01/ // tools.wmflabs.org
 $use_db_cache = false ;
@@ -19,6 +21,9 @@ $wdq_internal_url = 'http://wdq.wmflabs.org/api' ; // 'http://wikidata-wdq-mm.eq
 $pagepile_enabeled = true ; //isset($_REQUEST['pagepile_enabeled']) ;
 
 $petscan_note = "<div style='margin:3px;padding:3px;text-align:center;background-color:#d9edf7;'>Please try <a href='https://petscan.wmflabs.org/'>PetScan</a>, the designated successor to this tool!</div>" ;
+$petscan_note2 = "<div style='margin:3px;padding:3px;text-align:center;background-color:#FF4848;font-size:12pt;'><b>This tool will be replaced with <a href='https://petscan.wmflabs.org/'>PetScan</a> in the next few days!</b><br/>" ;
+$petscan_note2 .= "All links to this tool with URL parameters will be forwarded to PetScan, and should remain functional.<br/>" ;
+$petscan_note2 .= "Please add any blocking issues to the <a href='https://bitbucket.org/magnusmanske/petscan/issues?status=new&status=open'>PetScan bug tracker</a>.</div>" ;
 
 function myurlencode ( $t ) {
 	$t = str_replace ( " " , "_" , $t ) ;
@@ -184,11 +189,12 @@ function getPagesInCategory ( $db , $category , $depth = 0 , $namespace = 0 , $n
 
 
 function get_common_header ( $script , $title , $p = array() ) {
+	global $index_file ;
 	if ( !headers_sent() ) {
 		header('Content-type: text/html; charset=UTF-8'); // UTF8 test
 		header("Cache-Control: no-cache, must-revalidate");
 	}
-	$s = file_get_contents ( '/data/project/magnustools/public_html/resources/html/dummy_header.html' ) ;
+	$s = file_get_contents ( $index_file ) ;
 	if ( isset ( $p['style'] ) ) $s = str_replace ( '</style>' , $p['style'].'</style>' , $s ) ;
 	if ( isset ( $p['script'] ) ) $s = str_replace ( '</script>' , $p['script'].'</script>' , $s ) ;
 	
@@ -621,7 +627,8 @@ $ctx = stream_context_create(array('http'=>
 
 #	$url = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=" . urlencode($sparql) ;
 	$url = "https://query.wikidata.org/sparql?format=json&query=" . urlencode($sparql) ;
-	$fc = file_get_contents ( $url , false , $ctx ) ;
+	$fc = @file_get_contents ( $url , false , $ctx ) ;
+	if ( $fc === false ) return ; // Nope
 	return json_decode ( $fc ) ;
 }
 
