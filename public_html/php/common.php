@@ -11,7 +11,7 @@ set_time_limit ( 60 * 10 ) ; // Seconds
 define('CLI', PHP_SAPI === 'cli');
 ini_set('user_agent','Magnus labs tools'); # Fake user agent
 header("Connection: close");
-$index_file = '/data/project/magnustools/public_html/resources/html/dummy_header_bs4.html' ;
+#$index_file = '/data/project/magnustools/public_html/resources/html/dummy_header_bs4.html' ;
 #$index_file = '/data/project/magnustools/public_html/resources/html/dummy_header.html' ;
 $tools_webproxy = 'tools-webproxy' ;
 $tusc_url = "http://$tools_webproxy/tusc/tusc.php" ; // http://tools-webserver-01/ // tools.wmflabs.org
@@ -188,13 +188,26 @@ function getPagesInCategory ( $db , $category , $depth = 0 , $namespace = 0 , $n
 // Misc
 
 
+function load_common_header () {
+	$dir = '/data/project/magnustools/public_html/resources/html' ;
+	$f1 = file_get_contents ( "$dir/index_bs4.html" ) ;
+	$f2 = file_get_contents ( "$dir/menubar_bs4.html" ) ;
+
+	$f1 = preg_replace ( '/<body>.*/ms' , "<body>\n" , $f1 ) ;
+	$f1 = preg_replace ( '/<script src=".\/main.js"><\/script>\s*/' , '' , $f1 ) ;
+	$f3 = '<div id="main_content" class="container"><div class="row"><div class="col-sm-12" style="margin-bottom:20px;margin-top:10px;">' ;
+
+	return "$f1$f2$f3\n" ;
+}
+
 function get_common_header ( $script , $title , $p = array() ) {
 	global $index_file ;
 	if ( !headers_sent() ) {
 		header('Content-type: text/html; charset=UTF-8'); // UTF8 test
 		header("Cache-Control: no-cache, must-revalidate");
 	}
-	$s = file_get_contents ( $index_file ) ;
+//	$s = file_get_contents ( $index_file ) ;
+	$s = load_common_header() ;
 	if ( isset ( $p['style'] ) ) $s = str_replace ( '</style>' , $p['style'].'</style>' , $s ) ;
 	if ( isset ( $p['script'] ) ) $s = str_replace ( '</script>' , $p['script'].'</script>' , $s ) ;
 	
