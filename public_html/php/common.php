@@ -89,7 +89,7 @@ function openToolDB ( $dbname = '' , $server = '' , $force_user = '' ) {
 	else $dbname = "__$dbname" ;
 	if ( $force_user == '' ) $dbname = $mysql_user.$dbname;
 	else $dbname = $force_user.$dbname;
-	if ( $server == '' ) $server = "tools-db" ;
+	if ( $server == '' ) $server = "tools.labsdb" ; //"tools-db" ;
 	$db = new mysqli($server, $mysql_user, $mysql_password, $dbname);
 	if($db->connect_errno > 0) {
 		$o['msg'] = 'Unable to connect to database [' . $db->connect_error . ']';

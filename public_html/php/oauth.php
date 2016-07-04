@@ -401,6 +401,7 @@ class MW_OAuth {
 		$post_fields = '' ;
 		if ( $mode == 'upload' ) {
 			$post_fields = $post ;
+			$post_fields['file'] = new CurlFile($post['file'], 'application/octet-stream', $post['filename']);
 		} else {
 			$post_fields = http_build_query( $post ) ;
 		}
@@ -1299,11 +1300,11 @@ Claims are used like this:
 		$params = array(
 			'format' => 'json',
 			'action' => 'upload' ,
-			'filename' => $new_file_name ,
 			'comment' => $comment ,
 			'text' => $desc ,
 			'token' => $token ,
-			'file' => '@' . $tmpfile
+			'filename' => $new_file_name ,
+			'file' => $tmpfile // '@' . 
 		) ;
 		
 		if ( $ignorewarnings ) $params['ignorewarnings'] = 1 ;
