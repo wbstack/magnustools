@@ -611,6 +611,50 @@ function strtolower_utf8($string){
   return str_replace($convert_from, $convert_to, $string);
 } 
 
+function getMultipleURLsInParallel ( $urls ) {
+	$ret = array() ;
+	
+	$batch_size = 50 ;
+	$batches = array( array() ) ;
+	foreach ( $urls AS $k => $v ) {
+		if ( count($batches[count($batches)-1]) >= $batch_size ) $batches[] = array() ;
+		$batches[count($batches)-1][$k] = $v ;
+	}
+	
+	foreach ( $batches AS $batch_urls ) {
+	
+		$mh = curl_multi_init();
+		curl_multi_setopt  ( $mh , CURLMOPT_PIPELINING , 1 ) ;
+	//	curl_multi_setopt  ( $mh , CURLMOPT_MAX_TOTAL_CONNECTIONS , 5 ) ;
+		$ch = array() ;
+		foreach ( $batch_urls AS $key => $value ) {
+			$ch[$key] = curl_init($value);
+	//		curl_setopt($ch[$key], CURLOPT_NOBODY, true);
+	//		curl_setopt($ch[$key], CURLOPT_HEADER, true);
+			curl_setopt($ch[$key], CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch[$key], CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch[$key], CURLOPT_SSL_VERIFYHOST, false);
+			curl_multi_add_handle($mh,$ch[$key]);
+		}
+	
+		do {
+			curl_multi_exec($mh, $running);
+			curl_multi_select($mh);
+		} while ($running > 0);
+	
+		foreach(array_keys($ch) as $key){
+			$ret[$key] = curl_multi_getcontent($ch[$key]) ;
+			curl_multi_remove_handle($mh, $ch[$key]);
+		}
+	
+		curl_multi_close($mh);
+	}
+	
+	return $ret ;
+}
+
+
+
 function getSPARQLprefixes () {
 	$sparql = '' ;
 #	$sparql .= "PREFIX wdt: <http://www.wikidata.org/prop/direct/>\n" ;

@@ -122,8 +122,10 @@ switch ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : '' ) {
 	case 'checkauth':
 		if ( !checkAuth() ) error ( "Auth not OK: " . $oa->error ) ;
 		else {
-			if ( $botmode ) $out['error'] = 'OK' ;
-			else print "Auth OK!" ;
+			if ( $botmode ) {
+				$out['error'] = 'OK' ;
+				$out['data'] = $oa->getConsumerRights() ;
+			} else print "Auth OK!" ;
 		}
 		break;
 	case 'setpagetext':

@@ -170,6 +170,15 @@ class WikidataItemList {
 			$q = 'Q'.preg_replace('/\D/','',"$q") ;
 		}
 	}
+	
+	function parseEntities ( $j ) {
+		foreach ( $j->entities AS $q => $v ) {
+			if ( isset ( $this->items[$q] ) ) continue ; // Paranoia
+			$this->items[$q] = new WDI ;
+			$this->items[$q]->q = $q ;
+			$this->items[$q]->j = $v ;
+		}
+	}
 		
     function loadItems ( $list ) {
     	global $wikidata_api_url ;
@@ -183,17 +192,20 @@ class WikidataItemList {
     	
     	if ( count($qs) == 1 and count($qs[0]) == 0 ) return ;
     	
-    	foreach ( $qs AS $sublist ) {
+    	$urls = array() ;
+    	foreach ( $qs AS $k => $sublist ) {
     		if ( count ( $sublist ) == 0 ) continue ;
 			$url = "$wikidata_api_url?action=wbgetentities&ids=" . implode('|',$sublist) . "&format=json" ;
-			$j = json_decode ( file_get_contents ( $url ) ) ;
-			if ( !isset($j) or !isset($j->entities) ) continue ;
-			foreach ( $j->entities AS $q => $v ) {
-				$this->items[$q] = new WDI ;
-				$this->items[$q]->q = $q ;
-				$this->items[$q]->j = $v ;
-			}
+			$urls[$k] = $url ;
     	}
+    	
+    	$res = $this->getMultipleURLsInParallel ( $urls ) ;
+
+		foreach ( $res AS $k => $txt ) {
+			$j = json_decode ( $txt ) ;
+			if ( !isset($j) or !isset($j->entities) ) continue ;
+			$this->parseEntities ( $j ) ;
+		}
     }
     
     function loadItem ( $q ) {
@@ -216,6 +228,58 @@ class WikidataItemList {
     	return isset($this->items[$q]) ;
     }
 	
+	function loadItemByPage ( $page , $wiki ) {
+		$page = urlencode ( ucfirst ( str_replace ( ' ' , '_' , trim($page) ) ) ) ;
+		$url = "https://www.wikidata.org/w/api.php?action=wbgetentities&sites=$wiki&titles=$page&format=json" ;
+		$j = json_decode ( file_get_contents ( $url ) ) ;
+		if ( !isset($j) or !isset($j->entities) ) return false ;
+		$this->parseEntities ( $j ) ;
+		foreach ( $j->entities AS $q => $dummy ) {
+			return $q ;
+		}
+	}
+
+	function getMultipleURLsInParallel ( $urls ) {
+		$ret = array() ;
+	
+		$batch_size = 50 ;
+		$batches = array( array() ) ;
+		foreach ( $urls AS $k => $v ) {
+			if ( count($batches[count($batches)-1]) >= $batch_size ) $batches[] = array() ;
+			$batches[count($batches)-1][$k] = $v ;
+		}
+	
+		foreach ( $batches AS $batch_urls ) {
+	
+			$mh = curl_multi_init();
+			curl_multi_setopt  ( $mh , CURLMOPT_PIPELINING , 1 ) ;
+		//	curl_multi_setopt  ( $mh , CURLMOPT_MAX_TOTAL_CONNECTIONS , 5 ) ;
+			$ch = array() ;
+			foreach ( $batch_urls AS $key => $value ) {
+				$ch[$key] = curl_init($value);
+		//		curl_setopt($ch[$key], CURLOPT_NOBODY, true);
+		//		curl_setopt($ch[$key], CURLOPT_HEADER, true);
+				curl_setopt($ch[$key], CURLOPT_RETURNTRANSFER, true);
+				curl_setopt($ch[$key], CURLOPT_SSL_VERIFYPEER, false);
+				curl_setopt($ch[$key], CURLOPT_SSL_VERIFYHOST, false);
+				curl_multi_add_handle($mh,$ch[$key]);
+			}
+	
+			do {
+				curl_multi_exec($mh, $running);
+				curl_multi_select($mh);
+			} while ($running > 0);
+	
+			foreach(array_keys($ch) as $key){
+				$ret[$key] = curl_multi_getcontent($ch[$key]) ;
+				curl_multi_remove_handle($mh, $ch[$key]);
+			}
+	
+			curl_multi_close($mh);
+		}
+	
+		return $ret ;
+	}
 
 }
 
