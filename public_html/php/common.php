@@ -372,7 +372,8 @@ function get_wikipedia_article ( $lang , $title , $allow_redirect = true , $proj
 	# REDIRECT?
 	if ( $allow_redirect && strtoupper ( substr ( $text , 0 , 9 ) ) == "#REDIRECT" ) {
 		$text = substr ( $text , 9 ) ;
-		$text = array_shift ( explode ( "\n" , $text , 2 ) ) ;
+		$text = explode ( "\n" , $text , 2 ) ;
+		$text = array_shift ( $text ) ;
 		$text = str_replace ( "[[" , "" , $text ) ;
 		$text = str_replace ( "]]" , "" , $text ) ;
 		$text = ucfirst ( trim ( $text ) ) ;

@@ -18,6 +18,7 @@ class MW_OAuth {
 		
 		if ( $l == 'wikidata' ) $this->apiUrl = 'https://www.wikidata.org/w/api.php' ;
 		elseif ( $l == 'commons' ) $this->apiUrl = 'https://commons.wikimedia.org/w/api.php' ;
+		elseif ( $p == 'mediawiki' ) $this->apiUrl = 'https://www.mediawiki.org/w/api.php' ;
 		else $this->apiUrl = "https://$l.$p.org/w/api.php" ;
 
 		$this->loadIniFile() ;
@@ -1257,7 +1258,50 @@ Claims are used like this:
 		return true ;
 	}
 
+
+	function doUploadFromFile ( $local_file , $new_file_name , $desc , $comment , $ignorewarnings ) {
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $comment = isset($comment) ? trim("$desc #$tool_hashtag") : "#$tool_hashtag" ;
+	
+		$new_file_name = ucfirst ( str_replace ( ' ' , '_' , $new_file_name ) ) ;
+
+		// Next fetch the edit token
+		$ch = null;
+		$res = $this->doApiQuery( array(
+			'format' => 'json',
+			'action' => 'query' ,
+			'meta' => 'tokens'
+		), $ch );
+		if ( !isset( $res->query->tokens->csrftoken ) ) {
+			$this->error = 'Bad API response [uploadFromURL]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>' ;
+			return false ;
+		}
+		$token = $res->query->tokens->csrftoken;
+
+		$params = array(
+			'format' => 'json',
+			'action' => 'upload' ,
+			'comment' => $comment ,
+			'text' => $desc ,
+			'token' => $token ,
+			'filename' => $new_file_name ,
+			'file' => $local_file // '@' . 
+		) ;
 		
+		if ( $ignorewarnings ) $params['ignorewarnings'] = 1 ;
+		
+		$res = $this->doApiQuery( $params , $ch , 'upload' );
+
+		$this->last_res = $res ;
+		if ( $res->upload->result != 'Success' ) {
+			$this->error = $res->upload->result ;
+			return false ;
+		}
+
+		return true ;
+	}
+
+
 	function doUploadFromURL ( $url , $new_file_name , $desc , $comment , $ignorewarnings ) {
 		global $tool_hashtag ;
 		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $comment = isset($comment) ? trim("$desc #$tool_hashtag") : "#$tool_hashtag" ;
@@ -1272,16 +1316,6 @@ Claims are used like this:
 		$basedir = '/data/project/magnustools/tmp' ;
 		$tmpfile = tempnam ( $basedir , 'doUploadFromURL' ) ;
 		copy($url, $tmpfile) ;
-
-		if ( isset ( $_REQUEST['test'] ) ) {
-//			$new_file_name = utf8_decode ( $new_file_name ) ;
-			print "<hr/>$new_file_name<br/>\n" ;
-			print "$url<br/>\n" ;
-			print "Size: " . filesize($tmpfile) . "<br/>\n" ;
-			unlink ( $tmpfile ) ;
-			exit ( 0 ) ;
-		}
-		
 
 		// Next fetch the edit token
 		$ch = null;
@@ -1313,12 +1347,6 @@ Claims are used like this:
 
 		unlink ( $tmpfile ) ;
 		
-		if ( isset ( $_REQUEST['test'] ) ) {
-			print "<pre>" ; print_r ( $params ) ; print "</pre>" ;
-			print "<pre>" ; print_r ( $res ) ; print "</pre>" ;
-		}
-
-
 		$this->last_res = $res ;
 		if ( $res->upload->result != 'Success' ) {
 			$this->error = $res->upload->result ;
