@@ -793,7 +793,9 @@ Claims are used like this:
 		return true ;
 	}
 	
-	function createItem () {
+	function createItem ( $data = '' ) {
+	
+		if ( $data == '' ) $data = (object) array() ;
 	
 		// Next fetch the edit token
 		$ch = null;
@@ -813,7 +815,7 @@ Claims are used like this:
 			'format' => 'json',
 			'action' => 'wbeditentity',
 			'new' => 'item' ,
-			'data' => '{}' ,
+			'data' => json_encode ( $data ) ,
 			'token' => $token,
 			'bot' => 1
 		) ;
@@ -1166,6 +1168,7 @@ Claims are used like this:
 		$res = $this->doApiQuery( array(
 			'format' => 'json',
 			'action' => 'query' ,
+			'ignoreconflicts' => 'description' ,
 			'meta' => 'tokens'
 		), $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
@@ -1293,7 +1296,11 @@ Claims are used like this:
 		$res = $this->doApiQuery( $params , $ch , 'upload' );
 
 		$this->last_res = $res ;
-		if ( $res->upload->result != 'Success' ) {
+		if ( !isset($res->upload) ) {
+			$this->error = $res->error->info ;
+//		print_r ( $res ) ;
+			return false ;
+		} else if ( $res->upload->result != 'Success' ) {
 			$this->error = $res->upload->result ;
 			return false ;
 		}
