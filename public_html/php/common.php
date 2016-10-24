@@ -658,6 +658,16 @@ function getMultipleURLsInParallel ( $urls ) {
 
 function getSPARQLprefixes () {
 	$sparql = '' ;
+	
+	$toolname = basename($_SERVER["SCRIPT_FILENAME"], '.php') ;
+	if ( $toolname == '' or $toolname == 'index' or preg_match ( '/^api/' , $toolname ) ) {
+		$toolname = preg_replace ( '/^.+\.org\//' , '' , $_SERVER["SCRIPT_FILENAME"] ) ;
+		$toolname = preg_replace ( '/\/.*$/' , '' , $toolname ) ;
+	}
+	if ( $toolname != '' ) {
+		$sparql .= "#TOOL: $toolname\n" ;
+	}
+	
 #	$sparql .= "PREFIX wdt: <http://www.wikidata.org/prop/direct/>\n" ;
 #	$sparql .= "PREFIX wd: <http://www.wikidata.org/entity/>\n" ;
 #	$sparql .= "PREFIX wikibase: <http://wikiba.se/ontology#>\n" ;

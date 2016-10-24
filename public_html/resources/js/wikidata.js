@@ -619,6 +619,33 @@ function WikiData () {
 		}
 	}
 	
+	this.loadSPARQL = function ( query , callback ) {
+		var url = "https://query.wikidata.org/sparql?format=json&query=" + encodeURIComponent(query) ;
+		$.get ( url , function ( d ) {
+			callback ( d ) ;
+		} , 'json' ) . fail ( function () { callback() }  ) ;
+	}
+	
+	this.loadSPARQLitems = function ( query , callback ) {
+		var self = this ;
+		self.loadSPARQL ( query , function ( d ) {
+			if ( typeof d == 'undefined' ) {
+				callback ( [] ) ;
+				return ;
+			}
+			var tmp = [] ;
+			var varname = d.head.vars[0] ;
+			$.each ( d.results.bindings , function ( k , v ) {
+				var x = v[varname] ;
+				if ( typeof x == 'undefined' ) return ;
+				if ( x.type != 'uri' ) return ;
+				var q = x.value.replace ( /^.+\/Q/ , 'Q' ) ;
+				tmp.push ( q ) ;
+			} ) ;
+			callback ( tmp ) ;
+		} ) ;
+	}
+	
 }
 
 if ( typeof exports != 'undefined' ) exports.wd = new WikiData() ;

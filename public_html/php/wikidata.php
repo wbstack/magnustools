@@ -5,10 +5,10 @@ $wikidata_api_url = 'https://www.wikidata.org/w/api.php' ;
 
 class WDI {
 
-	var $q ;
-	var $j ;
+	public $q ;
+	public $j ;
 	
-	function WDI ( $q = '' ) {
+	public function WDI ( $q = '' ) {
 		global $wikidata_api_url ;
 		if ( $q != '' ) {
 			$q = 'Q' . preg_replace ( '/\D/' , '' , "$q" ) ;
@@ -19,11 +19,11 @@ class WDI {
 		}
 	}
 	
-	function getQ () {
+	public function getQ () {
 		return $this->q ;
 	}
 	
-	function getLabel ( $lang = '' ) {
+	public function getLabel ( $lang = '' ) {
 		global $wikidata_preferred_langs ;
 		if ( !isset ( $this->j->labels ) ) return $this->q ;
 		if ( isset ( $this->j->labels->$lang ) ) return $this->j->labels->$lang->value ; // Shortcut
@@ -41,7 +41,7 @@ class WDI {
 		return $best ;
 	}
 	
-	function getDesc ( $lang = '' ) {
+	public function getDesc ( $lang = '' ) {
 		global $wikidata_preferred_langs ;
 		if ( !isset ( $this->j->descriptions ) ) return '' ;
 		if ( isset ( $this->j->descriptions->$lang ) ) return $this->j->descriptions->$lang->value ; // Shortcut
@@ -58,7 +58,7 @@ class WDI {
 		return $best ;
 	}
 	
-	function getTarget ( $claim ) {
+	public function getTarget ( $claim ) {
 		$nid = 'numeric-id' ;
 		if ( !isset($claim->mainsnak) ) return false ;
 		if ( !isset($claim->mainsnak->datavalue) ) return false ;
@@ -67,7 +67,7 @@ class WDI {
 		return 'Q'.$claim->mainsnak->datavalue->value->$nid ;
 	}
 	
-	function hasLabel ( $label ) {
+	public function hasLabel ( $label ) {
 		if ( !isset($this->j->labels) ) return false ;
 		foreach ( $this->j->labels AS $lab ) {
 			if ( $lab->value == $label ) return true ;
@@ -75,19 +75,19 @@ class WDI {
 		return false ;
 	}
 	
-	function hasExternalSource ( $claim ) {
+	public function hasExternalSource ( $claim ) {
 		return false ; // DUMMY
 	}
 
-	function sanitizeP ( $p ) {
+	public function sanitizeP ( $p ) {
 		return 'P' . preg_replace ( '/\D/' , '' , "$p" ) ;
 	}
 
-	function sanitizeQ ( &$q ) {
+	public function sanitizeQ ( &$q ) {
 		$q = 'Q'.preg_replace('/\D/','',"$q") ;
 	}
 	
-	function getStrings ( $p ) {
+	public function getStrings ( $p ) {
 		$ret = array() ;
 		if ( !$this->hasClaims($p) ) return $ret ;
 		$claims = $this->getClaims($p) ;
@@ -102,13 +102,13 @@ class WDI {
 		return $ret ;
 	}
 	
-	function getFirstString ( $p ) {
+	public function getFirstString ( $p ) {
 		$strings = $this->getStrings ( $p ) ;
 		if ( count($strings) == 0 ) return '' ;
 		return $strings[0] ;
 	}
 
-	function getClaims ( $p ) {
+	public function getClaims ( $p ) {
 		$ret = array() ;
 		$p = $this->sanitizeP ( $p ) ;
 		if ( !isset($this->j) ) return $ret ;
@@ -117,7 +117,7 @@ class WDI {
 		return $this->j->claims->$p ;
 	}
 	
-	function hasTarget ( $p , $q ) {
+	public function hasTarget ( $p , $q ) {
 		$this->sanitizeP ( $p ) ;
 		$this->sanitizeQ ( $q ) ;
 		$claims = $this->getClaims($p) ;
@@ -128,18 +128,26 @@ class WDI {
 		return false ;
 	}
 	
-	function hasClaims ( $p ) {
+	public function hasClaims ( $p ) {
 		return count($this->getClaims($p)) > 0 ;
 	}
 	
-	function getSitelink ( $wiki ) {
+	public function getSitelink ( $wiki ) {
 		if ( !isset($this->j) ) return ;
 		if ( !isset($this->j->sitelinks) ) return ;
 		if ( !isset($this->j->sitelinks->$wiki) ) return ;
 		return $this->j->sitelinks->$wiki->title ;
 	}
 	
-	function getProps () {
+	public function getSitelinks () {
+		$ret = array() ;
+		if ( !isset($this->j) ) return $ret ;
+		if ( !isset($this->j->sitelinks) ) return $ret ;
+		foreach ( $this->j->sitelinks AS $wiki => $x ) $ret[$wiki] = $x->title ;
+		return $ret ;
+	}
+	
+	public function getProps () {
 		$ret = array() ;
 		if ( !isset($this->j) ) return $ret ;
 		if ( !isset($this->j->claims) ) return $ret ;
@@ -147,7 +155,7 @@ class WDI {
 		return $ret ;
 	}
 	
-	function getClaimByID ( $id ) {
+	public function getClaimByID ( $id ) {
 		if ( !isset($this->j->claims) ) return ;
 		foreach ( $this->j->claims AS $p => $v ) {
 			foreach ( $v AS $dummy => $claim ) {
@@ -161,9 +169,9 @@ class WDI {
 
 class WikidataItemList {
 
-	var $items = array() ;
+	protected $items = array() ;
 
-	function sanitizeQ ( &$q ) {
+	public function sanitizeQ ( &$q ) {
 		if ( preg_match ( '/^P\d+$/i' , "$q" ) ) {
 			$q = strtoupper ( $q ) ;
 		} else {
@@ -171,7 +179,7 @@ class WikidataItemList {
 		}
 	}
 	
-	function parseEntities ( $j ) {
+	protected function parseEntities ( $j ) {
 		foreach ( $j->entities AS $q => $v ) {
 			if ( isset ( $this->items[$q] ) ) continue ; // Paranoia
 			$this->items[$q] = new WDI ;
@@ -228,7 +236,7 @@ class WikidataItemList {
     	return isset($this->items[$q]) ;
     }
 	
-	function loadItemByPage ( $page , $wiki ) {
+	public function loadItemByPage ( $page , $wiki ) {
 		$page = urlencode ( ucfirst ( str_replace ( ' ' , '_' , trim($page) ) ) ) ;
 		$url = "https://www.wikidata.org/w/api.php?action=wbgetentities&sites=$wiki&titles=$page&format=json" ;
 		$j = json_decode ( file_get_contents ( $url ) ) ;
@@ -239,7 +247,7 @@ class WikidataItemList {
 		}
 	}
 
-	function getMultipleURLsInParallel ( $urls ) {
+	protected function getMultipleURLsInParallel ( $urls ) {
 		$ret = array() ;
 	
 		$batch_size = 50 ;
