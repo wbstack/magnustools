@@ -210,6 +210,7 @@ function get_common_header ( $script , $title , $p = array() ) {
 	$s = load_common_header() ;
 	if ( isset ( $p['style'] ) ) $s = str_replace ( '</style>' , $p['style'].'</style>' , $s ) ;
 	if ( isset ( $p['script'] ) ) $s = str_replace ( '</script>' , $p['script'].'</script>' , $s ) ;
+	if ( isset ( $p['title'] ) ) $s = str_replace ( '</head>' , "<title>{$p['title']}</title></head>" , $s ) ;
 	
 	$misc = '' ;
 	if ( isset ( $p['link'] ) ) $misc .= $p['link'] ;

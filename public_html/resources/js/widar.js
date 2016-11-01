@@ -51,6 +51,20 @@ function WiDaR ( callback ) {
 		} ) ;
 	}
 	
+	this.escapeAttribute = function ( s ) {
+		return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;').replace(/\//g,'&#x2F;') ;
+	}
+	
+	this.getUserLink = function ( text ) {
+		var me = this ;
+		if ( me.is_logged_in ) {
+			var h = "<a target='_blank' href='//www.wikidata.org/wiki/User:" + me.escapeAttribute ( encodeURIComponent ( me.getUserName() ) ) + "'>" + me.getUserName() + "</a>" ;
+			return h ;
+		} else {
+			return me.getLoginLink ( text ) ;
+		}
+	}
+	
 	
 	this.getInfo() ;
 }
