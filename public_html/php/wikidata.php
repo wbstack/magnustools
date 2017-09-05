@@ -23,10 +23,11 @@ class WDI {
 		return $this->q ;
 	}
 	
-	public function getLabel ( $lang = '' ) {
+	public function getLabel ( $lang = '' , $strict = false ) {
 		global $wikidata_preferred_langs ;
 		if ( !isset ( $this->j->labels ) ) return $this->q ;
 		if ( isset ( $this->j->labels->$lang ) ) return $this->j->labels->$lang->value ; // Shortcut
+		if ( $strict ) return $this->q ;
 		
 		$score = 9999 ;
 		$best = $this->q ;
@@ -41,10 +42,20 @@ class WDI {
 		return $best ;
 	}
 	
-	public function getDesc ( $lang = '' ) {
+	public function getAllAliases () {
+		$ret = array() ;
+		if ( !isset($this->j->aliases) ) return $ret ;
+		foreach ( $this->j->aliases AS $lang => $al ) {
+			foreach ( $al AS $v ) $ret[$lang][] = $v->value ;
+		}
+		return $ret ;
+	}
+	
+	public function getDesc ( $lang = '' , $strict = false ) {
 		global $wikidata_preferred_langs ;
 		if ( !isset ( $this->j->descriptions ) ) return '' ;
 		if ( isset ( $this->j->descriptions->$lang ) ) return $this->j->descriptions->$lang->value ; // Shortcut
+		if ( $strict ) return '' ;
 		
 		$score = 9999 ;
 		$best = '' ;
@@ -177,6 +188,29 @@ class WikidataItemList {
 		} else {
 			$q = 'Q'.preg_replace('/\D/','',"$q") ;
 		}
+	}
+	
+	public function updateItems ( $list ) {
+		$last_revs = array() ;
+		foreach ( $list AS $q ) {
+			if ( !$this->hasItem ( $q ) ) continue ;
+			$this->sanitizeQ ( $q ) ;
+			$last_revs[$q] = $this->items[$q]->j->lastrevid ;
+			unset ( $this->items[$q] ) ;
+		}
+		$this->loadItems ( $list ) ;
+
+		return ;
+		// Paranoia
+		foreach ( $list AS $q ) {
+			if ( !$this->hasItem ( $q ) ) continue ;
+			$this->sanitizeQ ( $q ) ;
+			if ( $last_revs[$q] == $this->items[$q]->j->lastrevid ) print "<pre>WARNING! Caching issue with $q</pre>" ;
+		}
+	}
+
+	public function updateItem ( $q ) {
+		$this->updateItems ( array ( $q ) ) ;
 	}
 	
 	protected function parseEntities ( $j ) {

@@ -10,7 +10,7 @@ set_time_limit ( 60 * 10 ) ; // Seconds
 
 define('CLI', PHP_SAPI === 'cli');
 ini_set('user_agent','Magnus labs tools'); # Fake user agent
-header("Connection: close");
+if ( !isset($noheaderwhatsoever) ) header("Connection: close");
 #$index_file = '/data/project/magnustools/public_html/resources/html/dummy_header_bs4.html' ;
 #$index_file = '/data/project/magnustools/public_html/resources/html/dummy_header.html' ;
 $tools_webproxy = 'tools-webproxy' ;
@@ -19,6 +19,7 @@ $use_db_cache = false ;
 $common_db_cache = array() ;
 $wdq_internal_url = 'http://wdq.wmflabs.org/api' ; // 'http://wikidata-wdq-mm.eqiad.wmflabs/api'
 $pagepile_enabeled = true ; //isset($_REQUEST['pagepile_enabeled']) ;
+$maxlag = 5 ; // https://www.mediawiki.org/wiki/Manual:Maxlag_parameter
 
 $petscan_note = "<div style='margin:3px;padding:3px;text-align:center;background-color:#d9edf7;'>Please try <a href='https://petscan.wmflabs.org/'>PetScan</a>, the designated successor to this tool!</div>" ;
 $petscan_note2 = "<div style='margin:3px;padding:3px;text-align:center;background-color:#FF4848;font-size:12pt;'><b>This tool will be replaced with <a href='https://petscan.wmflabs.org/'>PetScan</a> in the next few days!</b><br/>" ;
@@ -43,7 +44,9 @@ function getWebserverForWiki ( $wiki ) {
 }
 
 function escape_attribute ( $s ) {
-	return preg_replace ( "/'/" , '&quot;' , $s ) ;
+	$ret = preg_replace ( "/\"/" , '&quot;' , $s ) ;
+	$ret = preg_replace ( "/'/" , '&apos;' , $ret ) ;
+	return $ret ;
 }
 
 function getDBpassword () {
@@ -256,6 +259,7 @@ function do_post_request($url, $data, $optional_headers = null)
 
 
 function verify_tusc () {
+return false ; // TUSC deactivated
 	global $tusc_user , $tusc_password , $tusc_url ;
 	if ( $tusc_user == '' ) return false ;
 	if ( $tusc_password == '' ) return false ;
@@ -275,6 +279,7 @@ function verify_tusc () {
 }
 
 function verify_tusc_detail () {
+return false ; // TUSC deactivated
 	global $tusc_user , $tusc_password , $tusc_url ;
 	if ( $tusc_user == '' ) return false ;
 	if ( $tusc_password == '' ) return false ;
@@ -697,6 +702,12 @@ $ctx = stream_context_create(array('http'=>
 #	$url = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=" . urlencode($sparql) ;
 	$url = "https://query.wikidata.org/sparql?format=json&query=" . urlencode($sparql) ;
 	$fc = @file_get_contents ( $url , false , $ctx ) ;
+	
+	if ( preg_match ( '/429/' , $http_response_header[0] ) ) {
+		sleep ( 5 ) ;
+		return getSPARQL ( $cmd ) ;
+	}
+#	var_dump ( $http_response_header ) ;
 	if ( $fc === false ) return ; // Nope
 	return json_decode ( $fc ) ;
 }

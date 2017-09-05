@@ -15,7 +15,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 	
 	this.getURL = function () {
 		if ( typeof(this.raw) == 'undefined' ) return '' ;
-		var ret = "//www.wikidata.org/wiki/" ;
+		var ret = "https://www.wikidata.org/wiki/" ;
 		ret += this.raw.title ;
 		return ret ;
 	}
@@ -340,7 +340,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 function WikiData () {
 
 	// Variables
-	this.api = '//www.wikidata.org/w/api.php?callback=?' ;
+	this.api = 'https://www.wikidata.org/w/api.php?callback=?' ;
 	this.max_get_entities = 50 ;
 	this.max_get_entities_smaller = 25 ;
 	this.language = 'en' ; // Default
@@ -626,6 +626,10 @@ function WikiData () {
 		} , 'json' ) . fail ( function () { callback() }  ) ;
 	}
 	
+	this.itemFromBinding = function ( x ) {
+		return x.value.replace ( /^.+\/Q/ , '' ) ;
+	}
+	
 	this.loadSPARQLitems = function ( query , callback ) {
 		var self = this ;
 		self.loadSPARQL ( query , function ( d ) {
@@ -639,7 +643,7 @@ function WikiData () {
 				var x = v[varname] ;
 				if ( typeof x == 'undefined' ) return ;
 				if ( x.type != 'uri' ) return ;
-				var q = x.value.replace ( /^.+\/Q/ , 'Q' ) ;
+				var q = 'Q' + self.itemFromBinding ( x ) ; // x.value.replace ( /^.+\/Q/ , 'Q' ) ;
 				tmp.push ( q ) ;
 			} ) ;
 			callback ( tmp ) ;

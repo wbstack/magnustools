@@ -104,6 +104,11 @@ class MW_OAuth {
 		curl_setopt( $ch, CURLOPT_HEADER, 0 );
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
 		$data = curl_exec( $ch );
+
+		if ( isset ( $_REQUEST['test'] ) ) {
+			print "<h1>LOGIN</h1><pre>" ; print_r ( $data ) ; print "</pre></hr>" ;
+		}
+
 		if ( !$data ) {
 //			header( "HTTP/1.1 500 Internal Server Error" );
 			echo 'Curl error: ' . htmlspecialchars( curl_error( $ch ) );
@@ -257,10 +262,12 @@ class MW_OAuth {
 		// Then we send the user off to authorize
 		$url = $this->mwOAuthUrl . '/authorize';
 		$url .= strpos( $url, '?' ) ? '&' : '?';
-		$url .= http_build_query( array(
+		$arr = array(
 			'oauth_token' => $token->key,
 			'oauth_consumer_key' => $this->gConsumerKey,
-		) );
+		) ;
+		if ( $callback != '' ) $arr['callback'] = $callback ;
+		$url .= http_build_query( $arr );
 		header( "Location: $url" );
 		echo 'Please see <a href="' . htmlspecialchars( $url ) . '">' . htmlspecialchars( $url ) . '</a>';
 	}
@@ -364,6 +371,10 @@ class MW_OAuth {
 	 * @return array API results
 	 */
 	function doApiQuery( $post, &$ch = null , $mode = '' ) {
+		global $maxlag ;
+		if ( !isset($maxlag) ) $maxlag = 5 ;
+		$post['maxlag'] = $maxlag ;
+		
 		$headerArr = array(
 			// OAuth information
 			'oauth_consumer_key' => $this->gConsumerKey,
@@ -375,6 +386,13 @@ class MW_OAuth {
 			// We're using secret key signatures here.
 			'oauth_signature_method' => 'HMAC-SHA1',
 		);
+
+		if ( isset ( $_REQUEST['test'] ) ) {
+			print "<pre>" ;
+			print "!!\n" ;
+//			print_r ( $headerArr ) ;
+			print "</pre>" ;
+		}
 		
 		$to_sign = '' ;
 		if ( $mode == 'upload' ) {
@@ -420,7 +438,8 @@ class MW_OAuth {
 
 		if ( isset ( $_REQUEST['test'] ) ) {
 			print "<hr/><h3>API query</h3>" ;
-			print "Header:<pre>" ; print_r ( $header ) ; print "</pre>" ;
+//			print "URL:<pre>$url</pre>" ;
+//			print "Header:<pre>" ; print_r ( $header ) ; print "</pre>" ;
 			print "Payload:<pre>" ; print_r ( $post ) ; print "</pre>" ;
 			print "Result:<pre>" ; print_r ( $data ) ; print "</pre>" ;
 			print "<hr/>" ;
@@ -452,6 +471,14 @@ class MW_OAuth {
 			print "<pre>" ; print var_export ( $ch , 1 ) ; print "</pre>" ;
 			exit(0);
 		}
+		
+		# maxlag
+		if ( isset($ret->error) and isset($ret->error->code) and $ret->error->code == 'maxlag' ) {
+			sleep ( $maxlag ) ;
+			$ch = null ;
+			$ret = $this->doApiQuery( $post, $ch , '' ) ;
+		}
+		
 		return $ret ;
 	}
 

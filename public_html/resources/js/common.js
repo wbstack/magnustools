@@ -1,3 +1,6 @@
+// Try to enforce https
+if (location.protocol != 'https:') location.href = 'https:' + window.location.href.substring(window.location.protocol.length);
+
 var flicker_license = {
 	'4' : 'Attribution License' ,
 	'5' : 'Attribution-ShareAlike License' ,
