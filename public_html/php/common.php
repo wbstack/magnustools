@@ -102,17 +102,17 @@ function openToolDB ( $dbname = '' , $server = '' , $force_user = '' ) {
 	return $db ;
 }
 
-function openDBwiki ( $wiki ) {
+function openDBwiki ( $wiki , $slow_queries = false ) {
 	preg_match ( '/^(.+)(wik.+)$/' , $wiki , $m ) ;
 	if ( $m == null ) {
 		print "Cannot parse $wiki\n" ;
 		return ;
 	}
 	if ( $m[2] == 'wiki' ) $m[2] = 'wikipedia' ;
-	return openDB ( $m[1] , $m[2] ) ;
+	return openDB ( $m[1] , $m[2] , $slow_queries ) ;
 }
 
-function openDB ( $language , $project ) {
+function openDB ( $language , $project , $slow_queries = false ) {
 	global $mysql_user , $mysql_password , $o , $common_db_cache , $use_db_cache ;
 	
 	$db_key = "$language.$project" ;
@@ -120,11 +120,29 @@ function openDB ( $language , $project ) {
 	
 	getDBpassword() ;
 	$dbname = getDBname ( $language , $project ) ;
-
-	$server = substr( $dbname, 0, -2 ) . '.labsdb';
-//$server = 'c3.labsdb' ; # TEMPORARY HACK TO BYPASS BROKEN labs1002 SERVER
 	
+	$servers = array (
+		'.web.db.svc.eqiad.wmflabs' ,
+		'.analytics.db.svc.eqiad.wmflabs' ,
+		'.labsdb'
+	) ;
+
+	# Try optimal server
+	$server = substr( $dbname, 0, -2 ) . ( $slow_queries ? $servers[1] : $servers[0] ) ;
 	$db = new mysqli($server, $mysql_user, $mysql_password, $dbname);
+	
+	# Try the other server
+	if($db->connect_errno > 0 ) {
+		$server = substr( $dbname, 0, -2 ) . ( $slow_queries ? $servers[0] : $servers[1] ) ;
+		$db = new mysqli($server, $mysql_user, $mysql_password, $dbname);
+	}
+
+	# Try the old server as fallback
+	if($db->connect_errno > 0) {
+		$server = substr( $dbname, 0, -2 ) . $servers[2];
+		$db = new mysqli($server, $mysql_user, $mysql_password, $dbname);
+	}
+	
 	if($db->connect_errno > 0) {
 		$o['msg'] = 'Unable to connect to database [' . $db->connect_error . ']';
 		$o['status'] = 'ERROR' ;
