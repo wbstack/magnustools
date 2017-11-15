@@ -267,10 +267,8 @@ final class ToolforgeCommon {
 
 // CURL
 
-	// Takes a URL and an array with POST parameters, a format string (optionally)
-	// Returns raw content, or php_unserialized contant
-	function doPostRequest ( $url , $params = [] , $format = 'php' ) {
-		$params['format'] = $format ;
+	// Takes a URL and an array with POST parameters
+	function doPostRequest ( $url , $params = [] ) {
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookiejar);
 		curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookiejar);
@@ -282,8 +280,7 @@ final class ToolforgeCommon {
 		$output = curl_exec($ch);
 		$info = curl_getinfo($ch);
 		curl_close($ch);
-		if ( $format != 'php' ) return $output ;
-		return unserialize ( $output ) ;
+		return $output ;
 	}
 
 
@@ -338,7 +335,7 @@ final class ToolforgeCommon {
 
 		$ctx = stream_context_create(array('http'=>
 			array(
-				'timeout' => 1200,  //1200 Seconds is 20 Minutes
+				'timeout' => 1200,  //1200 seconds is 20 minutes
 			)
 		));
 
@@ -360,7 +357,7 @@ final class ToolforgeCommon {
 	// Returns an array of strings, usually Q IDs
 	public function getSPARQLitems ( $cmd , $varname = 'q' ) {
 		$ret = array() ;
-		$j = getSPARQL ( $cmd ) ;
+		$j = $this->getSPARQL ( $cmd ) ;
 		if ( !isset($j->results) or !isset($j->results->bindings) or count($j->results->bindings) == 0 ) return $ret ;
 		foreach ( $j->results->bindings AS $v ) {
 			$ret[] = preg_replace ( '/^.+\/([A-Z]\d+)$/' , '$1' , $v->$varname->value ) ;

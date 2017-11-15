@@ -43,7 +43,7 @@ final class ToolforgeCommonTest extends TestCase {
 	
 	public function testCanDoPostRequest() { //:void
 		$tfc = new ToolforgeCommon() ;
-		$s = $tfc->doPostRequest ( $this->test_url , [] , '' ) ;
+		$s = $tfc->doPostRequest ( $this->test_url , [] ) ;
 		$s = trim ( $s ) ;
 		$this->assertEquals ( $s , 'THIS IS A TEST!' ) ;
 	}
@@ -55,6 +55,14 @@ final class ToolforgeCommonTest extends TestCase {
 //		$this->assertEquals ( $s , 'THIS IS A TEST!' ) ; $result['testing']
 		$s = trim ( $result['testing'] ) ;
 		$this->assertEquals ( $s , 'THIS IS A TEST!' ) ;
+	}
+	
+	public function testCanDoSPARQL() { //:void
+		$tfc = new ToolforgeCommon() ;
+		$sparql = 'SELECT ?q { ?q wdt:P214 "113230702" }' ;
+		$items = $tfc->getSPARQLitems ( $sparql ) ;
+		$this->assertEquals ( count($items) , 1 ) ;
+		$this->assertEquals ( $items[0] , 'Q42' ) ;
 	}
 	
 	// TODO category tree
