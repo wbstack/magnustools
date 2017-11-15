@@ -500,6 +500,7 @@ var wikiDataCache = {
 		wikinews : '.n' ,
 		wikimedia : '.m' ,
 		wikiversity : '.v' ,
+		wikivoyage : '' ,
 		mediawiki : '.w'
 	} ,
 	ensureSiteInfo : function ( list , callback ) {

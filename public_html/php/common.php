@@ -69,6 +69,7 @@ function getDBname ( $language , $project ) {
 	if ( $language == 'commons' ) $ret = 'commonswiki_p' ;
 	elseif ( $language == 'wikidata' || $project == 'wikidata' ) $ret = 'wikidatawiki_p' ;
 	elseif ( $language == 'mediawiki' || $project == 'mediawiki' ) $ret = 'mediawikiwiki_p' ;
+	elseif ( $language == 'species' || $project == 'wikimedia' ) $ret = 'specieswiki_p' ;
 	elseif ( $language == 'meta' && $project == 'wikimedia' ) $ret = 'metawiki_p' ;
 	elseif ( $project == 'wikipedia' ) $ret .= 'wiki_p' ;
 	elseif ( $project == 'wikisource' ) $ret .= 'wikisource_p' ;
@@ -114,7 +115,7 @@ function openDBwiki ( $wiki , $slow_queries = false ) {
 
 function openDB ( $language , $project , $slow_queries = false ) {
 	global $mysql_user , $mysql_password , $o , $common_db_cache , $use_db_cache ;
-	
+
 	$db_key = "$language.$project" ;
 	if ( isset ( $common_db_cache[$db_key] ) ) return $common_db_cache[$db_key] ;
 	
@@ -163,6 +164,20 @@ function make_db_safe ( &$s , $fixup = false ) {
 	$s = get_db_safe ( $s , $fixup ) ;
 }
 
+function getSQL ( &$db , &$sql , $max_tries = 1 , $message = '' ) {
+	while ( $max_tries > 0 ) {
+		while ( !@$db->ping() ) {
+//			print "RECONNECTING..." ;
+			sleep ( 1 ) ;
+			@$db->connect() ;
+		}
+		if($ret = @$db->query($sql)) return $ret ;
+		$max_tries-- ;
+	}
+	die('There was an error running the query [' . $db->error . ']'."\n$sql\n$message\n");
+}
+
+
 function findSubcats ( $db , $root , &$subcats , $depth = -1 ) {
 	global $testing ;
 	$check = array() ;
@@ -174,14 +189,12 @@ function findSubcats ( $db , $root , &$subcats , $depth = -1 ) {
 	}
 	if ( count ( $c ) == 0 ) return ;
 	if ( $depth == 0 ) return ;
-	$sql = "select distinct page_title from page,categorylinks where page_id=cl_from and cl_to IN ('" . implode ( "','" , $c ) . "') and cl_type='subcat'" ;
-	if(!$result = $db->query($sql)) die('There was an error running the query [' . $db->error . ']');
-#	if ( $testing ) print "<pre>$depth : $sql</pre>" ;
+	$sql = "SELECT DISTINCT page_title FROM page,categorylinks WHERE page_id=cl_from AND cl_to IN ('" . implode ( "','" , $c ) . "') AND cl_type='subcat'" ;
+	$result = getSQL ( $db , $sql , 2 ) ;
 	while($row = $result->fetch_assoc()){
 		if ( isset ( $subcats[$row['page_title']] ) ) continue ;
 		$check[] = $row['page_title'] ;
 	}
-#	if ( $testing ) print_r ( $check ) ;
 	if ( count ( $check ) == 0 ) return ;
 	findSubcats ( $db , $check , $subcats , $depth - 1 ) ;
 }
@@ -197,7 +210,7 @@ function getPagesInCategory ( $db , $category , $depth = 0 , $namespace = 0 , $n
 	$sql = "SELECT DISTINCT page_title FROM page,categorylinks WHERE cl_from=page_id AND page_namespace=$namespace AND cl_to IN ('" . implode("','",$cats) . "')" ;
 	if ( $no_redirects ) $sql .= " AND page_is_redirect=0" ;
 
-	if(!$result = $db->query($sql)) die('There was an error running the query [' . $db->error . ']');
+	$result = getSQL ( $db , $sql , 2 ) ;
 	while($o = $result->fetch_object()){
 		$ret[$o->page_title] = $o->page_title ;
 	}
@@ -493,7 +506,7 @@ function db_get_user_images ( $username , $db ) {
 
 	$ret = array () ;
 	$sql = "SELECT  * FROM image WHERE img_user_text=\"{$username}\"" ;
-	if(!$result = $db->query($sql)) die('There was an error running the query [' . $db->error . ']');
+	$result = getSQL ( $db , $sql ) ;
 	while($o = $result->fetch_object()){
 		$ret[$o->img_name] = $o ;
 	}
@@ -636,10 +649,9 @@ function strtolower_utf8($string){
   return str_replace($convert_from, $convert_to, $string);
 } 
 
-function getMultipleURLsInParallel ( $urls ) {
+function getMultipleURLsInParallel ( $urls , $batch_size = 50 ) {
 	$ret = array() ;
 	
-	$batch_size = 50 ;
 	$batches = array( array() ) ;
 	foreach ( $urls AS $k => $v ) {
 		if ( count($batches[count($batches)-1]) >= $batch_size ) $batches[] = array() ;
@@ -656,6 +668,7 @@ function getMultipleURLsInParallel ( $urls ) {
 			$ch[$key] = curl_init($value);
 	//		curl_setopt($ch[$key], CURLOPT_NOBODY, true);
 	//		curl_setopt($ch[$key], CURLOPT_HEADER, true);
+			curl_setopt($ch[$key], CURLOPT_USERAGENT, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:57.0) Gecko/20100101 Firefox/57.0");
 			curl_setopt($ch[$key], CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($ch[$key], CURLOPT_SSL_VERIFYPEER, false);
 			curl_setopt($ch[$key], CURLOPT_SSL_VERIFYHOST, false);
@@ -682,7 +695,7 @@ function getMultipleURLsInParallel ( $urls ) {
 
 function getSPARQLprefixes () {
 	$sparql = '' ;
-	
+
 	$toolname = basename($_SERVER["SCRIPT_FILENAME"], '.php') ;
 	if ( $toolname == '' or $toolname == 'index' or preg_match ( '/^api/' , $toolname ) ) {
 		$toolname = preg_replace ( '/^.+\.org\//' , '' , $_SERVER["SCRIPT_FILENAME"] ) ;
@@ -691,15 +704,15 @@ function getSPARQLprefixes () {
 	if ( $toolname != '' ) {
 		$sparql .= "#TOOL: $toolname\n" ;
 	}
-	
+
 #	$sparql .= "PREFIX wdt: <http://www.wikidata.org/prop/direct/>\n" ;
 #	$sparql .= "PREFIX wd: <http://www.wikidata.org/entity/>\n" ;
 #	$sparql .= "PREFIX wikibase: <http://wikiba.se/ontology#>\n" ;
 #	$sparql .= "PREFIX p: <http://www.wikidata.org/prop/>\n" ;
-	$sparql .= "PREFIX v: <http://www.wikidata.org/prop/statement/>\n" ;
-	$sparql .= "PREFIX q: <http://www.wikidata.org/prop/qualifier/>\n" ;
-	$sparql .= "PREFIX ps: <http://www.wikidata.org/prop/statement/>\n" ;
-	$sparql .= "PREFIX pq: <http://www.wikidata.org/prop/qualifier/>\n" ;
+#	$sparql .= "PREFIX v: <http://www.wikidata.org/prop/statement/>\n" ;
+#	$sparql .= "PREFIX q: <http://www.wikidata.org/prop/qualifier/>\n" ;
+#	$sparql .= "PREFIX ps: <http://www.wikidata.org/prop/statement/>\n" ;
+#	$sparql .= "PREFIX pq: <http://www.wikidata.org/prop/qualifier/>\n" ;
 #	$sparql .= "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" ;
 #	$sparql .= "PREFIX schema: <http://schema.org/>\n" ;
 #	$sparql .= "PREFIX psv: <http://www.wikidata.org/prop/statement/value/>\n" ;
@@ -709,23 +722,23 @@ function getSPARQLprefixes () {
 function getSPARQL ( $cmd ) {
 	$sparql = getSPARQLprefixes() ;
 	$sparql .= $cmd ;
-#print "$sparql\n" ;
 
-$ctx = stream_context_create(array('http'=>
-    array(
-        'timeout' => 1200,  //1200 Seconds is 20 Minutes
-    )
-));
+	$ctx = stream_context_create(array('http'=>
+		array(
+			'timeout' => 1200,  //1200 Seconds is 20 Minutes
+		)
+	));
 
-#	$url = "https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query=" . urlencode($sparql) ;
 	$url = "https://query.wikidata.org/sparql?format=json&query=" . urlencode($sparql) ;
+#print "$url\n" ;
 	$fc = @file_get_contents ( $url , false , $ctx ) ;
 	
+	// Catch "wait" response, wait 5, retry
 	if ( preg_match ( '/429/' , $http_response_header[0] ) ) {
 		sleep ( 5 ) ;
 		return getSPARQL ( $cmd ) ;
 	}
-#	var_dump ( $http_response_header ) ;
+
 	if ( $fc === false ) return ; // Nope
 	return json_decode ( $fc ) ;
 }
@@ -734,11 +747,11 @@ $ctx = stream_context_create(array('http'=>
 function getSPARQLitems ( $cmd , $varname = 'q' ) {
 	$ret = array() ;
 	$j = getSPARQL ( $cmd ) ;
-#print_r ( $j ) ;
 	if ( !isset($j->results) or !isset($j->results->bindings) or count($j->results->bindings) == 0 ) return $ret ;
 	foreach ( $j->results->bindings AS $v ) {
 		$ret[] = preg_replace ( '/^.+\/Q/' , '' , $v->$varname->value ) ;
 	}
+	$ret = array_unique ( $ret ) ;
 	return $ret ;
 }
 

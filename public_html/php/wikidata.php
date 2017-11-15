@@ -175,6 +175,64 @@ class WDI {
 		}
 	}
 
+
+	public function getSnakValueQS ( $snak ) {
+		if ( !isset($snak) or !isset($snak->datavalue) ) {
+			// Skip => error message
+		} else if ( $snak->datatype == 'string' and $snak->datavalue->type == 'string' ) {
+			return '"' . $snak->datavalue->value . '"' ;
+		} else if ( $snak->datatype == 'external-id' and $snak->datavalue->type == 'string' ) {
+			return '"' . $snak->datavalue->value . '"' ;
+		} else if ( $snak->datatype == 'time' and $snak->datavalue->type == 'time' ) {
+			return $snak->datavalue->value->time.'/'.$snak->datavalue->value->precision ;
+		} else if ( $snak->datatype == 'wikibase-item' and $snak->datavalue->type == 'wikibase-entityid' ) {
+			return $snak->datavalue->value->id ;
+		}
+
+		if ( 0 ) { // Debug output
+			print "Cannot parse snak value:\n" ;
+			print_r ( $snak ) ;
+			print "\n\n" ;
+		}
+		return '' ;
+	}
+
+	public function statementQualifiersToQS ( $statement ) {
+		$ret = [] ;
+		$qo = 'qualifiers-order' ;
+		if ( !isset($statement->qualifiers) or !isset($statement->$qo) ) return $ret ;
+		foreach ( $statement->$qo AS $qual_prop ) {
+			if ( !isset($statement->qualifiers->$qual_prop) ) continue ;
+			foreach ( $statement->qualifiers->$qual_prop AS $x ) {
+				$v = $this->getSnakValueQS ( $x ) ;
+				if ( $v == '' ) continue ;
+				$ret[] = "$qual_prop\t$v" ;
+			}
+		}
+		return $ret ;
+	}
+
+	public function statementReferencesToQS ( $statement ) {
+		$ret = [] ;
+		if ( !isset($statement->references) ) return $ret ;
+	
+		$so = 'snaks-order' ;
+		foreach ( $statement->references AS $ref ) {
+			$ref_ret = [] ;
+			foreach ( $ref->$so AS $snak_prop ) {
+				if ( !isset($ref->snaks->$snak_prop) ) continue ;
+				foreach ( $ref->snaks->$snak_prop AS $ref_snak ) {
+					$v = $this->getSnakValueQS ( $ref_snak ) ;
+					if ( $v == '' ) continue ;
+					$ref_ret[] = "S" . preg_replace ( '/\D/' , '' , $snak_prop ) . "\t$v" ;
+				}
+			}
+			if ( count($ref_ret) > 0 ) $ret[] = $ref_ret ;
+		}
+	
+		return $ret ;
+	}
+
 	
 }
 
