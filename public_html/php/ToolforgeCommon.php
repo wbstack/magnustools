@@ -181,9 +181,10 @@ final class ToolforgeCommon {
 			if($ret = @$db->query($sql)) return $ret ;
 			$max_tries-- ;
 		}
-		assert ( false , 'There was an error running the query [' . $db->error . ']'."\n$sql\n$message\n" ) ;
+		$e = new \Exception;
+		var_dump($e->getTraceAsString());
+		die ( 'There was an error running the query [' . $db->error . ']'."\n$sql\n$message\n" ) ;
 	}
-
 
 	public function findSubcats ( &$db , $root , &$subcats , $depth = -1 ) {
 		$check = array() ;
@@ -202,13 +203,15 @@ final class ToolforgeCommon {
 			$check[] = $row['page_title'] ;
 		}
 		if ( count ( $check ) == 0 ) return ;
-		findSubcats ( $db , $check , $subcats , $depth - 1 ) ;
+		$this->findSubcats ( $db , $check , $subcats , $depth - 1 ) ;
 	}
 
 	public function getPagesInCategory ( &$db , $category , $depth = 0 , $namespace = 0 , $no_redirects = false ) {
 		$ret = array() ;
 		$cats = array() ;
-		findSubcats ( $db , array($category) , $cats , $depth ) ;
+		$category = str_replace ( ' ' , '_' , $category ) ;
+		$this->findSubcats ( $db , array($category) , $cats , $depth ) ;
+
 		if ( $namespace == 14 ) return $cats ; // Faster, and includes root category
 
 		$namespace *= 1 ;

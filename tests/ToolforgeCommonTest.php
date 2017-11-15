@@ -5,7 +5,7 @@
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers Email
+ * @covers ToolforgeCommon
  */
 final class ToolforgeCommonTest extends TestCase {
 
@@ -64,8 +64,23 @@ final class ToolforgeCommonTest extends TestCase {
 		$this->assertEquals ( count($items) , 1 ) ;
 		$this->assertEquals ( $items[0] , 'Q42' ) ;
 	}
+
+	public function testCanGetRequest() { //:void
+		$_REQUEST['test_defined'] = 'abc' ;
+		$tfc = new ToolforgeCommon() ;
+		$result_with_default = $tfc->getRequest ( 'test_undefined' , 'default' ) ;
+		$this->assertEquals ( $result_with_default , 'default' ) ;
+		$result_no_default = $tfc->getRequest ( 'test_defined' , 'default' ) ;
+		$this->assertEquals ( $result_no_default , 'abc' ) ;
+	}
 	
-	// TODO category tree
+	public function testCanGetPagesInCategoryTree() { //:void
+		$tfc = new ToolforgeCommon() ;
+		$db = $tfc->openDBwiki ( 'enwiki' ) ;
+		$pages = $tfc->getPagesInCategory ( $db , 'Secularism in the United Kingdom' , 2 , 0 , true ) ;
+		$this->assertArrayHasKey ( 'Richard_Dawkins' , $pages ) ;
+	}
+
 }
 
 ?>
