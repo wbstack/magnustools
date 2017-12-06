@@ -1,0 +1,30 @@
+/*
+Trying to use some colours and fonts from the WikimediaUI Style Guide:
+https://wikimedia.github.io/WikimediaUI-Style-Guide/visual-style_colors.html
+*/
+body {
+	font-family:Lato,Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+	--font-family-sans-serif:Lato,Roboto,"Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+	--font-family-serif:Charter,Verdana,"Times New Roman";
+}
+
+a { color:#36c; }
+a.external { color:#00af89; }
+a.wikidata { color:#2a4b8d; }
+
+h1,h2,h3,h4,h5,h6,h7,h8,h9 {
+	font-family:Charter,Verdana,Times New Roman;
+}
+
+.btn , .btn-group , nav { font-family:Lato,Arial; }
+.btn-primary { background-color:#36c; }
+.btn-success { color:#14866d; }
+.btn-danger { color:#b32424; }
+.btn-outline-primary { color:#36c; border-color:#36c; }
+.btn-outline-success { color:#14866d; border-color:#14866d; }
+.btn-outline-danger { color:#b32424; border-color:#b32424; }
+
+.bg-success { background-color:#00af89 !important; }
+.bg-info { background-color:#36c !important; }
+.bg-warning { background-color:#fc3 !important; }
+.bg-danger { background-color:#d33 !important; }

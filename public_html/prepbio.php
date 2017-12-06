@@ -189,8 +189,8 @@ function get_form () {
 	$externallinks = $wd['externallinks'] ;
 	if ( !isset($externallinks) ) $externallinks = get_request('externallinks','') ;
 	$ret = '' ;
-	$ret .= '<form method="get" class="form-inline" style="padding-bottom:20px;margin-bottom:20px;border-bottom:1px solid #DDD">Optional: <input style="width:300px" name="q" type="text" placeholder="Qxxx; e.g. Q42 for Douglas Adams"/> <input type="submit" class="btn btn-primary" value="Pre-fill from Wikidata" /></form>' ;
-	$ret .= '<form method="post" class="form-inline">' ;
+	$ret .= '<form method="get" class="form-inline" style="padding-bottom:20px;margin-bottom:20px;border-bottom:1px solid #DDD">Optional: <input style="width:300px" name="q" type="text" placeholder="Qxxx; e.g. Q42 for Douglas Adams"/> <input type="submit" class="btn btn-outline-primary" value="Pre-fill from Wikidata" /></form>' ;
+	$ret .= '<form method="post" class="form">' ;
 	$ret .= '<table>' ;
 	$ret .= get_form_row ( 'Last name' , 'Required' ) ;
 	$ret .= get_form_row ( 'First name(s)' ) ;
@@ -215,7 +215,7 @@ function get_form () {
 	$ret .= '<label class="checkbox"><input type="checkbox" id="create_infobox" name="create_infobox" value="1" checked>Create infobox</label> ' ;
 	$ret .= '<label class="checkbox"><input type="checkbox" id="brief_infobox" name="brief_infobox" value="1">Brief infobox</label>' ;
 	$ret .= '</td></tr>' ;
-	$ret .= '<tr><td/><td><input type="submit" name="doit" value="Generate text" class="btn btn-primary" /></td></tr>' ;
+	$ret .= '<tr><td/><td><input type="submit" name="doit" value="Generate text" class="btn btn-outline-primary" /></td></tr>' ;
 	$ret .= '</table></form>' ;
 	$ret .= 'Temporary text copy/paste area (has no effect on generated text)<br/>' ;
 	$ret .= '<textarea cols="80" rows="7" style="width:100%"></textarea>' ;

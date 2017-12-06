@@ -153,7 +153,7 @@ function print_form ( $html, $row_delim , $oneline , $escape , $otherhtml , $wik
   $otherhtml_check = $otherhtml ? "checked=\"checked\"" : '' ;
   
   print "<form action=\"./html2wiki.php\"
-      method=\"post\" class='form-inline'>
+      method=\"post\" class='form'>
 <fieldset>
   <legend>HTML2Wiki Converter<br /></legend>
 
@@ -169,7 +169,7 @@ function print_form ( $html, $row_delim , $oneline , $escape , $otherhtml , $wik
   <label for=\"oneline\" accesskey=\"o\" title=\"accesskey 'O'\">
     Use <span class=\"accesskey\">o</span>ne-line position of cells in a row:</label>
 
-  <select id=\"oneline\" name=\"oneline\" class='span1'
+  <select id=\"oneline\" name=\"oneline\" class='custom-select'
     title=\"Use one-line position of cells in a row, accesskey 'O'\">
     <option value=\"1\" $oneline_yes>yes</option>
     <option value=\"0\" $oneline_no>no</option>
