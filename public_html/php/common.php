@@ -96,6 +96,7 @@ function openToolDB ( $dbname = '' , $server = '' , $force_user = '' ) {
 	if ( $server == '' ) $server = "tools.labsdb" ; //"tools-db" ;
 	$db = new mysqli($server, $mysql_user, $mysql_password, $dbname);
 	if($db->connect_errno > 0) {
+#print "<pre>SERVER:$server\nSCHEMA:$dbname\nERROR:{$db->connect_error} [{$db->connect_errno}]</pre>" ;
 		$o['msg'] = 'Unable to connect to database [' . $db->connect_error . ']';
 		$o['status'] = 'ERROR' ;
 		return false ;
@@ -164,7 +165,7 @@ function make_db_safe ( &$s , $fixup = false ) {
 	$s = get_db_safe ( $s , $fixup ) ;
 }
 
-function getSQL ( &$db , &$sql , $max_tries = 1 , $message = '' ) {
+function getSQL ( &$db , &$sql , $max_tries = 2 , $message = '' ) {
 	while ( $max_tries > 0 ) {
 		while ( !@$db->ping() ) {
 //			print "RECONNECTING..." ;
@@ -174,6 +175,7 @@ function getSQL ( &$db , &$sql , $max_tries = 1 , $message = '' ) {
 		if($ret = @$db->query($sql)) return $ret ;
 		$max_tries-- ;
 	}
+	//debug_print_backtrace() ;
 	die('There was an error running the query [' . $db->error . ']'."\n$sql\n$message\n");
 }
 

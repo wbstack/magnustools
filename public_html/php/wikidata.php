@@ -79,6 +79,7 @@ class WDI {
 	}
 	
 	public function hasLabel ( $label ) {
+		if ( !isset($this->j) ) return false ;
 		if ( !isset($this->j->labels) ) return false ;
 		foreach ( $this->j->labels AS $lab ) {
 			if ( $lab->value == $label ) return true ;
@@ -86,6 +87,20 @@ class WDI {
 		return false ;
 	}
 	
+	public function hasLabelInLanguage ( $lang ) {
+		if ( !isset($this->j) ) return false ;
+		if ( !isset($this->j->labels) ) return false ;
+		if ( !isset($this->j->labels->$lang) ) return false ;
+		return true ;
+	}
+
+	public function hasDescriptionInLanguage ( $lang ) {
+		if ( !isset($this->j) ) return false ;
+		if ( !isset($this->j->descriptions) ) return false ;
+		if ( !isset($this->j->descriptions->$lang) ) return false ;
+		return true ;
+	}
+
 	public function hasExternalSource ( $claim ) {
 		return false ; // DUMMY
 	}
@@ -167,6 +182,7 @@ class WDI {
 	}
 	
 	public function getClaimByID ( $id ) {
+		if ( !isset($this->j) ) return ;
 		if ( !isset($this->j->claims) ) return ;
 		foreach ( $this->j->claims AS $p => $v ) {
 			foreach ( $v AS $dummy => $claim ) {

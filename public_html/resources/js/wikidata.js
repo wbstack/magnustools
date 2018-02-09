@@ -85,6 +85,12 @@ function WikiDataItem ( init_wd , init_raw ) {
 	this.getStringsForProperty = function ( p ) {
 		return this.getMultimediaFilesForProperty ( p ) ;
 	}
+
+	this.getFirstStringForProperty = function ( p ) {
+		var strings = this.getStringsForProperty ( p ) ;
+		if ( strings.length == 0 ) return '' ;
+		return strings[0] ;
+	}
 	
 	this.getMultimediaFilesForProperty = function ( p ) {
 		var self = this ;
@@ -627,7 +633,7 @@ function WikiData () {
 	}
 	
 	this.itemFromBinding = function ( x ) {
-		return x.value.replace ( /^.+\/Q/ , '' ) ;
+		return x.value.replace ( /^.+\/[PQ]/ , '' ) ;
 	}
 	
 	this.loadSPARQLitems = function ( query , callback ) {

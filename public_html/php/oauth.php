@@ -932,7 +932,7 @@ Claims are used like this:
 			'meta' => 'tokens'
 		), $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
-			$this->error = 'Bad API response [setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			$this->error = 'Bad API response [removeClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
 		$token = $res->query->tokens->csrftoken;
@@ -979,7 +979,7 @@ Claims are used like this:
 			'meta' => 'tokens'
 		), $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
-			$this->error = 'Bad API response [setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			$this->error = 'Bad API response [setSource]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
 		$token = $res->query->tokens->csrftoken;
@@ -1029,7 +1029,7 @@ Claims are used like this:
 			'meta' => 'tokens'
 		), $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
-			$this->error = 'Bad API response [setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
+			$this->error = 'Bad API response [createRedirect]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
 		$token = $res->query->tokens->csrftoken;
@@ -1056,7 +1056,7 @@ Claims are used like this:
 	}
 
 
-	function genericAction ( $j ) {
+	function genericAction ( $j , $summary = '' ) {
 		if ( !isset($j->action) ) { // Paranoia
 			$this->error = "No action in " . json_encode ( $j ) ;
 			return false ;
@@ -1081,6 +1081,11 @@ Claims are used like this:
 		
 		$params = array() ;
 		foreach ( $j AS $k => $v ) $params[$k] = $v ;
+
+
+		global $tool_hashtag ;
+		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = ($summary!='') ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
+		if ( $summary != '' ) $params['summary'] = $summary ;
 		
 		if ( isset ( $_REQUEST['test'] ) ) {
 			print "!!!!!<pre>" ; print_r ( $params ) ; print "</pre>" ;
@@ -1103,7 +1108,7 @@ Claims are used like this:
 	}
 
 
-	function setClaim ( $claim ) {
+	function setClaim ( $claim , $summary = '' ) {
 		if ( !isset ( $claim['claim'] ) ) { // Only for non-qualifier action; should that be fixed?
 			if ( $this->doesClaimExist($claim) ) return true ;
 		}

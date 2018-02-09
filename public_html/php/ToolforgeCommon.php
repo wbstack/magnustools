@@ -21,7 +21,7 @@ final class ToolforgeCommon {
 	public /*string*/ $toolname ;
 	public $prefilled_requests = [] ;
 	public /*string*/ $tool_user_name ; # force different DB user name
-	public $use_db_cache = false ;
+	public $use_db_cache = true ;
 
 	private $browser_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:57.0) Gecko/20100101 Firefox/57.0" ;
 	private	$db_servers = array (
@@ -82,6 +82,24 @@ final class ToolforgeCommon {
 		if ( preg_match ( '/^(.+)wiki$/' , $wiki , $m ) ) return $m[1].".wikipedia.org" ;
 		if ( preg_match ( '/^(.+)(wik.+)$/' , $wiki , $m ) ) return $m[1].".".$m[2].".org" ;
 		return '' ;
+	}
+
+	function trimWikitextMarkup ( $wikitext ) {
+		$wikitext = preg_replace ( '/\[\[(.+?)[\#\|].*?\]\]/' , '$1' , $wikitext ) ;
+		$wikitext = preg_replace ( '/\[\[(.+?)\]\]/' , '$1' , $wikitext ) ;
+		return $wikitext ;
+	}
+
+	function getWikiPageText ( $wiki , $page ) {
+		$server = $this->getWebserverForWiki ( $wiki ) ;
+		$url = "https://{$server}/w/api.php?action=parse&prop=wikitext&format=json&page=" . $this->urlEncode ( $page ) ;
+		$json = json_decode ( @file_get_contents ( $url ) ) ;
+		if ( !isset($json) or $json === null ) return '' ;
+		if ( !isset($json->parse) ) return '' ;
+		if ( !isset($json->parse->wikitext) ) return '' ;
+		$star = '*' ;
+		if ( !isset($json->parse->wikitext->$star) ) return '' ;
+		return $json->parse->wikitext->$star ;
 	}
 
 	function getDBname ( $language , $project ) {
@@ -171,7 +189,7 @@ final class ToolforgeCommon {
 		return $db ;
 	}
 
-	public function getSQL ( &$db , &$sql , $max_tries = 1 , $message = '' ) {
+	public function getSQL ( &$db , &$sql , $max_tries = 3 , $message = '' ) {
 		while ( $max_tries > 0 ) {
 			while ( !@$db->ping() ) {
 	//			print "RECONNECTING..." ;
@@ -357,13 +375,18 @@ final class ToolforgeCommon {
 		return json_decode ( $fc ) ;
 	}
 
+	public function parseItemFromURL ( $url ) {
+		return preg_replace ( '/^.+([A-Z]\d+)$/' , '$1' , $url ) ;
+	}
+
 	// Returns an array of strings, usually Q IDs
-	public function getSPARQLitems ( $cmd , $varname = 'q' ) {
+	public function getSPARQLitems ( $cmd , $varname = '' ) {
 		$ret = array() ;
 		$j = $this->getSPARQL ( $cmd ) ;
+		if ( $varname == '' ) $varname = $j->head->vars[0] ;
 		if ( !isset($j->results) or !isset($j->results->bindings) or count($j->results->bindings) == 0 ) return $ret ;
 		foreach ( $j->results->bindings AS $v ) {
-			$ret[] = preg_replace ( '/^.+\/([A-Z]\d+)$/' , '$1' , $v->$varname->value ) ;
+			$ret[] = $this->parseItemFromURL ( $v->$varname->value ) ;
 		}
 		$ret = array_unique ( $ret ) ;
 		return $ret ;
