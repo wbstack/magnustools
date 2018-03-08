@@ -132,6 +132,12 @@ function openDB ( $language , $project , $slow_queries = false ) {
 	# Try optimal server
 	$server = substr( $dbname, 0, -2 ) . ( $slow_queries ? $servers[1] : $servers[0] ) ;
 	$db = new mysqli($server, $mysql_user, $mysql_password, $dbname);
+
+	if ( $db->connect_errno > 0 and preg_match ( '/max_user_connections/' , $db->connect_error ) ) {
+		$seconds = rand ( 10 , 60*10 ) ; // Random delay
+		sleep ( $seconds ) ;
+		return openDB ( $language , $project , $slow_queries ) ;
+	}
 	
 	# Try the other server
 	if($db->connect_errno > 0 ) {
@@ -186,8 +192,8 @@ function findSubcats ( $db , $root , &$subcats , $depth = -1 ) {
 	$c = array() ;
 	foreach ( $root AS $r ) {
 		if ( isset ( $subcats[$r] ) ) continue ;
-		$subcats[$r] = get_db_safe ( $r ) ;
-		$c[] = get_db_safe($r); //str_replace ( ' ' , '_' , $db->escape_string ( $r ) ) ;
+		$subcats[$r] = $db->real_escape_string ( $r ) ;
+		$c[] = $db->real_escape_string($r); //str_replace ( ' ' , '_' , $db->escape_string ( $r ) ) ;
 	}
 	if ( count ( $c ) == 0 ) return ;
 	if ( $depth == 0 ) return ;
@@ -503,7 +509,7 @@ function cGetEditButton ( $text , $title , $lang , $project , $summary , $button
 }
 
 function db_get_user_images ( $username , $db ) {
-	make_db_safe ( $username ) ;
+	$username = $db->real_escape_string ( $username ) ;
 	$username = str_replace ( '_' , ' ' , $username ) ;
 
 	$ret = array () ;

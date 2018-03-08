@@ -9,6 +9,7 @@ class MW_OAuth {
 	var $ini_file , $params ;
 	var $mwOAuthUrl = 'https://www.mediawiki.org/w/index.php?title=Special:OAuth';
 	var $mwOAuthIW = 'mw'; // Set this to the interwiki prefix for the OAuth central wiki.
+	var $userinfo ;
 	
 	function MW_OAuth ( $t , $l , $p ) {
 		$this->tool = $t ;
@@ -1430,6 +1431,8 @@ Claims are used like this:
 			$this->error = 'Not logged in. (How did that happen?)' ;
 			return false ;
 		}
+
+		$this->userinfo = $res->query->userinfo ;
 		
 
 		return true ;

@@ -17,12 +17,13 @@ h1,h2,h3,h4,h5,h6,h7,h8,h9 {
 }
 
 .btn , .btn-group , nav { font-family:Lato,Arial; }
-.btn-primary { background-color:#36c; }
-.btn-success { color:#14866d; }
-.btn-danger { color:#b32424; }
-.btn-outline-primary { color:#36c; border-color:#36c; }
-.btn-outline-success { color:#14866d; border-color:#14866d; }
-.btn-outline-danger { color:#b32424; border-color:#b32424; }
+.btn-primary { background-color:#36c !important; }
+.btn-success { color:#14866d !important; }
+.btn-danger { color:#b32424 !important; }
+.btn-outline-primary { color:#36c !important; border-color:#36c !important; }
+.btn-outline-success { color:#14866d !important; border-color:#14866d !important; }
+.btn-outline-danger { color:#b32424 !important; border-color:#b32424 !important; }
+.text-success { color:#14866d !important; }
 
 .bg-success { background-color:#00af89 !important; }
 .bg-info { background-color:#36c !important; }

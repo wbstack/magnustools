@@ -111,7 +111,13 @@ function bot_out () {
 if ( !$botmode and ( !isset( $_REQUEST['action'] ) or $_REQUEST['action'] != 'authorize' ) ) {
 	print get_common_header ( '' , 'OAuth file uploader' ) ;
 	print "<p>This tool facilitates file uploads to Wikimedia Commons, under your user name. " ;
-	print "You will have to <a href='".htmlspecialchars( $_SERVER['SCRIPT_NAME'] )."?action=authorize'>authorise</a> it first.</p>" ;
+
+	if ( !$oa->isAuthOK() ) {
+		print "You will have to <a href='".htmlspecialchars( $_SERVER['SCRIPT_NAME'] )."?action=authorize'>authorise</a> it first.</p>" ;
+	} else {
+		print "You are logged in as {$oa->userinfo->name}.</p>" ;
+	}
+
 }
 
 

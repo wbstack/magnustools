@@ -70,6 +70,11 @@ final class ToolforgeCommon {
 		return $ret ;
 	}
 
+	function flush () {
+		@ob_flush();
+		flush();
+	}
+
 
 // Toolforge/Wikimedia name conversions
 
@@ -87,6 +92,8 @@ final class ToolforgeCommon {
 	function trimWikitextMarkup ( $wikitext ) {
 		$wikitext = preg_replace ( '/\[\[(.+?)[\#\|].*?\]\]/' , '$1' , $wikitext ) ;
 		$wikitext = preg_replace ( '/\[\[(.+?)\]\]/' , '$1' , $wikitext ) ;
+		$wikitext = preg_replace ( '/\{\{(.+?)\}\}/' , '' , $wikitext ) ;
+		$wikitext = preg_replace ( '/<.*?>/' , '' , $wikitext ) ;
 		return $wikitext ;
 	}
 
@@ -99,8 +106,15 @@ final class ToolforgeCommon {
 		if ( !isset($json->parse->wikitext) ) return '' ;
 		$star = '*' ;
 		if ( !isset($json->parse->wikitext->$star) ) return '' ;
-		return $json->parse->wikitext->$star ;
+
+		$ret = $json->parse->wikitext->$star ;
+		$ret = @iconv('UTF-8', 'UTF-8//IGNORE', $ret) ;
+//		print "$ret\n" ; exit(0) ;
+		return $ret ;
 	}
+
+// DATABASE
+
 
 	function getDBname ( $language , $project ) {
 		$ret = $language ;
@@ -123,10 +137,6 @@ final class ToolforgeCommon {
 		else die ( "Cannot construct database name for $language.$project - aborting." ) ;
 		return $ret ;
 	}
-
-
-// DATABASE
-
 
 	private function getDBpassword () {
 		if ( isset ( $this->tool_user_name ) and $this->tool_user_name != '' ) $user = $this->tool_user_name ;
