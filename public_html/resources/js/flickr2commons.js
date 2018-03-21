@@ -325,7 +325,12 @@ var flickr2commons = {
 
 		$.get ( me.flinfo , params , function ( d ) {
 			if ( undefined === d.wiki || d.wiki.status != 0 ) {
-				if ( d.wiki.status == 3 ) o.error = "File license has changed to non-free! Please click the ✘ on the right to remove the entry." ;
+				if ( d.wiki.status == 1 ) o.error = "Flinfo server failure. Try again." ;
+				else if ( d.wiki.status == 3 ) o.error = "Flinfo internal error." ;
+				else if ( d.wiki.status == 3 ) o.error = "File license has changed to non-free! Please click the ✘ on the right to remove the entry." ;
+				else if ( d.wiki.status == 4 ) o.error = "Flinfo says 'bad user'." ;
+				else if ( d.wiki.status == 5 ) o.error = "Flinfo says 'invalid ID'." ;
+				else if ( d.wiki.status == 6 ) o.error = "Flinfo says 'missing ID'." ;
 				else o.error = 'FLinfo issue: ' + d.wiki.status ;
 				return callback ( o ) ;
 			}

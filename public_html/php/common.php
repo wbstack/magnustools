@@ -174,7 +174,7 @@ function make_db_safe ( &$s , $fixup = false ) {
 function getSQL ( &$db , &$sql , $max_tries = 2 , $message = '' ) {
 	while ( $max_tries > 0 ) {
 		while ( !@$db->ping() ) {
-//			print "RECONNECTING..." ;
+//			print "RECONNECTING...\n" ;
 			sleep ( 1 ) ;
 			@$db->connect() ;
 		}
@@ -192,8 +192,8 @@ function findSubcats ( $db , $root , &$subcats , $depth = -1 ) {
 	$c = array() ;
 	foreach ( $root AS $r ) {
 		if ( isset ( $subcats[$r] ) ) continue ;
-		$subcats[$r] = $db->real_escape_string ( $r ) ;
-		$c[] = $db->real_escape_string($r); //str_replace ( ' ' , '_' , $db->escape_string ( $r ) ) ;
+		$subcats[$r] = $db->real_escape_string ( str_replace(' ','_',$r) ) ;
+		$c[] = $db->real_escape_string(str_replace(' ','_',$r));
 	}
 	if ( count ( $c ) == 0 ) return ;
 	if ( $depth == 0 ) return ;
@@ -216,6 +216,7 @@ function getPagesInCategory ( $db , $category , $depth = 0 , $namespace = 0 , $n
 
 	$namespace *= 1 ;
 	$sql = "SELECT DISTINCT page_title FROM page,categorylinks WHERE cl_from=page_id AND page_namespace=$namespace AND cl_to IN ('" . implode("','",$cats) . "')" ;
+//if($testing) print "!!!<pre>$category/$depth/$namespace/$sql</pre>" ;
 	if ( $no_redirects ) $sql .= " AND page_is_redirect=0" ;
 
 	$result = getSQL ( $db , $sql , 2 ) ;
