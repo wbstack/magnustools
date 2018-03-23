@@ -152,13 +152,14 @@ final class ToolforgeCommon {
 		}
 	}
 
-	public function openDBtool ( $dbname = '' , $server = '' , $force_user = '' ) {
+	public function openDBtool ( $dbname = '' , $server = '' , $force_user = '' , $persistent = false ) {
 		$this->getDBpassword() ;
 		if ( $dbname == '' ) $dbname = '_main' ;
 		else $dbname = "__$dbname" ;
 		if ( $force_user == '' ) $dbname = $this->mysql_user.$dbname;
 		else $dbname = $force_user.$dbname;
 		if ( $server == '' ) $server = "tools.labsdb" ; //"tools-db" ;
+		if ( $persistent ) $server = "p:$server" ;
 		$db = new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname);
 		assert ( $db->connect_errno == 0 , 'Unable to connect to database [' . $db->connect_error . ']' ) ;
 		return $db ;
@@ -171,7 +172,7 @@ final class ToolforgeCommon {
 		return $this->openDB ( $m[1] , $m[2] , $slow_queries ) ;
 	}
 
-	public function openDB ( $language , $project , $slow_queries = false ) {
+	public function openDB ( $language , $project , $slow_queries = false , $persistent = false ) {
 		$db_key = "$language.$project" ;
 		if ( isset ( $this->db_cache[$db_key] ) ) return $this->db_cache[$db_key] ;
 	
@@ -180,17 +181,20 @@ final class ToolforgeCommon {
 
 		# Try optimal server
 		$server = substr( $dbname, 0, -2 ) . ( $slow_queries ? $this->db_servers['slow'] : $this->db_servers['fast'] ) ;
+		if ( $persistent ) $server = "p:$server" ;
 		$db = new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname);
 	
 		# Try the other server
 		if($db->connect_errno > 0 ) {
 			$server = substr( $dbname, 0, -2 ) . ( $slow_queries ? $this->db_servers['fast'] : $this->db_servers['slow'] ) ;
+			if ( $persistent ) $server = "p:$server" ;
 			$db = new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname);
 		}
 
 		# Try the old server as fallback
 		if($db->connect_errno > 0) {
 			$server = substr( $dbname, 0, -2 ) . $this->db_servers['old'];
+			if ( $persistent ) $server = "p:$server" ;
 			$db = new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname);
 		}
 	
@@ -235,6 +239,8 @@ final class ToolforgeCommon {
 	}
 
 	public function getPagesInCategory ( &$db , $category , $depth = 0 , $namespace = 0 , $no_redirects = false ) {
+		$depth *= 1 ;
+		$namespace *= 1 ;
 		$ret = array() ;
 		$cats = array() ;
 		$category = str_replace ( ' ' , '_' , $category ) ;
