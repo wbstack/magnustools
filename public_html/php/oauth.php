@@ -10,6 +10,8 @@ class MW_OAuth {
 	var $mwOAuthUrl = 'https://www.mediawiki.org/w/index.php?title=Special:OAuth';
 	var $mwOAuthIW = 'mw'; // Set this to the interwiki prefix for the OAuth central wiki.
 	var $userinfo ;
+	var $delay_after_create_s = 5 ;
+	var $delay_after_edit_s = 0 ;
 	
 	function MW_OAuth ( $t , $l , $p ) {
 		$this->tool = $t ;
@@ -610,6 +612,8 @@ Claims are used like this:
 			return false ;
 		}
 
+		sleep ( $this->delay_after_edit_s ) ;
+
 		return true ;
 	}
 	
@@ -652,6 +656,8 @@ Claims are used like this:
 			return false ;
 		}
 
+		sleep ( $this->delay_after_edit_s ) ;
+
 		return true ;
 	}
 	
@@ -692,6 +698,8 @@ Claims are used like this:
 			$this->error = $res->error->info ;
 			return false ;
 		}
+
+		sleep ( $this->delay_after_edit_s ) ;
 
 		return true ;
 	}
@@ -735,6 +743,8 @@ Claims are used like this:
 			return false ;
 		}
 
+		sleep ( $this->delay_after_edit_s ) ;
+
 		return true ;
 	}
 	
@@ -775,6 +785,8 @@ Claims are used like this:
 			$this->error = $res->error->info ;
 			return false ;
 		}
+
+		sleep ( $this->delay_after_edit_s ) ;
 
 		return true ;
 	}
@@ -818,6 +830,8 @@ Claims are used like this:
 			return false ;
 		}
 
+		sleep ( $this->delay_after_edit_s ) ;
+
 		return true ;
 	}
 	
@@ -860,6 +874,8 @@ Claims are used like this:
 
 		$this->last_res = $res ;
 		if ( isset ( $res->error ) ) return false ;
+
+		sleep ( $this->delay_after_create_s ) ;
 
 		return true ;
 	}
@@ -921,6 +937,8 @@ Claims are used like this:
 		$this->last_res = $res ;
 		if ( isset ( $res->error ) ) return false ;
 
+		sleep ( $this->delay_after_create_s ) ;
+
 		return true ;
 	}
 
@@ -961,6 +979,8 @@ Claims are used like this:
 			print "<pre>" ; print_r ( $claim ) ; print "</pre>" ;
 			print "<pre>" ; print_r ( $res ) ; print "</pre>" ;
 		}
+
+		sleep ( $this->delay_after_edit_s ) ;
 		
 		return true ;
 	}
@@ -1013,6 +1033,8 @@ Claims are used like this:
 			return false ;
 		}
 
+		sleep ( $this->delay_after_edit_s ) ;
+
 		return true ;
 
 	}
@@ -1052,6 +1074,8 @@ Claims are used like this:
 
 		$this->last_res = $res ;
 		if ( isset ( $res->error ) ) return false ;
+
+		sleep ( $this->delay_after_edit_s ) ;
 
 		return true ;
 	}
@@ -1104,7 +1128,10 @@ Claims are used like this:
 			$this->error = $res->error->info ;
 			return false ;
 		}
-		
+
+		if ( $j->action == 'wbeditentity' and isset($j->{'new'}) ) sleep ( $this->delay_after_create_s ) ;
+		else sleep ( $this->delay_after_edit_s ) ;
+
 		return true ;
 	}
 
@@ -1183,6 +1210,8 @@ Claims are used like this:
 			$this->error = $res->error->info ;
 			return false ;
 		}
+
+		sleep ( $this->delay_after_edit_s ) ;
 
 		
 /*
@@ -1284,6 +1313,8 @@ Claims are used like this:
 			$this->error = $res->error->info ;
 			return false ;
 		}
+
+		sleep ( $this->delay_after_edit_s ) ;
 		
 /*
 		if ( $claim['type'] == 'string' ) {
@@ -1337,6 +1368,8 @@ Claims are used like this:
 			$this->error = $res->upload->result ;
 			return false ;
 		}
+
+		sleep ( $this->delay_after_edit_s ) ;
 
 		return true ;
 	}
@@ -1392,6 +1425,8 @@ Claims are used like this:
 			$this->error = $res->upload->result ;
 			return false ;
 		}
+
+		sleep ( $this->delay_after_edit_s ) ;
 
 		return true ;
 	}

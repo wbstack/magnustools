@@ -183,6 +183,12 @@ final class ToolforgeCommon {
 		$server = substr( $dbname, 0, -2 ) . ( $slow_queries ? $this->db_servers['slow'] : $this->db_servers['fast'] ) ;
 		if ( $persistent ) $server = "p:$server" ;
 		$db = new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname);
+
+		if ( $db->connect_errno > 0 and preg_match ( '/max_user_connections/' , $db->connect_error ) ) { // Bloody Toolforge DB connection limit
+			$seconds = rand ( 10 , 60*10 ) ; // Random delay
+			sleep ( $seconds ) ;
+			return $this->openDB ( $language , $project , $slow_queries , $persistent ) ;
+		}
 	
 		# Try the other server
 		if($db->connect_errno > 0 ) {
