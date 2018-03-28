@@ -10,8 +10,11 @@ class MW_OAuth {
 	var $mwOAuthUrl = 'https://www.mediawiki.org/w/index.php?title=Special:OAuth';
 	var $mwOAuthIW = 'mw'; // Set this to the interwiki prefix for the OAuth central wiki.
 	var $userinfo ;
-	var $delay_after_create_s = 5 ;
+
+	var $auto_detect_lag = true ;
+	var $delay_after_create_s = 2 ;
 	var $delay_after_edit_s = 0 ;
+	var $delay_after_upload_s = 1 ;
 	
 	function MW_OAuth ( $t , $l , $p ) {
 		$this->tool = $t ;
@@ -32,6 +35,27 @@ class MW_OAuth {
 			$this->fetchAccessToken();
 		}
 
+	}
+
+	function sleepAfterEdit ( $type ) {
+		if ( $this->auto_detect_lag ) { // Try to auto-detect lag
+			$url = 'https://www.wikidata.org/w/api.php?action=query&titles=MediaWiki&format=json&maxlag=-1' ;
+			$t = @file_get_contents ( $url ) ;
+			if ( $t !== false ) {
+				$j = @json_decode ( $t ) ;
+				if ( isset($j) and $j !== false ) {
+					$lag = $j->error->lag ;
+					if ( isset($lag) ) {
+						if ( $lag > 1 ) sleep ( $lag * 3 ) ;
+						return ;
+					}
+				}
+			}
+		}
+
+		if ( $type == 'create' ) sleep ( $this->delay_after_create_s ) ;
+		if ( $type == 'edit' ) sleep ( $this->delay_after_edit_s ) ;
+		if ( $type == 'upload' ) sleep ( $this->delay_after_upload_s ) ;
 	}
 	
 	function logout () {
@@ -612,7 +636,7 @@ Claims are used like this:
 			return false ;
 		}
 
-		sleep ( $this->delay_after_edit_s ) ;
+		$this->sleepAfterEdit ( 'edit' ) ;
 
 		return true ;
 	}
@@ -656,7 +680,7 @@ Claims are used like this:
 			return false ;
 		}
 
-		sleep ( $this->delay_after_edit_s ) ;
+		$this->sleepAfterEdit ( 'edit' ) ;
 
 		return true ;
 	}
@@ -699,7 +723,7 @@ Claims are used like this:
 			return false ;
 		}
 
-		sleep ( $this->delay_after_edit_s ) ;
+		$this->sleepAfterEdit ( 'edit' ) ;
 
 		return true ;
 	}
@@ -743,7 +767,7 @@ Claims are used like this:
 			return false ;
 		}
 
-		sleep ( $this->delay_after_edit_s ) ;
+		$this->sleepAfterEdit ( 'edit' ) ;
 
 		return true ;
 	}
@@ -786,7 +810,7 @@ Claims are used like this:
 			return false ;
 		}
 
-		sleep ( $this->delay_after_edit_s ) ;
+		$this->sleepAfterEdit ( 'edit' ) ;
 
 		return true ;
 	}
@@ -830,7 +854,7 @@ Claims are used like this:
 			return false ;
 		}
 
-		sleep ( $this->delay_after_edit_s ) ;
+		$this->sleepAfterEdit ( 'edit' ) ;
 
 		return true ;
 	}
@@ -875,7 +899,7 @@ Claims are used like this:
 		$this->last_res = $res ;
 		if ( isset ( $res->error ) ) return false ;
 
-		sleep ( $this->delay_after_create_s ) ;
+		$this->sleepAfterEdit ( 'create' ) ;
 
 		return true ;
 	}
@@ -937,7 +961,7 @@ Claims are used like this:
 		$this->last_res = $res ;
 		if ( isset ( $res->error ) ) return false ;
 
-		sleep ( $this->delay_after_create_s ) ;
+		$this->sleepAfterEdit ( 'create' ) ;
 
 		return true ;
 	}
@@ -980,7 +1004,7 @@ Claims are used like this:
 			print "<pre>" ; print_r ( $res ) ; print "</pre>" ;
 		}
 
-		sleep ( $this->delay_after_edit_s ) ;
+		$this->sleepAfterEdit ( 'edit' ) ;
 		
 		return true ;
 	}
@@ -1033,7 +1057,7 @@ Claims are used like this:
 			return false ;
 		}
 
-		sleep ( $this->delay_after_edit_s ) ;
+		$this->sleepAfterEdit ( 'edit' ) ;
 
 		return true ;
 
@@ -1075,7 +1099,7 @@ Claims are used like this:
 		$this->last_res = $res ;
 		if ( isset ( $res->error ) ) return false ;
 
-		sleep ( $this->delay_after_edit_s ) ;
+		$this->sleepAfterEdit ( 'create' ) ;
 
 		return true ;
 	}
@@ -1129,8 +1153,8 @@ Claims are used like this:
 			return false ;
 		}
 
-		if ( $j->action == 'wbeditentity' and isset($j->{'new'}) ) sleep ( $this->delay_after_create_s ) ;
-		else sleep ( $this->delay_after_edit_s ) ;
+		if ( $j->action == 'wbeditentity' and isset($j->{'new'}) ) $this->sleepAfterEdit ( 'create' ) ;
+		else $this->sleepAfterEdit ( 'edit' ) ;
 
 		return true ;
 	}
@@ -1211,7 +1235,7 @@ Claims are used like this:
 			return false ;
 		}
 
-		sleep ( $this->delay_after_edit_s ) ;
+		$this->sleepAfterEdit ( 'edit' ) ;
 
 		
 /*
@@ -1314,7 +1338,7 @@ Claims are used like this:
 			return false ;
 		}
 
-		sleep ( $this->delay_after_edit_s ) ;
+		$this->sleepAfterEdit ( 'edit' ) ;
 		
 /*
 		if ( $claim['type'] == 'string' ) {
@@ -1369,7 +1393,7 @@ Claims are used like this:
 			return false ;
 		}
 
-		sleep ( $this->delay_after_edit_s ) ;
+		$this->sleepAfterEdit ( 'upload' ) ;
 
 		return true ;
 	}
@@ -1426,7 +1450,7 @@ Claims are used like this:
 			return false ;
 		}
 
-		sleep ( $this->delay_after_edit_s ) ;
+		$this->sleepAfterEdit ( 'upload' ) ;
 
 		return true ;
 	}
