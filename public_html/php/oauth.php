@@ -13,7 +13,7 @@ class MW_OAuth {
 
 	var $auto_detect_lag = true ;
 	var $delay_after_create_s = 2 ;
-	var $delay_after_edit_s = 0 ;
+	var $delay_after_edit_s = 1 ;
 	var $delay_after_upload_s = 1 ;
 	
 	function MW_OAuth ( $t , $l , $p ) {
