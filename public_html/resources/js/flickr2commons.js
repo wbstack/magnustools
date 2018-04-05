@@ -21,8 +21,8 @@ var flickr2commons = {
 		$.getJSON ( me.oauth_uploader_api , {
 			action:'checkauth'
 		} , function ( d ) {
-			me.userinfo = d.data.query.userinfo ;
 			me.is_authorized = d.error=='OK' ;
+			if ( me.is_authorized ) me.userinfo = d.data.query.userinfo ;
 			callback ( d.error ) ;
 		}) ;
 	} ,

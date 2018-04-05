@@ -160,21 +160,21 @@ final class ToolforgeCommon {
 		else $dbname = $force_user.$dbname;
 		if ( $server == '' ) $server = "tools.labsdb" ; //"tools-db" ;
 		if ( $persistent ) $server = "p:$server" ;
-		$db = new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname);
+		$db = @new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname);
 		assert ( $db->connect_errno == 0 , 'Unable to connect to database [' . $db->connect_error . ']' ) ;
 		return $db ;
 	}
 
-	public function openDBwiki ( $wiki , $slow_queries = false ) {
+	public function openDBwiki ( $wiki , $slow_queries = false , $persistent = false ) {
 		preg_match ( '/^(.+)(wik.+)$/' , $wiki , $m ) ;
 		assert ( $m !== null , "Cannot parse $wiki" ) ;
 		if ( $m[2] == 'wiki' ) $m[2] = 'wikipedia' ;
-		return $this->openDB ( $m[1] , $m[2] , $slow_queries ) ;
+		return $this->openDB ( $m[1] , $m[2] , $slow_queries , $persistent ) ;
 	}
 
 	public function openDB ( $language , $project , $slow_queries = false , $persistent = false ) {
 		$db_key = "$language.$project" ;
-		if ( isset ( $this->db_cache[$db_key] ) ) return $this->db_cache[$db_key] ;
+		if ( !$persistent and isset ( $this->db_cache[$db_key] ) ) return $this->db_cache[$db_key] ;
 	
 		$this->getDBpassword() ;
 		$dbname = $this->getDBname ( $language , $project ) ;
@@ -182,7 +182,7 @@ final class ToolforgeCommon {
 		# Try optimal server
 		$server = substr( $dbname, 0, -2 ) . ( $slow_queries ? $this->db_servers['slow'] : $this->db_servers['fast'] ) ;
 		if ( $persistent ) $server = "p:$server" ;
-		$db = new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname);
+		$db = @new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname);
 
 		if ( $db->connect_errno > 0 and preg_match ( '/max_user_connections/' , $db->connect_error ) ) { // Bloody Toolforge DB connection limit
 			$seconds = rand ( 10 , 60*10 ) ; // Random delay
@@ -194,18 +194,18 @@ final class ToolforgeCommon {
 		if($db->connect_errno > 0 ) {
 			$server = substr( $dbname, 0, -2 ) . ( $slow_queries ? $this->db_servers['fast'] : $this->db_servers['slow'] ) ;
 			if ( $persistent ) $server = "p:$server" ;
-			$db = new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname);
+			$db = @new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname);
 		}
 
 		# Try the old server as fallback
 		if($db->connect_errno > 0) {
 			$server = substr( $dbname, 0, -2 ) . $this->db_servers['old'];
 			if ( $persistent ) $server = "p:$server" ;
-			$db = new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname);
+			$db = @new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname);
 		}
 	
 		assert ( $db->connect_errno == 0 , 'Unable to connect to database [' . $db->connect_error . ']' ) ;
-		if ( $this->use_db_cache ) $this->db_cache[$db_key] = $db ;
+		if ( !$persistent and $this->use_db_cache ) $this->db_cache[$db_key] = $db ;
 		return $db ;
 	}
 
@@ -369,7 +369,22 @@ final class ToolforgeCommon {
 	
 		return $ret ;
 	}
-	
+
+// Wikidata
+
+	public function hasWikidataItemEverBeenEditedWithString ( $item , $string ) {
+		$db = $this->openDB ( 'wikidata' , 'wikidata' , true , true ) ;
+		$ns = 0 ;
+		if ( preg_match ( '/^[pP]/',$item) ) $ns = 120 ;
+		$item = $db->real_escape_string ( $item ) ;
+		$string = $db->real_escape_string ( $string ) ;
+		$sql = "SELECT * FROM page,revision WHERE rev_comment LIKE '%{$string}%' AND rev_page=page_id AND page_namespace={$ns} AND page_title='{$item}' LIMIT 1" ;
+		$result = $this->getSQL ( $db , $sql ) ;
+		while($row = $result->fetch_assoc()) return true ;
+		return false ;
+	}
+
+
 // SPARQL
 
 	// Takes a SPARQL query, adds the tool name (for reacking at query server), returns the decoded JSON result
@@ -391,7 +406,7 @@ final class ToolforgeCommon {
 			return getSPARQL ( $cmd ) ;
 		}
 		
-		assert ( $fc !== false , 'SPARQL query failed' ) ;
+		assert ( $fc !== false , 'SPARQL query failed: '.$sparql ) ;
 
 		if ( $fc === false ) return ; // Nope
 		return json_decode ( $fc ) ;

@@ -94,7 +94,7 @@ function openToolDB ( $dbname = '' , $server = '' , $force_user = '' ) {
 	if ( $force_user == '' ) $dbname = $mysql_user.$dbname;
 	else $dbname = $force_user.$dbname;
 	if ( $server == '' ) $server = "tools.labsdb" ; //"tools-db" ;
-	$db = new mysqli($server, $mysql_user, $mysql_password, $dbname);
+	$db = @new mysqli($server, $mysql_user, $mysql_password, $dbname);
 	if($db->connect_errno > 0) {
 #print "<pre>SERVER:$server\nSCHEMA:$dbname\nERROR:{$db->connect_error} [{$db->connect_errno}]</pre>" ;
 		$o['msg'] = 'Unable to connect to database [' . $db->connect_error . ']';
@@ -131,7 +131,7 @@ function openDB ( $language , $project , $slow_queries = false ) {
 
 	# Try optimal server
 	$server = substr( $dbname, 0, -2 ) . ( $slow_queries ? $servers[1] : $servers[0] ) ;
-	$db = new mysqli($server, $mysql_user, $mysql_password, $dbname);
+	$db = @new mysqli($server, $mysql_user, $mysql_password, $dbname);
 
 	if ( $db->connect_errno > 0 and preg_match ( '/max_user_connections/' , $db->connect_error ) ) {
 		$seconds = rand ( 10 , 60*10 ) ; // Random delay
@@ -142,13 +142,13 @@ function openDB ( $language , $project , $slow_queries = false ) {
 	# Try the other server
 	if($db->connect_errno > 0 ) {
 		$server = substr( $dbname, 0, -2 ) . ( $slow_queries ? $servers[0] : $servers[1] ) ;
-		$db = new mysqli($server, $mysql_user, $mysql_password, $dbname);
+		$db = @new mysqli($server, $mysql_user, $mysql_password, $dbname);
 	}
 
 	# Try the old server as fallback
 	if($db->connect_errno > 0) {
 		$server = substr( $dbname, 0, -2 ) . $servers[2];
-		$db = new mysqli($server, $mysql_user, $mysql_password, $dbname);
+		$db = @new mysqli($server, $mysql_user, $mysql_password, $dbname);
 	}
 	
 	if($db->connect_errno > 0) {
