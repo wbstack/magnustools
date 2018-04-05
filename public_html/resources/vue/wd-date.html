@@ -1,5 +1,3 @@
-<div>
-
 <template id='wd-date-template'>
 	<span>
 		<span v-if='tv.precision==11'>{{tv.time.replace(/^[+]{0,1}(\d+-\d+-\d+).*$/,'$1')}}</span>
@@ -17,5 +15,3 @@ Vue.component ( 'wd-date' , {
 	props : [ 'tv' ] ,
 } ) ;
 </script>
-
-</div>
