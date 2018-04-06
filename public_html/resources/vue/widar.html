@@ -6,7 +6,8 @@
 </template>
 
 <script>
-var widar ;
+'use strict';
+let widar ;
 
 Vue.component ( 'widar' , {
 	data : function () { return { is_logged_in:false , userinfo:{} , widar_api:'/widar/index.php' , loaded:false , toolname:'' } } ,
@@ -18,7 +19,7 @@ Vue.component ( 'widar' , {
 	mounted : function () { tt.updateInterface(this.$el) } ,
 	methods : {
 		checkLogin : function () {
-			var me = this ;
+			let me = this ;
 			$.get ( me.widar_api , {
 				action:'get_rights',
 				botmode:1
@@ -32,7 +33,7 @@ Vue.component ( 'widar' , {
 			} , 'json' ) ;
 		} ,
 		run : function ( params , callback ) {
-			var me = this ;
+			let me = this ;
 			if ( me.tool != '' && typeof params.tool_hashtag == 'undefined' ) params.tool_hashtag = me.toolname ;
 			params.botmode = 1 ;
 			$.get ( me.widar_api , params , function ( d ) {
@@ -43,7 +44,7 @@ Vue.component ( 'widar' , {
 						setTimeout ( function () { me.run ( params , callback ) } , 500 ) ; // Again
 					} else {
 						console.log ( "ERROR (aborting)" , params , d ) ;
-//						var h = "<li style='color:red'>ERROR (" + params.action + ") : " + d.error + "</li>" ;
+//						let h = "<li style='color:red'>ERROR (" + params.action + ") : " + d.error + "</li>" ;
 //						$('#out ol').append(h) ;
 						callback ( d ) ; // Continue anyway
 					}
@@ -56,12 +57,12 @@ Vue.component ( 'widar' , {
 			}) ;
 		} ,
 		newClaimDate : function ( prop , d ) {
-			var precision = 9 ; // 11=day, 10=month , 9=year
-			var m ;
+			let precision = 9 ; // 11=day, 10=month , 9=year
+			let m ;
 			
-			var year ;
-			var month = '01' ;
-			var day = '01' ;
+			let year ;
+			let month = '01' ;
+			let day = '01' ;
 			
 			m = d.match ( /^(\d+)-(\d+)-(\d+)$/ ) ;
 			if ( m != null ) {
@@ -86,7 +87,7 @@ Vue.component ( 'widar' , {
 			
 			if ( month.length == 1 ) month = '0' + month ;
 			if ( day.length == 1 ) day = '0' + day ;
-			var t = '+' + year + '-' + month + '-' + day + 'T00:00:00Z' ;
+			let t = '+' + year + '-' + month + '-' + day + 'T00:00:00Z' ;
 			
 			
 			return {
@@ -145,8 +146,8 @@ Vue.component ( 'widar' , {
 			} ;
 		} ,
 		addClaimToItem : function ( q , claim , summary , tool_hashtag , callback ) {
-			var me = this ;
-			var params = {
+			let me = this ;
+			let params = {
 				action:'wbeditentity',
 				id:q,
 				data:{ claims:[] }

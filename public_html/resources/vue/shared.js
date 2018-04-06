@@ -1,25 +1,30 @@
+'use strict';
+
 // ENFORCE HTTPS
 if (location.protocol != 'https:') location.href = 'https:' + window.location.href.substring(window.location.protocol.length);
 
-var vue_components = {
+let vue_components = {
+	toolname : window.location.pathname.replace(/(\/|\.php|\.html{0,1})+$/,'').replace(/^.*\//,'') , // Guessing tool name, override if necessary!
+	components : {} ,
 	template_container_base_id : 'vue_component_templates' ,
 	components_base_url : 'https://tools-static.wmflabs.org/magnustools/resources/vue/' ,
-	loadComponents : function ( components , callback ) {
-		var me = this ;
-		var cnt = 0 ;
-		$.each ( components , function ( dummy , component ) {
-			cnt++ ;
-			me.loadComponent ( component , function(){
-				if ( --cnt == 0 ) callback() ;
-			} ) ;
-		} ) ;
+	loadComponents : function ( components ) {
+		return Promise.all ( components.map ( component => this.loadComponent(component) ) ) ;
 	} ,
-	loadComponent ( component , callback ) {
-		var me = this ;
-		var id = me.template_container_base_id + '-' + component ;
-		if ( $('#'+id).length > 0 ) return callback() ;
-		$('body').append($("<div id='"+id+"' style='display:none'>"));
-		var url = me.components_base_url+component+'.html' ;
-		$('#'+id).load(url,function(){ callback() }) ;
+	getComponentID ( component ) {
+		if ( typeof this.components[component] != 'undefined' ) return this.components[component] ;
+		this.components[component] = this.template_container_base_id + '-' + Object.keys(this.components).length ;
+		return this.components[component] ;
+	} ,
+	getComponentURL ( component ) {
+		return  /^(http:|https:|\/|\.)/.test(component) || /\.html$/.test(component) ? component : this.components_base_url+component+'.html' ;
+	} ,
+	loadComponent ( component ) {
+		let id = this.getComponentID ( component ) ;
+		if ( $('#'+id).length > 0 ) return Promise.resolve(42) ; // Already loaded/loading
+		$('body').append($("<div>").attr({id:id}).css({display:'none'}));
+		return fetch ( this.getComponentURL(component) )
+			.then ( (response) => response.text() )
+			.then ( (html) => $('#'+id).html(html) )
 	}
 }
