@@ -31,6 +31,20 @@ Vue.component ( 'widar' , {
 				} else {
 				}
 			} , 'json' ) ;
+/*
+			fetch ( this.widar_api , {
+				action:'get_rights',
+				test:2,
+				botmode:1
+			} )	.then (response => response.json())
+				.then ( (d) => {
+					this.loaded = true ;
+					if ( typeof d.result.query != 'undefined' && typeof d.result.query.userinfo != 'undefined' ) {
+						this.is_logged_in = true ;
+						this.userinfo = d.result.query.userinfo ;
+					}
+				} )
+*/
 		} ,
 		run : function ( params , callback ) {
 			let me = this ;
