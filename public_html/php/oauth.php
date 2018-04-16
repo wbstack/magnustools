@@ -16,16 +16,22 @@ class MW_OAuth {
 	var $delay_after_edit_s = 1 ;
 	var $delay_after_upload_s = 1 ;
 	
-	function MW_OAuth ( $t , $l , $p ) {
-		$this->tool = $t ;
-		$this->language = $l ;
-		$this->project = $p ;
-		$this->ini_file = "/data/project/$t/oauth.ini" ;
-		
-		if ( $l == 'wikidata' ) $this->apiUrl = 'https://www.wikidata.org/w/api.php' ;
-		elseif ( $l == 'commons' ) $this->apiUrl = 'https://commons.wikimedia.org/w/api.php' ;
-		elseif ( $p == 'mediawiki' ) $this->apiUrl = 'https://www.mediawiki.org/w/api.php' ;
-		else $this->apiUrl = "https://$l.$p.org/w/api.php" ;
+	function MW_OAuth ( $t , $l = '' , $p = '' ) {
+		if ( is_array($t) ) { // Bespoke override for third-party sites
+			foreach ( $t AS $k => $v ) {
+				$this->$k = $v ;
+			}
+		} else {
+			$this->tool = $t ;
+			$this->language = $l ;
+			$this->project = $p ;
+			$this->ini_file = "/data/project/$t/oauth.ini" ;
+			
+			if ( $l == 'wikidata' ) $this->apiUrl = 'https://www.wikidata.org/w/api.php' ;
+			elseif ( $l == 'commons' ) $this->apiUrl = 'https://commons.wikimedia.org/w/api.php' ;
+			elseif ( $p == 'mediawiki' ) $this->apiUrl = 'https://www.mediawiki.org/w/api.php' ;
+			else $this->apiUrl = "https://$l.$p.org/w/api.php" ;
+		}
 
 		$this->loadIniFile() ;
 		$this->setupSession() ;
