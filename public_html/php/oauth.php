@@ -16,7 +16,7 @@ class MW_OAuth {
 	var $delay_after_edit_s = 1 ;
 	var $delay_after_upload_s = 1 ;
 	
-	function MW_OAuth ( $t , $l = '' , $p = '' ) {
+	function __construct ( $t , $l = '' , $p = '' ) {
 		if ( is_array($t) ) { // Bespoke override for third-party sites
 			foreach ( $t AS $k => $v ) {
 				$this->$k = $v ;
