@@ -345,8 +345,9 @@ class WikidataItemList {
     }
 	
 	public function loadItemByPage ( $page , $wiki ) {
+		global $wikidata_api_url ;
 		$page = urlencode ( ucfirst ( str_replace ( ' ' , '_' , trim($page) ) ) ) ;
-		$url = "https://www.wikidata.org/w/api.php?action=wbgetentities&sites=$wiki&titles=$page&format=json" ;
+		$url = $wikidata_api_url . "?action=wbgetentities&sites=$wiki&titles=$page&format=json" ;
 		$j = json_decode ( file_get_contents ( $url ) ) ;
 		if ( !isset($j) or !isset($j->entities) ) return false ;
 		$this->parseEntities ( $j ) ;

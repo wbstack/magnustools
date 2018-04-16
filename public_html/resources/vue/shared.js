@@ -7,7 +7,7 @@ let vue_components = {
 	toolname : window.location.pathname.replace(/(\/|\.php|\.html{0,1})+$/,'').replace(/^.*\//,'') , // Guessing tool name, override if necessary!
 	components : {} ,
 	template_container_base_id : 'vue_component_templates' ,
-	components_base_url : 'https://tools.wmflabs.org/magnustools/resources/vue/' , // -static
+	components_base_url : 'https://tools-static.wmflabs.org/magnustools/resources/vue/' ,
 	loadComponents : function ( components ) {
 		return Promise.all ( components.map ( component => this.loadComponent(component) ) ) ;
 	} ,

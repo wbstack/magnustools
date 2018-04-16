@@ -11,33 +11,33 @@
 <script>
 'use strict';
 
-let wd_link_wd = new WikiData() ;
+var wd_link_wd = new WikiData() ;
 
 Vue.component ( 'wd-link' , {
 	template : '#wd-link-template' ,
 	props : [ 'item' , 'wd' ] ,
 	data : function () { return { label:'' , wikidata:{} , url:'' } } ,
 	created : function () {
-		let me = this ;
+		var me = this ;
 		me.label = me.getItemID() ;
 		me.url = 'https://www.wikidata.org/wiki/' + me.getPrefixedItemID() ;
 		if ( typeof me.wd == 'undefined' ) me.wikidata = wd_link_wd ;
 		else me.wikidata = me.wd ;
 		me.wikidata.getItemBatch ( [me.getItemID()] , function () {
-			let i = me.wikidata.getItem ( me.getItemID() ) ;
+			var i = me.wikidata.getItem ( me.getItemID() ) ;
 			if ( typeof i == 'undefined' ) return ;
 			me.label = i.getLabel () ;
 		} ) ;
 	} ,
 	methods : {
 		getItemID : function () {
-			let me = this ;
+			var me = this ;
 			if ( /^\d+$/.test(''+me.item) ) return 'Q'+me.item ;
 			return me.item.toUpperCase() ;
 		} ,
 		getPrefixedItemID : function () {
-			let me = this ;
-			let id = me.getItemID() ;
+			var me = this ;
+			var id = me.getItemID() ;
 			if ( /^[Pp]\d+$/.test(id) ) return 'Property:' + id ;
 			return id ;
 		}
