@@ -3,7 +3,7 @@
 <template id='wd-link-template'>
 	<span v-if='typeof item!="undefined"'>
 		<a :href='url' target='_blank' class='wikidata'>
-			{{label}}
+			{{use_label}}
 		</a>
 	</span>
 </template>
@@ -11,33 +11,41 @@
 <script>
 'use strict';
 
-var wd_link_wd = new WikiData() ;
+let wd_link_wd = new WikiData() ;
+let wd_link_base = 'https://www.wikidata.org/wiki/' ;
 
 Vue.component ( 'wd-link' , {
 	template : '#wd-link-template' ,
-	props : [ 'item' , 'wd' ] ,
-	data : function () { return { label:'' , wikidata:{} , url:'' } } ,
+	props : [ 'item' , 'wd' , 'label' ] ,
+	data : function () { return { use_label:'' , wikidata:{} , url:'' } } ,
 	created : function () {
-		var me = this ;
-		me.label = me.getItemID() ;
-		me.url = 'https://www.wikidata.org/wiki/' + me.getPrefixedItemID() ;
+		let me = this ;
 		if ( typeof me.wd == 'undefined' ) me.wikidata = wd_link_wd ;
 		else me.wikidata = me.wd ;
+
+		if ( typeof me.item == 'undefined' || me.item == '' ) return ;
+		me.use_label = me.getItemID() ;
+		me.url = wd_link_base + me.getPrefixedItemID() ;
+		if ( typeof me.label != 'undefined' ) {
+			me.use_label = me.label ;
+			return ;
+		}
 		me.wikidata.getItemBatch ( [me.getItemID()] , function () {
-			var i = me.wikidata.getItem ( me.getItemID() ) ;
+			let i = me.wikidata.getItem ( me.getItemID() ) ;
 			if ( typeof i == 'undefined' ) return ;
-			me.label = i.getLabel () ;
+			me.use_label = i.getLabel () ;
 		} ) ;
 	} ,
 	methods : {
 		getItemID : function () {
-			var me = this ;
+			let me = this ;
+			if ( typeof me.item == 'undefined' ) return '' ;
 			if ( /^\d+$/.test(''+me.item) ) return 'Q'+me.item ;
 			return me.item.toUpperCase() ;
 		} ,
 		getPrefixedItemID : function () {
-			var me = this ;
-			var id = me.getItemID() ;
+			let me = this ;
+			let id = me.getItemID() ;
 			if ( /^[Pp]\d+$/.test(id) ) return 'Property:' + id ;
 			return id ;
 		}

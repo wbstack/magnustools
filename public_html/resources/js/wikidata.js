@@ -28,6 +28,11 @@ function WikiDataItem ( init_wd , init_raw ) {
 		} ) ;
 		return ret ;
 	}
+
+	this.getDataytpe = function () {
+		var self = this ;
+		return self.raw.datatype ;
+	}
 	
 	this.getLink = function ( o ) {
 		var self = this ;
