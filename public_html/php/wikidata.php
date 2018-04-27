@@ -1,6 +1,6 @@
 <?PHP
 
-$wikidata_preferred_langs = array ('en','de','nl','fr','es','it','zh') ;
+$wikidata_preferred_langs = ['en','de','nl','fr','es','it','zh'] ;
 $wikidata_api_url = 'https://www.wikidata.org/w/api.php' ;
 
 class WDI {
@@ -311,10 +311,10 @@ class WikidataItemList {
     	$urls = array() ;
     	foreach ( $qs AS $k => $sublist ) {
     		if ( count ( $sublist ) == 0 ) continue ;
-			$url = "$wikidata_api_url?action=wbgetentities&ids=" . implode('|',$sublist) . "&format=json" ;
+			$url = "{$wikidata_api_url}?action=wbgetentities&ids=" . implode('|',$sublist) . "&format=json" ;
 			$urls[$k] = $url ;
     	}
-    	
+#print_r ( $urls ) ;
     	$res = $this->getMultipleURLsInParallel ( $urls ) ;
 
 		foreach ( $res AS $k => $txt ) {
@@ -325,7 +325,7 @@ class WikidataItemList {
     }
     
     function loadItem ( $q ) {
-    	return $this->loadItems ( array ( $q ) ) ;
+    	return $this->loadItems ( [ $q ] ) ;
     }
     
     function getItem ( $q ) {

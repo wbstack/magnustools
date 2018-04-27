@@ -172,6 +172,9 @@ function make_db_safe ( &$s , $fixup = false ) {
 }
 
 function getSQL ( &$db , &$sql , $max_tries = 2 , $message = '' ) {
+	if ( !isset($db) ) die ( "db not defined\n" ) ;
+	if ( !isset($sql) ) die ( "SQL not defined\n" ) ;
+	if ( $sql == '' ) die ( "SQL is empty\n" ) ;
 	while ( $max_tries > 0 ) {
 		while ( !@$db->ping() ) {
 //			print "RECONNECTING...\n" ;

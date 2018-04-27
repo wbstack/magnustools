@@ -23,8 +23,10 @@ let vue_components = {
 		let id = this.getComponentID ( component ) ;
 		if ( $('#'+id).length > 0 ) return Promise.resolve() ; // Already loaded/loading
 		$('body').append($("<div>").attr({id:id}).css({display:'none'}));
-		return fetch ( this.getComponentURL(component) )
+		let component_url = this.getComponentURL(component) ;
+		return fetch ( component_url )
 			.then ( (response) => response.text() )
 			.then ( (html) => $('#'+id).html(html) )
+			.catch(error => console.error(error)) // TODO that doesn't seem to work??
 	}
 }

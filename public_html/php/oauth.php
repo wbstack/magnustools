@@ -67,8 +67,8 @@ class MW_OAuth {
 	function logout () {
 		$this->setupSession() ;
 		session_start();
-		setcookie ( 'tokenKey' , '' , 1 , '/'+$this->tool+'/' ) ;
-		setcookie ( 'tokenSecret' , '' , 1 , '/'+$this->tool+'/' ) ;
+		setcookie ( 'tokenKey' , '' , 1 , '/'.$this->tool.'/' ) ;
+		setcookie ( 'tokenSecret' , '' , 1 , '/'.$this->tool.'/' ) ;
 		$_SESSION['tokenKey'] = '' ;
 		$_SESSION['tokenSecret'] = '' ;
 		session_write_close();
@@ -166,8 +166,8 @@ class MW_OAuth {
 		$_SESSION['tokenSecret'] = $this->gTokenSecret = $token->secret;
 		if ( $this->use_cookies ) {
 			$t = time()+60*60*24*30 ; // expires in one month
-			setcookie ( 'tokenKey' , $_SESSION['tokenKey'] , $t , '/'+$this->tool+'/' ) ;
-			setcookie ( 'tokenSecret' , $_SESSION['tokenSecret'] , $t , '/'+$this->tool+'/' ) ;
+			setcookie ( 'tokenKey' , $_SESSION['tokenKey'] , $t , '/'.$this->tool.'/' ) ;
+			setcookie ( 'tokenSecret' , $_SESSION['tokenSecret'] , $t , '/'.$this->tool.'/' ) ;
 		}
 		session_write_close();
 	}
@@ -287,8 +287,8 @@ class MW_OAuth {
 		$_SESSION['tokenSecret'] = $token->secret;
 		if ( $this->use_cookies ) {
 			$t = time()+60*60*24*30 ; // expires in one month
-			setcookie ( 'tokenKey' , $_SESSION['tokenKey'] , $t , '/'+$this->tool+'/' ) ;
-			setcookie ( 'tokenSecret' , $_SESSION['tokenSecret'] , $t , '/'+$this->tool+'/' ) ;
+			setcookie ( 'tokenKey' , $_SESSION['tokenKey'] , $t , '/'.$this->tool.'/' ) ;
+			setcookie ( 'tokenSecret' , $_SESSION['tokenSecret'] , $t , '/'.$this->tool.'/' ) ;
 		}
 		session_write_close();
 

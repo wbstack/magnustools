@@ -352,6 +352,7 @@ function WikiData () {
 
 	// Variables
 	this.api = 'https://www.wikidata.org/w/api.php?callback=?' ;
+	this.sparql_url = 'https://query.wikidata.org/sparql' ;
 	this.max_get_entities = 50 ;
 	this.max_get_entities_smaller = 25 ;
 	this.language = 'en' ; // Default
@@ -630,22 +631,26 @@ function WikiData () {
 		}
 	}
 	
-	this.loadSPARQL = function ( query , callback ) {
-		var url = "https://query.wikidata.org/sparql?format=json&query=" + encodeURIComponent(query) ;
+	this.loadSPARQL = function ( query , callback , callback_fail ) {
+		var url = this.sparql_url+"?format=json&query=" + encodeURIComponent(query) ;
 		$.get ( url , function ( d ) {
 			callback ( d ) ;
-		} , 'json' ) . fail ( function () { callback() }  ) ;
+		} , 'json' ) . fail ( callback_fail  ) ;
 	}
 	
 	this.itemFromBinding = function ( x ) {
 		return x.value.replace ( /^.+\/[PQ]/ , '' ) ;
 	}
 	
-	this.loadSPARQLitems = function ( query , callback ) {
+	this.loadSPARQLitems = function ( query , callback , callback_fail ) {
 		var self = this ;
+		if ( typeof callback_fail == 'undefined' ) callback_fail = function () {
+			console.log ( query + " HAS FAILED" ) ;
+			callback([]) ;
+		}
 		self.loadSPARQL ( query , function ( d ) {
 			if ( typeof d == 'undefined' ) {
-				callback ( [] ) ;
+				callback_fail() ;
 				return ;
 			}
 			var tmp = [] ;
@@ -654,11 +659,11 @@ function WikiData () {
 				var x = v[varname] ;
 				if ( typeof x == 'undefined' ) return ;
 				if ( x.type != 'uri' ) return ;
-				var q = 'Q' + self.itemFromBinding ( x ) ; // x.value.replace ( /^.+\/Q/ , 'Q' ) ;
+				var q = 'Q' + self.itemFromBinding ( x ) ;
 				tmp.push ( q ) ;
 			} ) ;
 			callback ( tmp ) ;
-		} ) ;
+		} , callback_fail ) ;
 	}
 	
 }
