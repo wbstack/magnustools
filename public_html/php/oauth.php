@@ -8,6 +8,8 @@ class MW_OAuth {
 	var $language , $project ;
 	var $ini_file , $params ;
 	var $mwOAuthUrl = 'https://www.mediawiki.org/w/index.php?title=Special:OAuth';
+	var $publicMwOAuthUrl; //if the mediawiki url given to the user is different from how this
+							//script may see it (e.g. if behind a proxy) set the user url here.
 	var $mwOAuthIW = 'mw'; // Set this to the interwiki prefix for the OAuth central wiki.
 	var $userinfo ;
 
@@ -32,6 +34,11 @@ class MW_OAuth {
 			elseif ( $p == 'mediawiki' ) $this->apiUrl = 'https://www.mediawiki.org/w/api.php' ;
 			else $this->apiUrl = "https://$l.$p.org/w/api.php" ;
 		}
+
+		if ( !isset( $this->publicMwOAuthUrl )) {
+			$this->publicMwOAuthUrl = $this->mwOAuthUrl;
+		}
+
 
 		$this->loadIniFile() ;
 		$this->setupSession() ;
@@ -293,7 +300,7 @@ class MW_OAuth {
 		session_write_close();
 
 		// Then we send the user off to authorize
-		$url = $this->mwOAuthUrl . '/authorize';
+		$url = $this->publicMwOAuthUrl . '/authorize';
 		$url .= strpos( $url, '?' ) ? '&' : '?';
 		$arr = array(
 			'oauth_token' => $token->key,
