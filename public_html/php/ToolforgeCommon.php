@@ -211,7 +211,9 @@ final class ToolforgeCommon {
 
 	public function getSQL ( &$db , &$sql , $max_tries = 3 , $message = '' ) {
 		while ( $max_tries > 0 ) {
+			$pinging = 10 ;
 			while ( !@$db->ping() ) {
+				if ( $pinging < 0 ) break ;
 	//			print "RECONNECTING..." ;
 				sleep ( 1 ) ;
 				@$db->connect() ;

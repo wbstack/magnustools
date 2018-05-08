@@ -176,10 +176,13 @@ function getSQL ( &$db , &$sql , $max_tries = 2 , $message = '' ) {
 	if ( !isset($sql) ) die ( "SQL not defined\n" ) ;
 	if ( $sql == '' ) die ( "SQL is empty\n" ) ;
 	while ( $max_tries > 0 ) {
+		$pinging = 10 ;
 		while ( !@$db->ping() ) {
+			if ( $pinging < 0 ) break ;
 //			print "RECONNECTING...\n" ;
 			sleep ( 1 ) ;
 			@$db->connect() ;
+			$pinging-- ;
 		}
 		if($ret = @$db->query($sql)) return $ret ;
 		$max_tries-- ;
