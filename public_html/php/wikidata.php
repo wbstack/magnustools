@@ -41,6 +41,14 @@ class WDI {
 		}
 		return $best ;
 	}
+
+	public function getAliases ( $lang ) {
+		$ret = array() ;
+		if ( !isset($this->j->aliases) ) return $ret ;
+		if ( !isset($this->j->aliases->$lang) ) return $ret ;
+		foreach ( $this->j->aliases->$lang AS $v ) $ret[] = $v->value ;
+		return $ret ;
+	}
 	
 	public function getAllAliases () {
 		$ret = array() ;
@@ -254,6 +262,7 @@ class WDI {
 
 class WikidataItemList {
 
+	public $testing = false ;
 	protected $items = array() ;
 
 	public function sanitizeQ ( &$q ) {
@@ -301,6 +310,7 @@ class WikidataItemList {
     	$qs = array(array()) ;
     	foreach ( $list AS $q ) {
     		$this->sanitizeQ($q) ;
+    		if ( $q == 'Q' || $q == 'P' ) continue ;
 	    	if ( isset($this->items[$q]) ) continue ;
 	    	if ( count($qs[count($qs)-1]) == 50 ) $qs[] = array() ;
     		$qs[count($qs)-1][] = $q ;
@@ -316,7 +326,7 @@ class WikidataItemList {
     	}
 #print_r ( $urls ) ;
     	$res = $this->getMultipleURLsInParallel ( $urls ) ;
-
+    	
 		foreach ( $res AS $k => $txt ) {
 			$j = json_decode ( $txt ) ;
 			if ( !isset($j) or !isset($j->entities) ) continue ;
@@ -370,7 +380,6 @@ class WikidataItemList {
 	
 			$mh = curl_multi_init();
 			curl_multi_setopt  ( $mh , CURLMOPT_PIPELINING , 1 ) ;
-		//	curl_multi_setopt  ( $mh , CURLMOPT_MAX_TOTAL_CONNECTIONS , 5 ) ;
 			$ch = array() ;
 			foreach ( $batch_urls AS $key => $value ) {
 				$ch[$key] = curl_init($value);

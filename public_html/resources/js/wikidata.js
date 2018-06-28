@@ -269,8 +269,8 @@ function WikiDataItem ( init_wd , init_raw ) {
 		if ( claim.mainsnak.datavalue === undefined ) return undefined ;
 		if ( claim.mainsnak.datavalue.value === undefined ) return undefined ;
 		if ( claim.mainsnak.datavalue.value['entity-type'] != 'item' ) return undefined ;
-		if ( claim.mainsnak.datavalue.value['numeric-id'] === undefined ) return undefined ;
-		return 'Q'+claim.mainsnak.datavalue.value['numeric-id'] ;
+		if ( claim.mainsnak.datavalue.value['id'] === undefined ) return undefined ;
+		return claim.mainsnak.datavalue.value['id'] ;
 	}
 	
 	this.getClaimTargetString = function ( claim ) {
@@ -359,6 +359,7 @@ function WikiData () {
 	this.main_languages = [ 'en' , 'de' , 'fr' , 'nl' , 'es' , 'it' , 'pl' , 'pt' , 'ja' , 'ru' , 'hu' , 'sv' , 'fi' , 'da' , 'cs' , 'sk' , 'et' , 'tr' , 'az' , 'zh' ] ;
 	this.items = {} ;
 	this.default_props = 'info|aliases|labels|descriptions|claims|sitelinks|datatype' ;
+	this.currently_loading = {} ;
 	
 	// Constructor
 //	this.clear() ;
@@ -415,6 +416,7 @@ function WikiData () {
 	this.getItemBatch = function ( item_list , callback , props ) {
 		var self = this ;
 		if ( props === undefined ) props = self.default_props ;
+
 		var ids = [ [] ] ;
 		self.loaded_count = 0 ;
 		self.loading_count = 0 ;
@@ -435,6 +437,13 @@ function WikiData () {
 		
 		if ( ids[0].length == 0 ) { // My work here is done
 			callback ( ids ) ;
+			return ;
+		}
+
+		if ( ids[0].length == 1 && self.currently_loading[ids[0][0]] == 1 ) { // Already loading this single one, wait
+			setTimeout ( function () {
+				self.getItemBatch ( ids[0] , callback , props ) ;
+			} , 200 ) ;
 			return ;
 		}
 		
@@ -468,8 +477,10 @@ function WikiData () {
 				api_params.sites = sites.join('|') ;
 				api_params.languages = languages.join('|') ;
 			}
+			$.each ( id_list , function ( k , v ) { self.currently_loading[v] = 1 } ) ; // Mark as loading
 			$.getJSON ( self.api , api_params , function ( data ) {
-				
+				$.each ( id_list , function ( k , v ) { delete self.currently_loading[v] } ) ; // Mark as not loading
+
 				$.each ( (data.entities||[]) , function ( k , v ) {
 					var q = self.getUnifiedID ( k ) ;
 					self.items[q] = new WikiDataItem ( self , data.entities[q] ) ;

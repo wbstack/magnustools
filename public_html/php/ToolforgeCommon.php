@@ -217,6 +217,7 @@ final class ToolforgeCommon {
 	//			print "RECONNECTING..." ;
 				sleep ( 1 ) ;
 				@$db->connect() ;
+				$pinging-- ;
 			}
 			if($ret = @$db->query($sql)) return $ret ;
 			$max_tries-- ;
@@ -313,7 +314,7 @@ final class ToolforgeCommon {
 // CURL
 
 	// Takes a URL and an array with POST parameters
-	function doPostRequest ( $url , $params = [] ) {
+	function doPostRequest ( $url , $params = [] , $optional_headers = null ) {
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookiejar);
 		curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookiejar);
@@ -322,6 +323,7 @@ final class ToolforgeCommon {
 		curl_setopt($ch, CURLOPT_POST, true);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
 		curl_setopt($ch, CURLOPT_USERAGENT, $this->browser_agent);
+		if ($optional_headers !== null) curl_setopt($ch, CURLOPT_HTTPHEADER, $optional_headers);
 		$output = curl_exec($ch);
 		$info = curl_getinfo($ch);
 		curl_close($ch);
@@ -405,7 +407,7 @@ final class ToolforgeCommon {
 		// Catch "wait" response, wait 5, retry
 		if ( preg_match ( '/429/' , $http_response_header[0] ) ) {
 			sleep ( 5 ) ;
-			return getSPARQL ( $cmd ) ;
+			return $this->getSPARQL ( $cmd ) ;
 		}
 		
 		assert ( $fc !== false , 'SPARQL query failed: '.$sparql ) ;
@@ -430,6 +432,49 @@ final class ToolforgeCommon {
 		$ret = array_unique ( $ret ) ;
 		return $ret ;
 	}
+
+// QuickStatements
+// require_once ( '/data/project/quickstatements/public_html/quickstatements.php' ) ;
+
+	// Will use the first *.conf config file in tools directory, unless specified
+	public function getQS ( $toolname , $config_file = '' ) {
+		if ( $config_file == '' ) $config_file = $this->guessConfigFile() ;
+		if ( $config_file == '' ) die ( "Can't determine QS config file location" ) ;
+		$qs = new QuickStatements() ;
+		$qs->use_oauth = false ;
+		$qs->bot_config_file = $config_file ;
+		$qs->toolname = $toolname ;
+		$qs->sleep = 1 ;
+		$qs->use_command_compression = true ;
+		$this->qs = $qs ;
+		return $qs ;
+	}
+
+	// $commands as array
+	// Returns last (created) item, or undefined
+	public function runCommandsQS ( $commands , $qs = '' ) {
+		if ( count($commands) == 0 ) return ;
+		if ( $qs == '' ) $qs = $this->qs ;
+		$commands = implode ( "\n" , $commands ) ;
+		$tmp_uncompressed = $qs->importData ( $commands , 'v1' ) ;
+		$tmp['data']['commands'] = $qs->compressCommands ( $tmp_uncompressed['data']['commands'] ) ;
+		$qs->runCommandArray ( $tmp['data']['commands'] ) ;
+		if ( !isset($qs->last_item) ) return ;
+		$last_item = 'Q' . preg_replace ( '/\D/' , '' , "{$qs->last_item}" ) ;
+		return $last_item ;
+	}
+
+	private function guessConfigFile () {
+		if ( preg_match ( '/(\/mnt\/nfs\/labstore-secondary-tools-project\/[^\/]+)/' , getcwd() , $m ) ) {
+			$dir = $m[1] ;
+			$files = scandir ( $dir ) ;
+			foreach ( $files AS $file ) {
+				if ( preg_match ( '/^[^\.].*\.conf$/' , $file ) ) return "{$dir}/{$file}" ;
+			}
+		}
+		return '' ; // No luck
+	}
+
 
 } ;
 

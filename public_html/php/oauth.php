@@ -514,7 +514,9 @@ class MW_OAuth {
 		
 		# maxlag
 		if ( isset($ret->error) and isset($ret->error->code) and $ret->error->code == 'maxlag' ) {
-			sleep ( $maxlag ) ;
+			$lag = $maxlag ;
+			if ( isset($ret->error->lag) ) $lag += $ret->error->lag*1 ;
+			sleep ( $lag ) ;
 			$ch = null ;
 			$ret = $this->doApiQuery( $post, $ch , '' ) ;
 		}
