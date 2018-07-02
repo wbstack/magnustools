@@ -1,0 +1,50 @@
+<style>
+.autodesc_result_text {
+}
+.autodesc_manual_text {
+	color:#666;
+}
+</style>
+
+<template id='autodesc-template'>
+<span :key='item+"|"+mode+"|"+language'>
+	<span v-if='loaded'>
+		<span v-if='data.result!=""' class='autodesc_result_text'>{{data.result}}</span>
+		<span v-else class='autodesc_manual_text'>{{data.manual_desctiption}}</span>
+	</span>
+	<span v-else-if='error_message!=""'><i>{{error_message}}</i></span>
+	<span v-else>...</span>
+</span>
+</template>
+
+<script>
+'use strict';
+
+Vue.component ( 'autodesc' , {
+	props : [ 'item' , 'mode' , 'language' ] ,
+	data : function () { return { loaded:false , data:{} , error_message:'' } } ,
+	created : function () {
+		var me = this ;
+		me.loaded = false ;
+		me.error_message = '' ;
+		let params = {
+			q:me.item,
+			mode:(me.mode==''?'short':me.mode) ,
+//			lang:(me.language||'en') ,
+			links:'text',
+			format:'json'
+		} ;
+		if ( typeof me.language != 'undefined' ) params.lang = me.language ;
+		else if ( typeof tt != 'undefined' ) params.lang = tt.language ;
+		$.get ( '/autodesc' , params , function ( d ) {
+			me.data = d ;
+//			console.log ( JSON.parse(JSON.stringify(d)) ) ;
+			me.loaded = true ;
+		} , 'json' )
+		.fail ( function () {
+			me.error_message = 'Could not load description for '+me.item ;
+		} ) ;
+	} ,
+	template : '#autodesc-template'
+} ) ;
+</script>

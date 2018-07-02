@@ -75,6 +75,10 @@ final class ToolforgeCommon {
 		flush();
 	}
 
+	function getCurrentTimestamp () {
+		return date ( 'YmdHis' ) ;
+	}
+
 
 // Toolforge/Wikimedia name conversions
 
