@@ -650,7 +650,7 @@ function WikiData () {
 	}
 	
 	this.itemFromBinding = function ( x ) {
-		return x.value.replace ( /^.+\/[PQ]/ , '' ) ;
+		return x.value.replace ( /^.+\/([PQ])/ , '$1' ) ;
 	}
 	
 	this.loadSPARQLitems = function ( query , callback , callback_fail ) {
@@ -670,7 +670,7 @@ function WikiData () {
 				var x = v[varname] ;
 				if ( typeof x == 'undefined' ) return ;
 				if ( x.type != 'uri' ) return ;
-				var q = 'Q' + self.itemFromBinding ( x ) ;
+				var q = self.itemFromBinding ( x ) ;
 				tmp.push ( q ) ;
 			} ) ;
 			callback ( tmp ) ;
