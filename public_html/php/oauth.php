@@ -52,16 +52,14 @@ class MW_OAuth {
 
 	function sleepAfterEdit ( $type ) {
 		if ( $this->auto_detect_lag ) { // Try to auto-detect lag
-			$url = 'https://www.wikidata.org/w/api.php?action=query&titles=MediaWiki&format=json&maxlag=-1' ;
+			$url = $this->apiUrl . '?action=query&meta=siteinfo&format=json&maxlag=-1' ;
 			$t = @file_get_contents ( $url ) ;
 			if ( $t !== false ) {
 				$j = @json_decode ( $t ) ;
-				if ( isset($j) and $j !== false ) {
+				if ( isset($j->error->lag) ) {
 					$lag = $j->error->lag ;
-					if ( isset($lag) ) {
-						if ( $lag > 1 ) sleep ( $lag * 3 ) ;
-						return ;
-					}
+					if ( $lag > 1 ) sleep ( $lag * 3 ) ;
+					return ;
 				}
 			}
 		}
