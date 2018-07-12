@@ -1,0 +1,214 @@
+<style>
+input.value_validator {
+	display:inline;
+	width:20rem;
+}
+</style>
+
+<template id='value-validator-template'>
+<div style='display:inline-block;' v-if='initialized'>
+	<div v-if='ready'>
+		<input type='text' class='form-control value_validator' v-model='string_value' @keyup='onKeyRelease' />
+		<!-- @keyup='onKeyRelease' @keyup.esc='onKeyEscape'  @keyup.down='onKeyDown' @keyup.enter='onKeyEnter' -->
+		<span v-if='typeof parsed_datavalue.type!="undefined"'>
+			<span v-if='parsed_datavalue.type=="time"'>
+				<select v-model='parsed_datavalue.value.precision' class='custom-select' style='width:auto'>
+					<option value='11' tt='day'></option>
+					<option value='10' tt='month'></option>
+					<option value='9' tt='year'></option>
+					<option value='8' tt='decade'></option>
+					<option value='7' tt='century'></option>
+				</select>
+				<select v-model='parsed_datavalue.value.calendarmodel' class='custom-select' style='width:auto'>
+					<option value='http://www.wikidata.org/entity/Q1985727' tt='gregorian'></option>
+					<option value='http://www.wikidata.org/entity/Q11184' tt='julian'></option>
+				</select>
+			</span>
+			<span v-else>{{parsed_datavalue}}</span>
+		</span>
+		<span v-if='helper_url!=""' class="alert alert-light">
+			<a class='external' target='_blank' :href='helper_url' :title='p.getLabel()'>{{string_value}}</a>
+		</span>
+		<span v-if='helper_q!=""' class="alert alert-info">
+			<b><small><wd-link :item='helper_q' smallq='1'></wd-link></small></b>
+		</span>
+		<span v-if='helper_commons_file!=""'>
+			<commons-thumbnail :filename='helper_commons_file' :height='64'></commons-thumbnail>
+		</span>
+		<span v-if='!is_valid && $.trim(string_value)!=""'>
+			<small><wd-link :item='prop' :label='prop'></wd-link></small>
+		</span>
+	</div>
+	<div v-else>
+		PROBLEM WITH PROPERTY "{{prop}}"
+	</div>
+</div>
+</template>
+
+<script>
+'use strict';
+
+Vue.component ( 'value-validator' , {
+	template : '#value-validator-template' ,
+	props : [ 'prop' , 'init' ] ,
+	data : function () { return { string_value:'' , p:{} , initialized:false , ready:false , validity_cache:{} , is_valid:false , datatype:'' , helper_q:'' , helper_url:'' , helper_commons_file:'' , parsed_datavalue:{} , timeout_handle:'' } } ,
+	created : function () {
+		var me = this ;
+		if ( typeof me.init != 'undefined' ) me.string_value = me.init ;
+		wd.getItemBatch ( [ me.prop ] , function () {
+			me.p = wd.getItem ( me.prop ) ;
+			me.ready = (typeof me.p != 'undefined') ;
+			if ( me.ready ) me.datatype = me.p.getDataytpe() ;
+			me.initialized = true ;
+		} ) ;
+	} ,
+    mounted : function () { if (typeof tt!='undefined') tt.updateInterface(this.$el) } ,
+    updated : function () { if (typeof tt!='undefined') tt.updateInterface(this.$el) } ,
+	methods : {
+		onKeyRelease : function () {
+			clearTimeout ( this.timeout_handle ) ;
+			this.timeout_handle = setTimeout ( this.checkValidValue , 300 ) ;
+		} ,
+		checkValidValue : function () {
+			var me = this ;
+			me.isValidValue ( function () {
+				if ( me.is_valid ) {
+					let ret = { is_valid:true , string_value:me.string_value , statement:{ mainsnak:{snaktype:'value',property:me.prop,datatype:me.datatype},type:'statement',rank:'normal' } } ;
+					if ( me.datatype  == 'external-id' ) {
+						ret.statement.mainsnak.datavalue = { value:$.trim(me.string_value) , type:'string' } ;
+					} else if ( me.datatype  == 'commonsMedia' ) {
+						ret.statement.mainsnak.datavalue = $.trim(me.string_value) ;
+					} else if ( me.datatype  == 'string' ) {
+						ret.statement.mainsnak.datavalue = $.trim(me.string_value) ;
+					} else if ( typeof me.parsed_datavalue.type != 'undefined' ) {
+						ret.statement.mainsnak.datavalue = me.parsed_datavalue ;
+					} else {
+						console.log ( me.datatype ) ;
+						return ;
+					}
+					ret = JSON.parse ( JSON.stringify ( ret ) ) ;
+					me.$emit('setvalue',ret) ;
+				} else {
+					let ret = { is_valid:false } ;
+					me.$emit('setvalue',ret) ;
+				}
+			} ) ;
+		} ,
+		resetHelpers : function () {
+			var me = this ;
+				me.helper_q = '' ;
+				me.helper_url = '' ;
+				me.helper_commons_file = '' ;
+		} ,
+		isValidValue : function ( callback ) {
+			var me = this ;
+			let o = $($(me.$el).find('input.value_validator')) ;
+			if ( $.trim(me.string_value) == '' ) {
+				o.removeClass('is-valid').removeClass('is-invalid') ;
+				o.attr('title','') ;
+				me.is_valid = false ;
+				me.resetHelpers() ;
+				if ( me.is_valid ) o.addClass('is-invalid').removeClass('is-valid') ;
+				else o.addClass('is-valid').removeClass('is-invalid') ;
+				return callback() ;
+			}
+			if ( typeof me.validity_cache[me.string_value] != 'undefined' ) {
+				me.is_valid = me.validity_cache[me.string_value].validity ;
+				o.attr('title',me.validity_cache[me.string_value].title) ;
+				me.helper_q = me.validity_cache[me.string_value].helper_q ;
+				me.helper_url = me.validity_cache[me.string_value].helper_url ;
+				me.helper_commons_file = me.validity_cache[me.string_value].helper_commons_file ;
+
+//				me.setValidity ( me.validity_cache[me.string_value] , callback ) ;
+				if ( typeof callback != 'undefined' ) callback() ;
+				return ;
+			}
+			o.attr('title','') ;
+			me.resetHelpers() ;
+			let ret = false ;
+
+			if ( me.prop == 'P373' ) { // Commons category
+				$.getJSON ( 'https://commons.wikimedia.org/w/api.php?callback=?' , {
+					action:'query',
+					prop:'info',
+					titles:'Category:'+$.trim(me.string_value),
+					format:'json'
+				} ,function ( d ) {
+					let is_valid = (typeof d.query.pages['-1']=='undefined') ;
+					if ( is_valid ) me.helper_url = 'https://commons.wikimedia.org/wiki/Category:' + encodeURIComponent(me.string_value.replace(/ /g,'_')) ;
+					me.setValidity ( is_valid , callback ) ;
+				} ) ;
+			} else if ( me.datatype  == 'commonsMedia' ) {
+				$.getJSON ( 'https://commons.wikimedia.org/w/api.php?callback=?' , {
+					action:'query',
+					prop:'info',
+					titles:'File:'+$.trim(me.string_value),
+					format:'json'
+				} ,function ( d ) {
+					let is_valid = (typeof d.query.pages['-1']=='undefined') ;
+					if ( is_valid ) me.helper_commons_file = $.trim(me.string_value) ;
+					me.setValidity ( is_valid , callback ) ;
+				} ) ;
+			} else if ( me.datatype  == 'external-id' ) {
+				if ( me.p.hasClaims ( 'P1630' ) ) {
+					let url = me.p.getFirstStringForProperty('P1630') ;
+					me.helper_url = url.replace ( /\$1/ , $.trim(me.string_value) ) ;
+				}
+				if ( me.p.hasClaims ( 'P1793' ) ) {
+					$.each ( me.p.getClaimsForProperty('P1793') , function ( k , v ) {
+						let pattern = new RegExp ( v.mainsnak.datavalue.value ) ;
+						if ( pattern.test ( me.string_value) ) ret = true ;
+					} ) ;
+					if ( !ret ) o.attr('title',tt.t('regexp_fail')) ;
+				} else ret = true ;
+				if ( ret && me.p.hasClaimItemLink ( 'P2302' , 'Q21502410' ) ) { // Distinct value constraint
+					let sparql = 'SELECT ?q { ?q wdt:'+me.prop+' "'+$.trim(me.string_value)+'"}' ;
+					return wd.loadSPARQLitems ( sparql , function ( data ) {
+						if ( data.length > 0 ) {
+							o.attr ('title',tt.t('external_id_already_used',{params:[data[0]]})) ;
+							me.helper_q = data[0] ;
+						}
+						me.setValidity ( data.length==0 , callback ) ;
+					} , function () { // FAIL
+						me.setValidity ( false , callback ) ;
+					} )
+				}
+				me.setValidity ( ret , callback ) ;
+			} else if ( me.datatype == 'string' ) {
+				me.setValidity ( true , callback ) ;
+			} else {
+				$.getJSON ( 'https://www.wikidata.org/w/api.php?callback=?' , {
+					action:'wbparsevalue',
+					datatype:me.datatype,
+					values:me.string_value,
+					format:'json'
+				} , function ( d ) {
+					me.parsed_datavalue = {} ;
+					if ( typeof d.error == 'undefined' ) {
+						me.parsed_datavalue = {
+							value : d.results[0].value ,
+							type : d.results[0].type
+						} ;
+						me.setValidity ( true , callback ) ;
+					} else {
+						me.setValidity ( false , callback ) ;
+					}
+				} ) ;
+			}
+		} ,
+		setValidity : function ( validity , callback ) {
+			var me = this ;
+			let o = $($(me.$el).find('input.value_validator')) ;
+			me.is_valid = validity ;
+			let result = { validity:validity , helper_q:me.helper_q , title:o.attr('title') , helper_url:me.helper_url , helper_commons_file:me.helper_commons_file } ;
+			me.validity_cache[me.string_value] = result ;
+			if ( !me.is_valid ) {
+				o.addClass('is-invalid').removeClass('is-valid') ;
+			} else {
+				o.addClass('is-valid').removeClass('is-invalid') ;
+				o.attr('title','') ;
+			}
+			if ( typeof callback != 'undefined' ) callback() ;
+		}
+	}
+} ) ;

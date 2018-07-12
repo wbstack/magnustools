@@ -88,7 +88,9 @@ Vue.component ( 'typeahead-search' , {
 	} ,
 	mounted : function () {
 		this.$refs.search.focus();
+		if (typeof tt!='undefined') tt.updateInterface(this.$el) ;
 	} ,
+    updated : function () { if (typeof tt!='undefined') tt.updateInterface(this.$el) } ,
 	methods : {
 		clearLastSearch : function () {
 			var me = this ;
@@ -214,6 +216,19 @@ Vue.component ( 'typeahead-search' , {
 			this.is_search_done = false ;
 			this.key_select_position = -1 ;
 			this.highlightKeySelect() ;
+		} ,
+	} ,
+	watch : {
+		initial_q : function ( new_q , old_q ) {
+			var me = this ;
+			wd.getItemBatch ( [ new_q ] , function () {
+				let i = wd.getItem ( new_q ) ;
+				let r = {
+					id : new_q ,
+					label : (typeof i=='undefined'?new_q:i.getLabel())
+				}
+				me.onSelectResult ( r ) ;
+			} ) ;
 		}
 	}
 } ) ;
