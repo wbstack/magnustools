@@ -13,7 +13,7 @@ class MW_OAuth {
 	var $mwOAuthIW = 'mw'; // Set this to the interwiki prefix for the OAuth central wiki.
 	var $userinfo ;
 
-	var $auto_detect_lag = true ;
+	var $auto_detect_lag = false ;
 	var $delay_after_create_s = 2 ;
 	var $delay_after_edit_s = 1 ;
 	var $delay_after_upload_s = 1 ;

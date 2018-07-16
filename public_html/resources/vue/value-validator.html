@@ -3,12 +3,17 @@ input.value_validator {
 	display:inline;
 	width:20rem;
 }
+input.language_validator {
+	display:inline;
+	width:5rem;
+}
 </style>
 
 <template id='value-validator-template'>
 <div style='display:inline-block;' v-if='initialized'>
 	<div v-if='ready'>
-		<input type='text' class='form-control value_validator' v-model='string_value' @keyup='onKeyRelease' />
+		<input v-if='datatype=="monolingualtext"' type='text' v-model='language_code' class='form-control language_validator' @keyup='onKeyRelease' placeholder='lang' />
+		<input type='text' class='form-control value_validator' v-model='string_value' @keyup='onKeyRelease' :placeholder='datatype' />
 		<!-- @keyup='onKeyRelease' @keyup.esc='onKeyEscape'  @keyup.down='onKeyDown' @keyup.enter='onKeyEnter' -->
 		<span v-if='typeof parsed_datavalue.type!="undefined"'>
 			<span v-if='parsed_datavalue.type=="time"'>
@@ -21,7 +26,7 @@ input.value_validator {
 				</select>
 				<select v-model='parsed_datavalue.value.calendarmodel' class='custom-select' style='width:auto'>
 					<option value='http://www.wikidata.org/entity/Q1985727' tt='gregorian'></option>
-					<option value='http://www.wikidata.org/entity/Q11184' tt='julian'></option>
+					<option value='http://www.wikidata.org/entity/Q1985786' tt='julian'></option>
 				</select>
 			</span>
 			<span v-else>{{parsed_datavalue}}</span>
@@ -51,7 +56,7 @@ input.value_validator {
 Vue.component ( 'value-validator' , {
 	template : '#value-validator-template' ,
 	props : [ 'prop' , 'init' ] ,
-	data : function () { return { string_value:'' , p:{} , initialized:false , ready:false , validity_cache:{} , is_valid:false , datatype:'' , helper_q:'' , helper_url:'' , helper_commons_file:'' , parsed_datavalue:{} , timeout_handle:'' } } ,
+	data : function () { return { string_value:'' , p:{} , initialized:false , ready:false , validity_cache:{} , is_valid:false , datatype:'' , helper_q:'' , helper_url:'' , helper_commons_file:'' , parsed_datavalue:{} , timeout_handle:'' , language_code:'' } } ,
 	created : function () {
 		var me = this ;
 		if ( typeof me.init != 'undefined' ) me.string_value = me.init ;
@@ -76,6 +81,8 @@ Vue.component ( 'value-validator' , {
 					let ret = { is_valid:true , string_value:me.string_value , statement:{ mainsnak:{snaktype:'value',property:me.prop,datatype:me.datatype},type:'statement',rank:'normal' } } ;
 					if ( me.datatype  == 'external-id' ) {
 						ret.statement.mainsnak.datavalue = { value:$.trim(me.string_value) , type:'string' } ;
+					} else if ( me.datatype  == 'monolingualtext' ) {
+						ret.statement.mainsnak.datavalue = { text:$.trim(me.string_value) , language:$.trim(me.language_code.toLowerCase()) } ;
 					} else if ( me.datatype  == 'commonsMedia' ) {
 						ret.statement.mainsnak.datavalue = $.trim(me.string_value) ;
 					} else if ( me.datatype  == 'string' ) {
@@ -176,6 +183,8 @@ Vue.component ( 'value-validator' , {
 				me.setValidity ( ret , callback ) ;
 			} else if ( me.datatype == 'string' ) {
 				me.setValidity ( true , callback ) ;
+			} else if ( me.datatype == 'monolingualtext' ) {
+				me.setValidity ( true , callback ) ; // TODO check language
 			} else {
 				$.getJSON ( 'https://www.wikidata.org/w/api.php?callback=?' , {
 					action:'wbparsevalue',

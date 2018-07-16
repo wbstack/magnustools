@@ -50,7 +50,7 @@ Vue.component ( 'widar' , {
 			let me = this ;
 			if ( me.tool != '' && typeof params.tool_hashtag == 'undefined' ) params.tool_hashtag = me.toolname ;
 			params.botmode = 1 ;
-			$.get ( me.widar_api , params , function ( d ) {
+			$.post ( me.widar_api , params , function ( d ) {
 				if ( d.error != 'OK' ) {
 					console.log ( 'WIDAR' , params ) ;
 					if ( null != d.error.match(/Invalid token/) || null != d.error.match(/happen/) || null != d.error.match(/Problem creating item/) || ( params.action!='create_redirect' && null != d.error.match(/failed/) ) ) {
