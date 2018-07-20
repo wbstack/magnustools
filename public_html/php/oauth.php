@@ -188,7 +188,7 @@ class MW_OAuth {
 	 * @param string $url URL string
 	 * @param array $params Extra parameters for the Authorization header or post 
 	 * 	data (if application/x-www-form-urlencoded).
-	 *Â @return string Signature
+	 * @return string Signature
 	 */
 	function sign_request( $method, $url, $params = array() ) {
 //		global $gConsumerSecret, $gTokenSecret;
@@ -938,11 +938,28 @@ Claims are used like this:
 			'sitelinks' => array ( $site => array ( "site" => $site ,"title" => $page ) )
 		) ;
 		$m = array () ;
-		if ( preg_match ( '/^(.+)wiki$/' , $site , $m ) ) {
-			$nice_title = preg_replace ( '/\s+\(.+$/' , '' , str_replace ( '_' , ' ' , $page ) ) ;
+		if ( preg_match ( '/^(.+)wiki(|quote)$/' , $site , $m ) ) {
+			$nice_title = preg_replace ( '/\s+\(.+\)$/' , '' , str_replace ( '_' , ' ' , $page ) ) ;
 			$lang = $m[1] ;
-			if ( $lang == 'species' or $lang == 'meta' or $lang == 'wikidata' ) $lang = 'en' ; // Default language
-			if ( $lang == 'no' ) $lang = 'nb' ;
+			$lang_map = array (
+				'als' => 'gsw',
+				'bat_smg' => 'sgs',
+				'be_x_old' => 'be-tarask',
+				'bh' => 'bho',
+				'commons' => 'en',
+				'fiu_vro' => 'vro',
+				'mediawiki' => 'en',
+				'meta' => 'en',
+				'no' => 'nb',
+				'roa_rup' => 'rup',
+				'simple' => 'en',
+				'species' => 'en',
+				'wikidata' => 'en',
+				'zh_classical' => 'lzh',
+				'zh_min_nan' => 'nan',
+				'zh_yue' => 'yue',
+			) ;
+			if ( isset( $lang_map[ $lang ] ) ) $lang = $lang_map[ $lang ] ;
 			$data['labels'] = array ( $lang => array ( 'language' => $lang , 'value' => $nice_title ) ) ;
 		}
 //		print "<pre>" ; print_r ( json_encode ( $data ) ) ; print " </pre>" ; return true ;
