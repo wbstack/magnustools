@@ -408,12 +408,14 @@ class MW_OAuth {
 	 * @param object $ch Curl handle
 	 * @return array API results
 	 */
-	function doApiQuery( $post, &$ch = null , $mode = '' , $iterations_left = 10 ) {
+	function doApiQuery( $post, &$ch = null , $mode = '' , $iterations_left = 5 , $last_maxlag = -1 ) {
 		if ( $iterations_left <= 0 ) return ; // Avoid infinite recursion when Wikidata Is Too Damn Slow Again
 
 		global $maxlag ;
 		if ( !isset($maxlag) ) $maxlag = 5 ;
-		$post['maxlag'] = $maxlag ;
+		$give_maxlag = $maxlag ;
+		if ( $last_maxlag != -1 ) $give_maxlag = $last_maxlag ;
+		$post['maxlag'] = $give_maxlag ;
 		
 		$headerArr = array(
 			// OAuth information
@@ -515,10 +517,10 @@ class MW_OAuth {
 		# maxlag
 		if ( isset($ret->error) and isset($ret->error->code) and $ret->error->code == 'maxlag' ) {
 			$lag = $maxlag ;
-//			if ( isset($ret->error->lag) ) $lag += $ret->error->lag*1 ;
+			if ( isset($ret->error->lag) ) $last_maxlag = $ret->error->lag*1 + $maxlag ;
 			sleep ( $lag ) ;
 			$ch = null ;
-			$ret = $this->doApiQuery( $post, $ch , '' , $iterations_left-1 ) ;
+			$ret = $this->doApiQuery( $post, $ch , '' , $iterations_left-1 , $last_maxlag ) ;
 		}
 		
 		return $ret ;
