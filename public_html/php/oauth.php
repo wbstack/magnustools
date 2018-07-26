@@ -408,7 +408,9 @@ class MW_OAuth {
 	 * @param object $ch Curl handle
 	 * @return array API results
 	 */
-	function doApiQuery( $post, &$ch = null , $mode = '' ) {
+	function doApiQuery( $post, &$ch = null , $mode = '' , $iterations_left = 10 ) {
+		if ( $iterations_left <= 0 ) return ; // Avoid infinite recursion when Wikidata Is Too Damn Slow Again
+
 		global $maxlag ;
 		if ( !isset($maxlag) ) $maxlag = 5 ;
 		$post['maxlag'] = $maxlag ;
@@ -516,7 +518,7 @@ class MW_OAuth {
 //			if ( isset($ret->error->lag) ) $lag += $ret->error->lag*1 ;
 			sleep ( $lag ) ;
 			$ch = null ;
-			$ret = $this->doApiQuery( $post, $ch , '' ) ;
+			$ret = $this->doApiQuery( $post, $ch , '' , $iterations_left-1 ) ;
 		}
 		
 		return $ret ;

@@ -178,6 +178,30 @@ Vue.component ( 'widar' , {
 				callback ( d ) ;
 			} ) ;
 		} ,
+		setLabelOrDescription : function ( type , q , lang , label , summary , tool_hashtag , callback ) {
+			let me = this ;
+			let params = {
+				action:(type=='labels'?'wbsetlabel':'wbsetdescription'),
+				id:q,
+				language:lang,
+				value:label
+			} ;
+			params = {
+				action : 'generic' ,
+				summary : summary ,
+				tool_hashtag : tool_hashtag ,
+				json : JSON.stringify ( params )
+			} ;
+			me.run ( params , function ( d ) {
+				callback ( d ) ;
+			} ) ;
+		} ,
+		setLabel : function ( q , lang , label , summary , tool_hashtag , callback ) {
+			this.setLabelDescription ( 'labels' , q , lang , label , summary , tool_hashtag , callback ) ;
+		} ,
+		setDescription : function ( q , lang , label , summary , tool_hashtag , callback ) {
+			this.setLabelDescription ( 'descriptions' , q , lang , label , summary , tool_hashtag , callback ) ;
+		} ,
 		getUserName : function () { return this.userinfo.name }
 	} ,
 	template : '#widar-template'
