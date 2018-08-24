@@ -415,8 +415,15 @@ class MW_OAuth {
 		if ( !isset($maxlag) ) $maxlag = 5 ;
 		$give_maxlag = $maxlag ;
 		if ( $last_maxlag != -1 ) $give_maxlag = $last_maxlag ;
+
+		// Not an edit, high maxlag allowed
+		if ( isset($post['action']) and $post['action']=='query' and isset($post['meta']) and $post['meta']=='userinfo' ) {
+			$give_maxlag = 99999 ;
+		}
+
 		$post['maxlag'] = $give_maxlag ;
-		
+		if ( isset ( $_REQUEST['test'] ) ) print "<pre>GIVEN MAXLAG:{$give_maxlag}</pre>" ;
+
 		$headerArr = array(
 			// OAuth information
 			'oauth_consumer_key' => $this->gConsumerKey,
@@ -602,8 +609,6 @@ Claims are used like this:
 
 
 	function getConsumerRights () {
-
-		// Next fetch the edit token
 		$ch = null;
 		$res = $this->doApiQuery( array(
 			'format' => 'json',
@@ -612,6 +617,9 @@ Claims are used like this:
 			'uiprop' => 'blockinfo|groups|rights'
 		), $ch );
 		
+//		$url = $this->apiUrl . "?action=query&meta=userinfo&uiprop=blockinfo|groups|rights&format=json" ;
+//		$ret = json_decode ( file_get_content ( $url ) ) ;
+
 		return $res ;
 	}
 

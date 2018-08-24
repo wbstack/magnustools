@@ -2,15 +2,18 @@
 .autodesc_result_text {
 }
 .autodesc_manual_text {
-	color:#666;
+	color:#AAA;
 }
 </style>
 
 <template id='autodesc-template'>
 <span :key='key'>
 	<span v-if='loaded'>
-		<span v-if='data.result!=""' class='autodesc_result_text'>{{data.result}}</span>
-		<span v-else class='autodesc_manual_text'>{{data.manual_desctiption}}</span>
+		<span v-if='data.result!=""'>
+			<span class='autodesc_result_text'>{{data.result.replace(/<.*?>/g,'')}}</span>
+			<span v-if='add_manual' class='autodesc_manual_text'>; {{data.manual_description}}</span>
+		</span>
+		<span v-else class='autodesc_manual_text'>{{data.manual_description}}</span>
 	</span>
 	<span v-else-if='error_message!=""'><i>{{error_message}}</i></span>
 	<span v-else>...</span>
@@ -26,7 +29,7 @@ var autodesc = {
 } ;
 
 Vue.component ( 'autodesc' , {
-	props : [ 'item' , 'mode' , 'language' ] ,
+	props : [ 'item' , 'mode' , 'language' , 'add_manual' ] ,
 	data : function () { return { loaded:false , data:{} , error_message:'' , key:'' } } ,
 	created : function () {
 		this.loadDescription() ;

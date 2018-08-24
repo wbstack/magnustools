@@ -9,7 +9,7 @@
 		<a v-else :href='url' target='_blank' class='wikidata'>
 			{{use_label}}
 		</a>
-		<small v-if='smallq'>[{{item}}]</small>
+		<small v-if='smallq'>[{{getItemID()}}]</small>
 	</span>
 </template>
 

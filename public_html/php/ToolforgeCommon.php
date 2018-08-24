@@ -441,7 +441,7 @@ final class ToolforgeCommon {
 // require_once ( '/data/project/quickstatements/public_html/quickstatements.php' ) ;
 
 	// Will use the first *.conf config file in tools directory, unless specified
-	public function getQS ( $toolname , $config_file = '' ) {
+	public function getQS ( $toolname , $config_file = '' , $useTemporaryBatchID = false ) {
 		if ( $config_file == '' ) $config_file = $this->guessConfigFile() ;
 		if ( $config_file == '' ) die ( "Can't determine QS config file location" ) ;
 		$qs = new QuickStatements() ;
@@ -450,6 +450,7 @@ final class ToolforgeCommon {
 		$qs->toolname = $toolname ;
 		$qs->sleep = 1 ;
 		$qs->use_command_compression = true ;
+		if ( $useTemporaryBatchID ) $qs->generateAndUseTemporaryBatchID() ;
 		$this->qs = $qs ;
 		return $qs ;
 	}
