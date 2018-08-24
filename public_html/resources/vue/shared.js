@@ -9,7 +9,8 @@ let vue_components = {
 	template_container_base_id : 'vue_component_templates' ,
 	components_base_url : 'https://tools-static.wmflabs.org/magnustools/resources/vue/' ,
 	loadComponents : function ( components ) {
-		return Promise.all ( components.map ( component => this.loadComponent(component) ) ) ;
+		return Promise.all ( components.map ( component => this.fetchComponent ( component ) ) )
+			.then (fetched => fetched.map( (html, i) => this.injectComponent ( components[i], html ) ) );
 	} ,
 	getComponentID ( component ) {
 		if ( typeof this.components[component] != 'undefined' ) return this.components[component] ;
@@ -20,13 +21,18 @@ let vue_components = {
 		return  /^(http:|https:|\/|\.)/.test(component) || /\.html$/.test(component) ? component : this.components_base_url+component+'.html' ;
 	} ,
 	loadComponent ( component ) {
+		return this.fetchComponent( component ).then(html => this.injectComponent( component, html ));
+	} ,
+	fetchComponent ( component ) {
 		let id = this.getComponentID ( component ) ;
 		if ( $('#'+id).length > 0 ) return Promise.resolve() ; // Already loaded/loading
-		$('body').append($("<div>").attr({id:id}).css({display:'none'}));
 		let component_url = this.getComponentURL(component) ;
 		return fetch ( component_url )
-			.then ( (response) => response.text() )
-			.then ( (html) => $('#'+id).html(html) )
-			.catch(error => console.error(error)) // TODO that doesn't seem to work??
+			.then ( response => response.text() )
+	} ,
+	injectComponent ( component, html ) {
+		if ( !html ) return;
+		let id = this.getComponentID ( component ) ;
+		$('body').append($('<div>').attr({id: id}).css({display: 'none'}).html(html));
 	}
 }
