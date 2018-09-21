@@ -428,6 +428,7 @@ final class ToolforgeCommon {
 	public function getSPARQLitems ( $cmd , $varname = '' ) {
 		$ret = array() ;
 		$j = $this->getSPARQL ( $cmd ) ;
+		if ( !isset($j) or !isset($j->head) ) return $ret ;
 		if ( $varname == '' ) $varname = $j->head->vars[0] ;
 		if ( !isset($j->results) or !isset($j->results->bindings) or count($j->results->bindings) == 0 ) return $ret ;
 		foreach ( $j->results->bindings AS $v ) {

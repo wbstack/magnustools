@@ -7,7 +7,7 @@ ul.typeahead_search_results {
 }
 input.typeahead_search_results_query {
 	display:inline;
-	width:30rem;
+	width:auto;
 }
 li.typeahead_search_results_row {
 	cursor:pointer;
@@ -37,7 +37,7 @@ div.typeahead_search_results_query_overlay {
 <template id='typeahead-search-template'>
 <div :q='q' style='display:inline-block;'>
 	<form class='form'>
-		<div>
+		<div style='white-space:nowrap;'>
 			<div style='display:inline'>
 				<div class='typeahead_search_results_query_overlay'>{{q}}</div>
 				<input type='text' ref='search' class='form-control typeahead_search_results_query' v-model='query' @keyup='onKeyRelease' @keyup.esc='onKeyEscape' @keyup.up='onKeyUp' @keyup.down='onKeyDown' @keyup.enter='onKeyEnter' autofocus />
@@ -70,7 +70,7 @@ div.typeahead_search_results_query_overlay {
 Vue.component ( 'typeahead-search' , {
 	template : '#typeahead-search-template' ,
 	props : [ 'type' , 'fulltext' , 'initial' , 'language' , 'limit' , 'noinitialsearch' , 'initial_q' ] ,
-	data : function () { return { query:'' , last_query:'' , results:[] , q:'' , is_search_running:false , is_search_done:false , timeout:'' , key_select_position:-1 } } ,
+	data : function () { return { query:'' , last_query:'' , results:[] , q:'' , is_search_running:false , is_search_done:false , timeout:'' , key_select_position:-1 , last_emit:'' } } ,
 	created : function () {
 		var me = this ;
 		if ( typeof me.initial != 'undefined' && $.trim(me.initial) != '' ) {
@@ -78,6 +78,7 @@ Vue.component ( 'typeahead-search' , {
 			if ( !me.noinitialsearch ) me.doSearch () ;
 		} else if ( typeof me.initial_q != 'undefined' && $.trim(me.initial_q) != '' ) {
 			me.q = me.initial_q ;
+//			me.last_emit = me.q ; // ?
 			wd.getItemBatch ( [me.initial_q] , function () {
 				let i = wd.getItem ( me.initial_q ) ;
 				if ( typeof i == 'undefined' ) return ;
@@ -171,11 +172,15 @@ Vue.component ( 'typeahead-search' , {
 			me.is_search_running = false ;
 		} ,
 		onSelectResult : function ( r ) {
+			if ( typeof r == 'undefined' ) return ;
 			this.last_query = r.label ;
 			this.query = r.label ;
 			this.q = r.id ;
 			this.is_search_done = false ;
-			this.$emit('setq',this.q) ;
+			if ( this.last_emit != this.q ) {
+				this.$emit('setq',this.q) ;
+				this.last_emit = this.q ;
+			}
 			this.results = [] ;
 		} ,
 		onKeyUp : function () {
@@ -216,6 +221,7 @@ Vue.component ( 'typeahead-search' , {
 			this.is_search_done = false ;
 			this.key_select_position = -1 ;
 			this.highlightKeySelect() ;
+			this.$emit('cancel') ;
 		} ,
 	} ,
 	watch : {

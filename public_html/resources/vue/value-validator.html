@@ -5,18 +5,23 @@ input.value_validator {
 }
 input.language_validator {
 	display:inline;
-	width:5rem;
+	width:3rem;
 }
 </style>
 
 <template id='value-validator-template'>
 <div style='display:inline-block;' v-if='initialized'>
 	<div v-if='ready'>
-		<input v-if='datatype=="monolingualtext"' type='text' v-model='language_code' class='form-control language_validator' @keyup='onKeyRelease' placeholder='lang' />
-		<input type='text' class='form-control value_validator' v-model='string_value' @keyup='onKeyRelease' :placeholder='datatype' />
-		<!-- @keyup='onKeyRelease' @keyup.esc='onKeyEscape'  @keyup.down='onKeyDown' @keyup.enter='onKeyEnter' -->
+		<div style='display:flex;'>
+			<input v-if='datatype=="monolingualtext"' type='text' v-model='language_code' class='form-control language_validator' @keyup='onKeyRelease' placeholder='lang' />
+			<input type='text' class='form-control value_validator' v-model='string_value' @keyup.esc='onKeyEscape' @keyup.enter='onKeyEnter' @keyup='onKeyRelease' :placeholder='datatype' v-focus />
+			<div v-if='typeof buttons!="undefined"' style='display:flex;'>
+				<button v-if='is_valid' class='btn btn-success' @click.prevent='onKeyEnter'><span style='color:white'>✔</span></button>
+				<button class='btn btn-danger' @click.prevent='onKeyEscape'><span style='color:white'>✘</span></button>
+			</div>
+		</div>
 		<span v-if='typeof parsed_datavalue.type!="undefined"'>
-			<span v-if='parsed_datavalue.type=="time"'>
+			<div v-if='parsed_datavalue.type=="time"'>
 				<select v-model='parsed_datavalue.value.precision' class='custom-select' style='width:auto'>
 					<option value='11' tt='day'></option>
 					<option value='10' tt='month'></option>
@@ -28,8 +33,12 @@ input.language_validator {
 					<option value='http://www.wikidata.org/entity/Q1985727' tt='gregorian'></option>
 					<option value='http://www.wikidata.org/entity/Q1985786' tt='julian'></option>
 				</select>
-			</span>
-			<span v-else>{{parsed_datavalue}}</span>
+			</div>
+			<div v-else-if='parsed_datavalue.type=="globecoordinate"'>
+				<div>{{parsed_datavalue.value.latitude}}/{{parsed_datavalue.value.longitude}} [{{parsed_datavalue.value.precision}}]</div>
+				<div><wd-link :item='parsed_datavalue.value.globe.replace(/^.+\//,"")'></wd-link></div>
+			</div>
+<!--			<div v-else>{{parsed_datavalue}}</div>-->
 		</span>
 		<span v-if='helper_url!=""' class="alert alert-light">
 			<a class='external' target='_blank' :href='helper_url' :title='p.getLabel()'>{{string_value}}</a>
@@ -40,7 +49,7 @@ input.language_validator {
 		<span v-if='helper_commons_file!=""'>
 			<commons-thumbnail :filename='helper_commons_file' :height='64'></commons-thumbnail>
 		</span>
-		<span v-if='!is_valid && $.trim(string_value)!=""'>
+		<span v-if='!is_valid && $.trim(string_value)!="" && !hide_property'>
 			<small><wd-link :item='prop' :label='prop'></wd-link></small>
 		</span>
 	</div>
@@ -53,40 +62,81 @@ input.language_validator {
 <script>
 'use strict';
 
+Vue.directive('focus', {
+    inserted: function (el) {
+        el.focus()
+    }
+}) ;
+
 Vue.component ( 'value-validator' , {
 	template : '#value-validator-template' ,
-	props : [ 'prop' , 'init' ] ,
+	props : [ 'prop' , 'init' , 'buttons' , 'snak' , 'hide_property' ] ,
 	data : function () { return { string_value:'' , p:{} , initialized:false , ready:false , validity_cache:{} , is_valid:false , datatype:'' , helper_q:'' , helper_url:'' , helper_commons_file:'' , parsed_datavalue:{} , timeout_handle:'' , language_code:'' } } ,
 	created : function () {
 		var me = this ;
 		if ( typeof me.init != 'undefined' ) me.string_value = me.init ;
-		wd.getItemBatch ( [ me.prop ] , function () {
-			me.p = wd.getItem ( me.prop ) ;
-			me.ready = (typeof me.p != 'undefined') ;
-			if ( me.ready ) me.datatype = me.p.getDataytpe() ;
-			me.initialized = true ;
-		} ) ;
+		if ( typeof me.snak != 'undefined' ) me.initFromSnak ( me.snak , me.initProperty ) ;
+		else me.initProperty() ;
 	} ,
     mounted : function () { if (typeof tt!='undefined') tt.updateInterface(this.$el) } ,
     updated : function () { if (typeof tt!='undefined') tt.updateInterface(this.$el) } ,
 	methods : {
-		onKeyRelease : function () {
-			clearTimeout ( this.timeout_handle ) ;
-			this.timeout_handle = setTimeout ( this.checkValidValue , 300 ) ;
+		initProperty : function () {
+			var me = this ;
+			wd.getItemBatch ( [ me.prop ] , function () {
+				me.p = wd.getItem ( me.prop ) ;
+				me.ready = (typeof me.p != 'undefined') ;
+				if ( me.ready ) me.datatype = me.p.getDataytpe() ;
+				me.initialized = true ;
+				me.checkValidValue('setvalue');
+			} ) ;
 		} ,
-		checkValidValue : function () {
+		initFromSnak : function ( snak , callback ) {
+			var me = this ;
+			me.parsed_datavalue = snak.datavalue ;
+			if ( snak.datatype == 'monolingualtext' ) {
+				me.language_code = snak.datavalue.value.language ;
+				me.string_value = snak.datavalue.value.text ;
+				return callback() ;
+			}
+			if ( snak.datatype == 'commonsMedia' ) {
+				me.string_value = snak.datavalue.value ;
+				return callback() ;
+			}
+			$.getJSON ( 'https://www.wikidata.org/w/api.php?callback=?' , {
+				action:'wbformatvalue',
+				datavalue:JSON.stringify(snak.datavalue),
+				datatype:snak.datatype,
+				format:'json'
+			} , function ( d ) {
+				me.string_value = $('<div />').html(d.result).text() ;
+				callback() ;
+			} ) ;
+		} ,
+		onKeyRelease : function () {
+			var me = this ;
+			clearTimeout ( me.timeout_handle ) ;
+			me.timeout_handle = setTimeout ( function () { me.checkValidValue('setvalue') } , 300 ) ;
+		} ,
+		onKeyEscape : function () {
+			this.$emit('cancel') ;
+		} ,
+		onKeyEnter : function () {
+			this.checkValidValue('enter') ;
+		} ,
+		checkValidValue : function ( event_name ) {
 			var me = this ;
 			me.isValidValue ( function () {
 				if ( me.is_valid ) {
-					let ret = { is_valid:true , string_value:me.string_value , statement:{ mainsnak:{snaktype:'value',property:me.prop,datatype:me.datatype},type:'statement',rank:'normal' } } ;
+					let ret = { is_valid:true , string_value:$.trim(me.string_value) , statement:{ mainsnak:{snaktype:'value',property:me.prop,datatype:me.datatype},type:'statement',rank:'normal' } } ;
 					if ( me.datatype  == 'external-id' ) {
 						ret.statement.mainsnak.datavalue = { value:$.trim(me.string_value) , type:'string' } ;
 					} else if ( me.datatype  == 'monolingualtext' ) {
 						ret.statement.mainsnak.datavalue = { text:$.trim(me.string_value) , language:$.trim(me.language_code.toLowerCase()) } ;
 					} else if ( me.datatype  == 'commonsMedia' ) {
-						ret.statement.mainsnak.datavalue = $.trim(me.string_value) ;
+						ret.statement.mainsnak.datavalue = { value:$.trim(me.string_value) , type:'string' } ;
 					} else if ( me.datatype  == 'string' ) {
-						ret.statement.mainsnak.datavalue = $.trim(me.string_value) ;
+						ret.statement.mainsnak.datavalue = { value:$.trim(me.string_value) , type:'string' } ;
 					} else if ( typeof me.parsed_datavalue.type != 'undefined' ) {
 						ret.statement.mainsnak.datavalue = me.parsed_datavalue ;
 					} else {
@@ -94,10 +144,10 @@ Vue.component ( 'value-validator' , {
 						return ;
 					}
 					ret = JSON.parse ( JSON.stringify ( ret ) ) ;
-					me.$emit('setvalue',ret) ;
+					me.$emit(event_name,ret) ;
 				} else {
 					let ret = { is_valid:false } ;
-					me.$emit('setvalue',ret) ;
+					me.$emit(event_name,ret) ;
 				}
 			} ) ;
 		} ,
@@ -184,7 +234,8 @@ Vue.component ( 'value-validator' , {
 			} else if ( me.datatype == 'string' ) {
 				me.setValidity ( true , callback ) ;
 			} else if ( me.datatype == 'monolingualtext' ) {
-				me.setValidity ( true , callback ) ; // TODO check language
+				if ( me.isValidLanguageCode(me.language_code) ) me.setValidity ( true , callback ) ;
+				else me.setValidity ( false , callback ) ;
 			} else {
 				$.getJSON ( 'https://www.wikidata.org/w/api.php?callback=?' , {
 					action:'wbparsevalue',
@@ -204,6 +255,9 @@ Vue.component ( 'value-validator' , {
 					}
 				} ) ;
 			}
+		} ,
+		isValidLanguageCode : function ( lang ) {
+			return /^\S{2,}$/.test(lang) ; // TODO
 		} ,
 		setValidity : function ( validity , callback ) {
 			var me = this ;

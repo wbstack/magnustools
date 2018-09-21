@@ -30,27 +30,35 @@ Vue.component ( 'commons-thumbnail' , {
 	props : [ 'filename' , 'width' , 'height' , 'api' ] ,
 	data : function () { return { loading:true , loaded:false , img:{} , api_url:'https://commons.wikimedia.org/w/api.php' } } ,
     created : function () {
-    	let me = this ;
-    	if ( typeof me.api != 'undefined' ) me.api_url = me.api ; // Manual override
-    	$.getJSON ( me.api_url+'?callback=?' , {
-    		action:'query',
-    		prop:'imageinfo',
-    		iiprop:'url|mediatype|mime|size',
-    		iiurlwidth:me.width,
-    		iiurlheight:(me.height||me.width),
-    		titles:'File:'+me.filename,
-    		format:'json'
-    	} , function ( d ) {
-    		$.each ( d.query.pages , function ( k , v ) {
-    			if ( k == -1 ) return ;
-	    		me.img = v ;
-	    		me.loaded = true ;
-    		} ) ;
-//    		console.log ( JSON.parse(JSON.stringify(me.img)) ) ;
-    		me.loading = false ;
-    	} ) ;
+        this.checkAndLoadFilename() ;
     } ,
     methods : {
+        checkAndLoadFilename : function () {
+            let me = this ;
+            if ( typeof me.filename == 'undefined' ) {
+                me.loading = false ;
+                me.loaded = false ;
+                return ;
+            }
+            if ( typeof me.api != 'undefined' ) me.api_url = me.api ; // Manual override
+            $.getJSON ( me.api_url+'?callback=?' , {
+                action:'query',
+                prop:'imageinfo',
+                iiprop:'url|mediatype|mime|size',
+                iiurlwidth:me.width,
+                iiurlheight:(me.height||me.width),
+                titles:'File:'+me.filename,
+                format:'json'
+            } , function ( d ) {
+                $.each ( d.query.pages , function ( k , v ) {
+                    if ( k == -1 ) return ;
+                    me.img = v ;
+                    me.loaded = true ;
+                } ) ;
+    //          console.log ( JSON.parse(JSON.stringify(me.img)) ) ;
+                me.loading = false ;
+            } ) ;
+        } ,
         getElementStyle : function () {
             let me = this ;
             let parts = [] ;
@@ -65,6 +73,11 @@ Vue.component ( 'commons-thumbnail' , {
             return me.width ;
         }
     },
+    watch : {
+        filename : function () {
+            this.checkAndLoadFilename() ;
+        }
+    } ,
 	template : '#commons-thumbnail-template'
 } ) ;
 </script>
