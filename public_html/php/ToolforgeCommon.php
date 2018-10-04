@@ -122,7 +122,7 @@ final class ToolforgeCommon {
 		if ( $language == 'commons' ) return 'commonswiki' ;
 		if ( $language == 'wikidata' ) return 'wikidatawiki' ;
 		if ( $project == 'wikipedia' ) return $language . 'wiki' ;
-		return return $language . 'project' ; // I'm trying, OK?
+		return $language . 'project' ; // I'm trying, OK?
 	}
 
 // DATABASE
