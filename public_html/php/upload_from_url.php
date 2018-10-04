@@ -9,6 +9,44 @@ require_once( 'peachy/Init.php' );
 //header('Content-type: text/plain; charset=utf-8');
 header('Content-type: application/json; charset=utf-8');
 
+
+// UPLOAD FILE VIA API
+
+$cookiejar = '' ;
+$file_upload_api_result = array() ;
+
+
+
+function uploadFileViaAPI ( $username , $userpass , $local_file , $new_file_name , $desc , $comment , $testing ) {
+	global $cookiejar , $file_upload_api_result ;
+	$cookiejar = tempnam("/tmp", "magnus_upload_cookiejar");
+	$api = 'http://commons.wikimedia.org/w/api.php' ;
+	
+	$r1 = do_post_request_curl ( $api , array ( 'action' => 'login' , 'lgname' => $username , 'lgpassword' => $userpass ) ) ;
+	$r2 = do_post_request_curl ( $api , array ( 'action' => 'login' , 'lgname' => $username , 'lgpassword' => $userpass , 'lgtoken' => $r1['login']['token'] ) ) ;
+	$r3 = do_post_request_curl ( $api , array ( 'action' => 'tokens' , 'type' => 'edit' ) ) ;
+	$token = $r3['tokens']['edittoken'] ;
+	$file_upload_api_result = do_post_request_curl ( $api , array (
+		'action' => 'upload' ,
+		'filename' => $new_file_name ,
+		'comment' => $comment ,
+		'text' => $desc ,
+		'token' => $token ,
+		'file' => '@' . $local_file
+	) ) ;
+	if ( isset($testing) AND $testing ) {
+		print "<pre>" ; print_r ( $r1 ) ; print "</pre>" ;
+		print "<pre>" ; print_r ( $r2 ) ; print "</pre>" ;
+		print "<pre>" ; print_r ( $r3 ) ; print "</pre>" ;
+		print "<pre>" ; print_r ( $file_upload_api_result ) ; print "</pre>" ;
+	}
+	unlink ( $cookiejar ) ;
+	if ( $file_upload_api_result['upload']['result'] == 'Warning' ) return false ;
+	return true ; // TODO 
+}
+
+
+
 function do_direct_upload ( $url , $new_name , $desc ) {
 	global $project , $source , $tusc_user , $o , $peachy_error ;
 	$language = 'commons' ;

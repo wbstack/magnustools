@@ -117,6 +117,14 @@ final class ToolforgeCommon {
 		return $ret ;
 	}
 
+	function getWikiForLanguageProject ( $language , $project ) {
+		$language = trim ( strtolower ( $language ) ) ;
+		if ( $language == 'commons' ) return 'commonswiki' ;
+		if ( $language == 'wikidata' ) return 'wikidatawiki' ;
+		if ( $project == 'wikipedia' ) return $language . 'wiki' ;
+		return return $language . 'project' ; // I'm trying, OK?
+	}
+
 // DATABASE
 
 
@@ -228,7 +236,7 @@ final class ToolforgeCommon {
 		}
 		$e = new \Exception;
 		var_dump($e->getTraceAsString());
-		die ( 'There was an error running the query [' . $db->error . ']'."\n$sql\n$message\n" ) ;
+		die ( 'There was an error running the query [' . $db->error . '/' . $db->errno . ']'."\n$sql\n$message\n" ) ;
 	}
 
 	public function findSubcats ( &$db , $root , &$subcats , $depth = -1 ) {
@@ -291,7 +299,7 @@ final class ToolforgeCommon {
 		return "$f1$f2$f3\n" ;
 	}
 
-	public function getCommonHeader ( $title = '' , $p = array() ) {
+	public function getCommonHeader ( $title = '' , $p = [] ) {
 		if ( $title == '' ) $title = ucfirst ( strtolower ( $this->toolname ) ) ;
 		
 		if ( !headers_sent() ) {

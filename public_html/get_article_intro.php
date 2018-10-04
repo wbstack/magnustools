@@ -1,7 +1,7 @@
 <?php
 
 require_once ( "php/common.php" ) ;
-
+require_once ( "php/legacy.php" ) ;
 
 function dewikify ( $p , $lang ) {
 	
