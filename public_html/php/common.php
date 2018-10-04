@@ -1,18 +1,8 @@
 <?PHP
 
-/*
-error_reporting(E_ERROR|E_CORE_ERROR|E_ALL|E_COMPILE_ERROR);
-ini_set('display_errors', 'On');
-
-ini_set('memory_limit','500M');
-set_time_limit ( 60 * 10 ) ; // Seconds
-*/
-
 define('CLI', PHP_SAPI === 'cli');
 ini_set('user_agent','Magnus labs tools'); # Fake user agent
 if ( !isset($noheaderwhatsoever) ) header("Connection: close");
-#$index_file = '/data/project/magnustools/public_html/resources/html/dummy_header_bs4.html' ;
-#$index_file = '/data/project/magnustools/public_html/resources/html/dummy_header.html' ;
 $tools_webproxy = 'tools-webproxy' ;
 $tusc_url = "http://$tools_webproxy/tusc/tusc.php" ; // http://tools-webserver-01/ // tools.wmflabs.org
 $use_db_cache = false ;
@@ -50,43 +40,29 @@ function getSQL ( &$db , &$sql , $max_tries = 2 , $message = '' ) { global $wrap
 function getPagesInCategory ( $db , $category , $depth = 0 , $namespace = 0 , $no_redirects = false ) { global $wrapper_tfc ; return $wrapper_tfc->getPagesInCategory ( $db , $category , $depth , $namespace , $no_redirects ) ; }
 function findSubcats ( $db , $root , &$subcats , $depth = -1 ) { global $wrapper_tfc ; return $wrapper_tfc->findSubcats ( $db , $root , $subcats , $depth ) ; }
 
-
 # External
 function do_post_request($url, $data, $optional_headers = null) { global $wrapper_tfc ; return $wrapper_tfc->doPostRequest ( $url , $params , $optional_headers ) ; }
 function getMultipleURLsInParallel ( $urls , $batch_size = 50 ) { global $wrapper_tfc ; return $wrapper_tfc->getMultipleURLsInParallel ( $urls , $batch_size ) ; }
-function do_post_request_curl ( $url , $params , $format = 'php' ) {
-	global $wrapper_tfc ;
-	$ret = $wrapper_tfc->doPostRequest ( $url , $params ) ;
-	if ( $format != 'php' ) return $output ;
-	return unserialize ( $output ) ;
-}
-
+function do_post_request_curl ( $url , $params , $format = 'php' ) { global $wrapper_tfc ; $ret = $wrapper_tfc->doPostRequest ( $url , $params ) ; return  ($format=='php')?unserialize($output):$output ; }
 
 # SPARQL
 function getSPARQL ( $cmd ) { global $wrapper_tfc ; return $wrapper_tfc->getSPARQL ( $cmd ) ; }
 function getSPARQLitems ( $cmd , $varname = 'q' ) {
 	global $wrapper_tfc ;
 	$items = $wrapper_tfc->getSPARQLitems ( $cmd , $varname ) ;
-	foreach ( $items AS $k => $v ) $items[$k] = preg_replace ( '/\D/' , '' , $v ) ; # Old function returns numeric-only, ToolforgeCommon method returns Qxxx, need to rewrite
+	foreach ( $items AS $k => $v ) $items[$k] = preg_replace ( '/\D/' , '' , $v ) ; # Legacy function returns numeric-only, ToolforgeCommon method returns Qxxx, need to rewrite
 	return $items ;
 }
 
-# Obsolete?
-function verify_tusc () { return false ; }
-function verify_tusc_detail () { return false ; }
-
-
-//________________________________________________________________________________________
-// LEGACY STUFF (should be replaced)
-
-
-
+# Misc
+function get_server_for_lp ( $lang , $project ) { 	global $wrapper_tfc ; return $wrapper_tfc->getWebserverForWiki ( $wrapper_tfc->getWikiForLanguageProject ( $lang , $project ) ) ; }
 function fix_language_code ( $s ) { return strtolower ( preg_replace ( '/[^a-z-]/' , '' , $s ) ) ; }
 function check_project_name ( $s ) { return strtolower ( preg_replace ( '/[^a-z]/' , '' , $s ) ) ; }
 function pre ( $d ) { print "<pre>" ; print_r ( $d ) ; 	print "</pre>" ; }
 function strip_html_comments ( &$text ) { return preg_replace( '?<!--.*-->?msU', '', $text); }
-function get_image_url ( $lang , $image , $project = "wikipedia" ) { return "//{$lang}.".($lang=='commons'?'wikimedia':$project).".org/wiki/Special:Redirect/file/" . myurlencode ( $image ); }
-function get_thumbnail_url ( $lang , $image , $width , $project = "wikipedia" ) { return "//{$lang}.".($lang=='commons'?'wikimedia':$project).".org/wiki/Special:Redirect/file/" . myurlencode ( $image ) . "?width=". $width; }
+function get_image_url ( $lang , $image , $project = "wikipedia" ) { return "//".get_server_for_lp($lang,$project)."/wiki/Special:Redirect/file/".myurlencode($image); }
+function get_thumbnail_url ( $lang , $image , $width , $project = "wikipedia" ) { return "//".get_server_for_lp($lang,$project)."/wiki/Special:Redirect/file/".myurlencode($image)."?width={$width}"; }
+function get_wikipedia_url ( $lang , $title , $action = "" , $project = "wikipedia" ) { return "https://".get_server_for_lp($lang,$project)."/w/index.php?title=".$wrapper_tfc->urlEncode($title).($action==''?'':"&action={$action}") ; }
 function make_db_safe ( &$s , $fixup = false ) { $s = get_db_safe ( $s , $fixup ) ; }
 function get_db_safe ( $s , $fixup = false ) {
 	global $db ;
@@ -94,9 +70,6 @@ function get_db_safe ( $s , $fixup = false ) {
 	if ( !isset($db) ) return addslashes ( str_replace ( ' ' , '_' , $s ) ) ;
 	return $db->real_escape_string ( str_replace ( ' ' , '_' , $s ) ) ;
 }
-
-
-
 
 /**
  * Returns the raw text of a wikipedia page, trimmed and with html comments removed
@@ -106,22 +79,10 @@ function get_wikipedia_article ( $lang , $title , $allow_redirect = true , $proj
 	global $wrapper_tfc ;
 	$wiki = $wrapper_tfc->getWikiForLanguageProject ( $lang , $project ) ;
 	$text = $wrapper_tfc->getWikiPageText ( $wiki , $title ) ;
+	# TODO check redirect?
 	if ( $remove_comments ) $text = trim ( strip_html_comments ( $text ) ) ;
 	else $text = trim ( $text ) ;
 	return $text ;
-}
-
-/**
- * Returns the URL for a language/title combination
- * May be called with additional parameter $action
- */
-function get_wikipedia_url ( $lang , $title , $action = "" , $project = "wikipedia" ) {
-	global $wrapper_tfc ;
-	$wiki = $wrapper_tfc->getWikiForLanguageProject ( $lang , $project ) ;
-	$server = $wrapper_tfc->getWebserverForWiki ( $wiki ) ;
-	$url = "https://{$server}/w/index.php?title=" . $wrapper_tfc->urlEncode ( $title ) ;
-	if ( $action != "" ) $url .= "&action={$action}" ;
-	return $url ;
 }
 
 

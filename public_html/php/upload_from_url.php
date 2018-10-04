@@ -5,6 +5,7 @@ ini_set('display_errors', 'On');
 
 require_once( 'common.php' );
 require_once( 'peachy/Init.php' );
+require_once( 'legacy.php' );
 
 //header('Content-type: text/plain; charset=utf-8');
 header('Content-type: application/json; charset=utf-8');
