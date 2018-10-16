@@ -20,6 +20,7 @@ $petscan_note2 .= "Please add any blocking issues to the <a href='https://bitbuc
 // LEGACY WRAPPER FUNCTIONS AROUND ToolforgeCommon METHODS TO AVOID CODE DUPLICATION
 require_once ( '/data/project/magnustools/public_html/php/ToolforgeCommon.php' ) ;
 $wrapper_tfc = new ToolforgeCommon ( 'legacy code' );
+$wrapper_tfc->use_db_cache = false ; # Some scripts close the DB
 
 # Misc
 function myurlencode ( $t ) { global $wrapper_tfc ; return $wrapper_tfc->urlEncode ( $t ) ; }
@@ -62,7 +63,7 @@ function pre ( $d ) { print "<pre>" ; print_r ( $d ) ; 	print "</pre>" ; }
 function strip_html_comments ( &$text ) { return preg_replace( '?<!--.*-->?msU', '', $text); }
 function get_image_url ( $lang , $image , $project = "wikipedia" ) { return "//".get_server_for_lp($lang,$project)."/wiki/Special:Redirect/file/".myurlencode($image); }
 function get_thumbnail_url ( $lang , $image , $width , $project = "wikipedia" ) { return "//".get_server_for_lp($lang,$project)."/wiki/Special:Redirect/file/".myurlencode($image)."?width={$width}"; }
-function get_wikipedia_url ( $lang , $title , $action = "" , $project = "wikipedia" ) { return "https://".get_server_for_lp($lang,$project)."/w/index.php?title=".$wrapper_tfc->urlEncode($title).($action==''?'':"&action={$action}") ; }
+function get_wikipedia_url ( $lang , $title , $action = "" , $project = "wikipedia" ) { global $wrapper_tfc; return "https://".get_server_for_lp($lang,$project)."/w/index.php?title=".$wrapper_tfc->urlEncode($title).($action==''?'':"&action={$action}") ; }
 function make_db_safe ( &$s , $fixup = false ) { $s = get_db_safe ( $s , $fixup ) ; }
 function get_db_safe ( $s , $fixup = false ) {
 	global $db ;

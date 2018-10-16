@@ -87,6 +87,7 @@ final class ToolforgeCommon {
 		if ( $wiki == 'commonswiki' ) return "commons.wikimedia.org" ;
 		if ( $wiki == 'wikidatawiki' ) return "www.wikidata.org" ;
 		if ( $wiki == 'specieswiki' ) return "species.wikimedia.org" ;
+		if ( $wiki == 'metawiki' ) return "meta.wikimedia.org" ;
 		$wiki = preg_replace ( '/_/' , '-' , $wiki ) ;
 		if ( preg_match ( '/^(.+)wiki$/' , $wiki , $m ) ) return $m[1].".wikipedia.org" ;
 		if ( preg_match ( '/^(.+)(wik.+)$/' , $wiki , $m ) ) return $m[1].".".$m[2].".org" ;
@@ -121,6 +122,7 @@ final class ToolforgeCommon {
 		$language = trim ( strtolower ( $language ) ) ;
 		if ( $language == 'commons' ) return 'commonswiki' ;
 		if ( $language == 'wikidata' ) return 'wikidatawiki' ;
+		if ( $language == 'meta' ) return 'metawiki' ;
 		if ( $project == 'wikipedia' ) return $language . 'wiki' ;
 		return $language . $project . 'wiki' ; // I'm trying, OK?
 	}

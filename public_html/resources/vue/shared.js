@@ -1,7 +1,7 @@
 'use strict';
 
 // ENFORCE HTTPS
-if (location.protocol != 'https:') location.href = 'https:' + window.location.href.substring(window.location.protocol.length);
+//if (location.protocol != 'https:') location.href = 'https:' + window.location.href.substring(window.location.protocol.length);
 
 let vue_components = {
 	toolname : window.location.pathname.replace(/(\/|\.php|\.html{0,1})+$/,'').replace(/^.*\//,'') , // Guessing tool name, override if necessary!
