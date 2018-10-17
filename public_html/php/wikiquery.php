@@ -1,14 +1,19 @@
 <?PHP
 
-//include_once ( 'php/common.php' ) ;
-include_once ( 'common.php' ) ;
+require_once ( 'common.php' ) ;
 
 # ______________________________________________________________________
 # BEGIN OF CLASS WikiQuery
 
+# This class offers access to many "properties" of pages, via API
+# Its original purpose was to get around the unreliable database connections on the toolserver
+# The ToolforgeCommon class likely makes most of the API calls obsolete, but this class is still widely used
+# It also includes "common.php"
+
 class WikiQuery {
-	var $language , $project ;
-	
+	public $language , $project ;
+	private $retry_api_url = 3 ; # Now many times to try file_get_contents for an API page before giving up
+
 	function WikiQuery ( $language , $project = 'wikipedia' ) {
 		if ( $language == 'commons' ) $project = 'wikimedia' ;
 		if ( $language == 'wikidata' ) { $project = $language ; $language = 'www' ; }
@@ -16,56 +21,55 @@ class WikiQuery {
 		$this->language = $language ;
 		$this->project = $project ;
 	}
-	
+
+	function urlEncode ( $t ) {
+		$t = str_replace ( " " , "_" , $t ) ;
+		$t = urlencode ( $t ) ;
+		return $t ;
+	}
+
 	function get_api_base_url ( $what = '' ) {
-    $ret = "http://" ;
-    if ( $this->language != '' ) $ret .= "{$this->language}." ;
+	$ret = "http://" ;
+	if ( $this->language != '' ) $ret .= "{$this->language}." ;
 		$ret .= "{$this->project}.org/w/api.php?format=php&" ;
 		if ( $what != '' ) $ret .= 'action=query&prop=' . $what . '&' ;
 		return $ret ;
 	}
-	
+
+	private function get_api_url ( $what = '' , $append = '' ) {
+		return $this->get_api_base_url('what') . $append ;
+	}
+
 	function get_result ( $url ) {
-		$cnt = 3 ;
+		$cnt = $this->retry_api_url ;
 		do {
 			$result = @file_get_contents ( $url ) ;
 			$cnt-- ;
-			} while ( $result === false AND $cnt > 0 ) ;
+		} while ( $result === false AND $cnt > 0 ) ;
 		return unserialize ( $result ) ;
 	}
 
 	function get_image_data ( $image , $tw = -1 , $th = -1 ) {
 		$url = $this->get_api_base_url ( 'imageinfo' ) ;
-		$url .= 'titles=' . myurlencode ( $image ) ;
+		$url .= 'titles=' . $this->urlEncode ( $image ) ;
 		$url .= '&iiprop=timestamp|user|comment|url|sha1|size|mime|archivename' ;
 		$url .= '&iilimit=50' ;
 		if ( $tw > -1 ) $url .= '&iiurlwidth=' . $tw ;
 		if ( $th > -1 ) $url .= '&iiurlheight=' . $th ;
-		$data = $this->get_result ( $url ) ;
-
-		if ( !isset ( $data['query'] ) ) return false ; # Error
-		$data = $data['query'] ;
-
-		if ( !isset ( $data['pages'] ) ) return false ; # Error
-		$data = $data['pages'] ;
-
-		$data = array_shift ( $data ) ;
+		$data = $this->getFirstResult ( $url , ['query','pages'] ) ;
 		$data['id'] = $data['pageid'] ; unset ( $data['pageid'] ) ;
 		$data['imghistory'] = $data['imageinfo'] ;
-//		unset ( $data['imageinfo'] ) ;
-#		$data['image']['bits'] = '???' ;
-		
 		return $data ;
 	}
 
 
 	function get_existing_pages_sub ( $pages ) {
-		$ret = array () ;
+		$ret = [] ;
 		if ( count ( $pages ) == 0 ) return $ret ;
 		$add = '' ;
 		foreach ( $pages AS $p ) {
 			if ( $add != '' ) $add .= '|' ;
-			$add .= myurlencode ( $p ) ;
+			$add .= $this->urlEncode ( $p ) ;
 		}
 		$url = $this->get_api_base_url ( 'info' ) ;
 		$url .= 'titles=' . $add ;
@@ -85,35 +89,40 @@ class WikiQuery {
 	}
 
 	function get_existing_pages ( $pages ) {
-    $ret = array () ;
-    while ( count ( $pages ) > 0 ) {
-      $temp = array () ;
-      while ( count ( $pages ) > 0 and count ( $temp ) < 200 ) {
-        $temp[] = array_shift ( $pages ) ;
-      }
-      $res = $this->get_existing_pages_sub ( $temp ) ;
-      foreach ( $res AS $r ) $ret[] = $r ;
-    }
-    return $ret ;
+	    $ret = [] ;
+	    while ( count ( $pages ) > 0 ) {
+	      $temp = [] ;
+	      while ( count ( $pages ) > 0 and count ( $temp ) < 200 ) {
+	        $temp[] = array_shift ( $pages ) ;
+	      }
+	      $res = $this->get_existing_pages_sub ( $temp ) ;
+	      foreach ( $res AS $r ) $ret[] = $r ;
+	    }
+	    return $ret ;
+	}
+
+	private function getFirstResult ( $url , $path_parts ) {
+		$data = $this->get_result ( $url ) ;
+		if ( !isset($data) or $data === false ) return false ;
+		while ( count($[$path_parts]) > 0 ) {
+			$part = array_shift ( $path_parts ) ; # First part
+			if ( !isset ( $data[$part] ) ) return false ;
+			$data = $data[$part] ;
+		}
+		if ( count($data) == 0 ) return false ;
+		$data = array_shift ( $data ) ;
+		return $data ;
 	}
 
 	function does_image_exist ( $image ) {
-		$url = $this->get_api_base_url ( 'imageinfo' ) ;
-		$url .= 'titles=' . myurlencode ( $image ) ;
-		$data = $this->get_result ( $url ) ;
-		
-//		print "<pre>" ; print_r ( $data ) ; print "</pre>" ;
-		
-		if ( !isset ( $data['query'] ) ) return false ; $data = $data['query'] ;
-		if ( !isset ( $data['pages'] ) ) return false ; $data = $data['pages'] ;
-
-		$data = array_shift ( $data ) ;
+		$url = $this->get_api_url ( 'imageinfo' , 'titles=' . $this->urlEncode ( $image ) ) ;
+		$data = $this->getFirstResult ( $url , ['query','pages'] ) ;
+		if ( !$data ) return false ;
 		return ! isset ( $data['missing'] ) ;
 	}
-	
+
 	function get_redirect_target ( $title ) {
-		$url = $this->get_api_base_url ( 'info' ) ;
-		$url .= "redirects&titles=" . myurlencode ( $title ) ;
+		$url = $this->get_api_url ( 'info' , "redirects&titles=" . $this->urlEncode ( $title ) ) ;
 		$data = $this->get_result ( $url ) ;
 		$data = $data['query'] ;
 		if ( !isset ( $data['redirects'] ) ) return $data['redirects'] ;
@@ -124,18 +133,9 @@ class WikiQuery {
 	}
 
 	function get_categories ( $title ) {
-		$ret = array () ;
-
-		$url = $this->get_api_base_url ( 'categories' ) ;
-		$url .= 'titles=' . myurlencode ( $title ) ;
-		$url .= '&cllimit=500' ;
-		
-		$data = $this->get_result ( $url ) ;
-		
-		if ( !isset ( $data['query'] ) ) return $ret ; $data = $data['query'] ;
-		if ( !isset ( $data['pages'] ) ) return $ret ; $data = $data['pages'] ;
-		$data = array_shift ( $data ) ;
-		
+		$ret = [] ;
+		$url = $this->get_api_url ( 'categories' , 'cllimit=500&titles=' . $this->urlEncode ( $title ) . ) ;
+		$data = $this->getFirstResult ( $url , ['query','pages'] ) ;
 		if ( !isset ( $data['categories'] ) ) return $ret ; # Error
 		$data = $data['categories'] ;
 		if ( !is_array ( $data ) ) return $ret ;
@@ -145,20 +145,15 @@ class WikiQuery {
 		}
 		return $ret ;
 	}
-	
+
 	function get_used_templates ( $title , $return_all_namespaces = false ) {
-		$ret = array () ;
+		$ret = [] ;
 
 		$url = $this->get_api_base_url ( 'templates' ) ;
-		$url .= 'titles=' . myurlencode ( $title ) ;
+		$url .= 'titles=' . $this->urlEncode ( $title ) ;
 		$url .= '&tllimit=500' ;
 		
-		$data = $this->get_result ( $url ) ;
-		
-		if ( !isset ( $data['query'] ) ) return $ret ; $data = $data['query'] ;
-		if ( !isset ( $data['pages'] ) ) return $ret ; $data = $data['pages'] ;
-		
-		$data = array_shift ( $data ) ;
+		$data = $this->getFirstResult ( $url , ['query','pages'] ) ;
 		if ( !isset ( $data['templates'] ) ) return $ret ;
 		$data = $data['templates'] ;
 		if ( !is_array ( $data ) ) return $ret ;
@@ -168,21 +163,21 @@ class WikiQuery {
 		}
 		return $ret ;
 	}
-	
+
 	function get_pages_in_category ( $category , $namespace = 0 , $depth = 1 ) {
-		if ( $depth <= 0 ) return array () ;
+		if ( $depth <= 0 ) return [] ;
 		
-		$ret = array () ;
+		$ret = [] ;
 
 		$url = $this->get_api_base_url () ;
 		$url .= 'action=query&list=categorymembers&' ;
-		$url .= 'cmtitle=' . myurlencode ( "Category:$category" ) ;
+		$url .= 'cmtitle=' . $this->urlEncode ( "Category:$category" ) ;
 		$url .= '&cmprop=ids|title|timestamp&cmlimit=500' ;
 		
 		if ( $namespace != -1 ) $url1 = $url . '&cmnamespace=' . $namespace ;
 		$url2 = $url . '&cmnamespace=14' ;
 		
-//		print "<pre>" ;		print_r ( $url1 ) ;		print "</pre>" ;
+	//		print "<pre>" ;		print_r ( $url1 ) ;		print "</pre>" ;
 		
 		# Load pages
 		$data = $this->get_result ( $url1 ) ;
@@ -221,12 +216,12 @@ class WikiQuery {
 
 		return $ret ;
 	}
-	
+
 	function get_backlinks ( $title , $blfilter = 'all' , $blfilterredir = 'all' ) {
-		$ret = array () ;
+		$ret = [] ;
 		$url = $this->get_api_base_url () ;
 		$url .= '&action=query&list=backlinks&' ;
-		$url .= 'bllimit=500&bltitle=' . myurlencode ( $title ) . "&blfilterredir=$blfilterredir" ;
+		$url .= 'bllimit=500&bltitle=' . $this->urlEncode ( $title ) . "&blfilterredir=$blfilterredir" ;
 		$data = $this->get_result ( $url ) ;
 		if ( !isset ( $data['query'] ) ) return $ret ; $data = $data['query'] ;
 		if ( !isset ( $data['backlinks'] ) ) return $ret ; $data = $data['backlinks'] ;
@@ -239,15 +234,15 @@ class WikiQuery {
 		
 		return $ret ;
 	}
-	
+
 	function get_images_in_category ( $category , $depth = 1 ) {
 		return $this->get_pages_in_category ( $category , 6 , $depth ) ;
 	}
-	
+
 	function get_recent_uploads ( $num = 50 ) {
-    $ret = array() ;
+	$ret = [] ;
 		$url = $this->get_api_base_url () ;
-    $url .= "action=query&list=logevents&letype=upload&lelimit=" . $num ;
+	$url .= "action=query&list=logevents&letype=upload&lelimit=" . $num ;
 		$data = $this->get_result ( $url ) ;
 		if ( !isset ( $data['query'] ) ) return $ret ;
 		$data = $data['query'] ;
@@ -255,12 +250,12 @@ class WikiQuery {
 		return $data ;
 	}
 
-  # All links on a page
-  # Returns array of array ( ns , title )
+	# All links on a page
+	# Returns array of array ( ns , title )
 	function get_links ( $title , $ns , $cont = '' ) {
-    	$ret = array() ;
+		$ret = [] ;
 		$url = $this->get_api_base_url ( 'links' ) ;
-		$url .= 'pllimit=500&titles=' . myurlencode ( $title ) ;
+		$url .= 'pllimit=500&titles=' . $this->urlEncode ( $title ) ;
 		$url .= '&rawcontinue=1' ;
 		if ( $cont != '' ) $url .= "&plcontinue=" . $cont ;
 		if ( isset ( $ns ) ) $url .= '&plnamespace=' . $ns ;
@@ -284,16 +279,16 @@ class WikiQuery {
 
 		return $data ;
 	}
-	
+
 	function get_external_links ( $all_titles , $start = '' ) {
-		$ret = array() ;
+		$ret = [] ;
 		while ( count ( $all_titles ) > 0 ) {
-			$titles = array () ;
+			$titles = [] ;
 			while ( count ( $titles ) < 100 and count ( $all_titles ) > 0 ) $titles[] = array_pop ( $all_titles ) ;
 			$url = $this->get_api_base_url ( 'extlinks' ) ;
-			foreach ( $titles AS $k => $v ) $titles[$k] = myurlencode ( $v ) ;
+			foreach ( $titles AS $k => $v ) $titles[$k] = $this->urlEncode ( $v ) ;
 			$url .= 'titles=' . implode ( "|" , $titles ) ;
-	
+
 			$data = $this->get_result ( $url ) ;
 			if ( !isset ( $data['query'] ) ) return $ret ;
 			$data = $data['query'] ;
@@ -311,15 +306,15 @@ class WikiQuery {
 
 		return $ret ;
 	}
-	
+
 	function get_images_on_page ( $title , $check_ignore = 0 ) {
-	    $ret = array() ;
+	    $ret = [] ;
 	    $imcontinue = '' ;
 	    
 	    do {
 			$url = $this->get_api_base_url ( 'images' ) ;
-			$url .= 'imlimit=500&titles=' . myurlencode ( $title ) ;
-//			$url .= '&rawcontinue=1' ; // NO!
+			$url .= 'imlimit=500&titles=' . $this->urlEncode ( $title ) ;
+	//			$url .= '&rawcontinue=1' ; // NO!
 			if ( $imcontinue != "" ) $url .= "&imcontinue=" . urlencode ( $imcontinue ) ;
 
 			$data = $this->get_result ( $url ) ;
@@ -338,22 +333,22 @@ class WikiQuery {
 			}
 		} while ( $imcontinue != '' ) ;
 
-#		print_r ( $data ) ;
+	#		print_r ( $data ) ;
 		return $ret ;
 	}
 
 	function get_used_image ( $image , $ns = "0" ) {
-		$ret = array() ;
+		$ret = [] ;
 		$iucontinue = "" ;
 		
 		do {
 		  $url = $this->get_api_base_url () ;
-		  $url .= 'iutitle=' . myurlencode ( $image ) ;
-		  $url .= '&iunamespace=' . myurlencode ( $ns ) ;
+		  $url .= 'iutitle=' . $this->urlEncode ( $image ) ;
+		  $url .= '&iunamespace=' . $this->urlEncode ( $ns ) ;
 		  $url .= '&iulimit=500&list=imageusage&action=query' ;
 			$url .= '&rawcontinue=1' ;
 		  if ( $iucontinue != "" ) $url .= "&iucontinue=" . urlencode ( $iucontinue ) ;
-	
+
 		  $data = $this->get_result ( $url ) ;
 		  if ( !isset ( $data['query'] ) ) return $ret ;
 		  
@@ -368,7 +363,7 @@ class WikiQuery {
 		  
 		  $data = $data['query'] ;
 		  $data = $data['imageusage'] ;
-	
+
 		  foreach ( $data AS $i ) {
 			$title = $i['title'] ;
 			$ret[$title ] = $title ;
@@ -378,56 +373,53 @@ class WikiQuery {
 	}
 
 	function get_namespaces () {
-      $url = $this->get_api_base_url () ;
-      $url .= "action=query&meta=siteinfo&siprop=namespaces" ;
-      $ret = array () ;
-      $data = $this->get_result ( $url ) ;
-      if ( !isset ( $data['query'] ) ) return $ret ;
-      $data = $data['query'] ;
-      if ( !isset ( $data['namespaces'] ) ) return $ret ;
-      $data = $data['namespaces'] ;
-      
-      foreach ( $data AS $k => $v ) {
-      	$ret[$k] = $v['*'] ;
-      }
-#      print "<pre>" ; print_r ( $ret ) ; print "</pre>" ; 
-     return $ret ;
+	  $url = $this->get_api_base_url () ;
+	  $url .= "action=query&meta=siteinfo&siprop=namespaces" ;
+	  $ret = [] ;
+	  $data = $this->get_result ( $url ) ;
+	  if ( !isset ( $data['query'] ) ) return $ret ;
+	  $data = $data['query'] ;
+	  if ( !isset ( $data['namespaces'] ) ) return $ret ;
+	  $data = $data['namespaces'] ;
+	  
+	  foreach ( $data AS $k => $v ) {
+	  	$ret[$k] = $v['*'] ;
+	  }
+	 return $ret ;
 	}
 
-  function get_url_usage ( $url , $namespace = '' ) {
-    $ret = array () ;
-    $orig_url = $url ;
-    if ( substr ( $url , 0 , 7 ) == 'http://' ) $url = substr ( $url , 7 ) ;
-    $wurl = $this->get_api_base_url () ;
-    $wurl .= "action=query&list=exturlusage&euquery=" . urlencode ( $url ) ;
-    if ( $namespace != '' ) $wurl .= "&eunamespace=" . $namespace ;
-    $data = $this->get_result ( $wurl ) ;
-    if ( !isset ( $data['query'] ) ) return $ret ;
-    $data = $data['query'] ;
-    if ( !isset ( $data['exturlusage'] ) ) return $ret ;
-    $data = $data['exturlusage'] ;
-    foreach ( $data AS $d ) {
-//    	print $d['url'] ."<hr/>" ;
-    	if ( $d['url'] != $orig_url ) continue ;
-//    	print "TESTING : " ; print_r ( $d ) ; print "<br/>" ;
-      $ret[] = $d['title'] ;
-    }
-    return $ret ;
-  }
+	function get_url_usage ( $url , $namespace = '' ) {
+	$ret = [] ;
+	$orig_url = $url ;
+	if ( substr ( $url , 0 , 7 ) == 'http://' ) $url = substr ( $url , 7 ) ;
+	$wurl = $this->get_api_base_url () ;
+	$wurl .= "action=query&list=exturlusage&euquery=" . urlencode ( $url ) ;
+	if ( $namespace != '' ) $wurl .= "&eunamespace=" . $namespace ;
+	$data = $this->get_result ( $wurl ) ;
+	if ( !isset ( $data['query'] ) ) return $ret ;
+	$data = $data['query'] ;
+	if ( !isset ( $data['exturlusage'] ) ) return $ret ;
+	$data = $data['exturlusage'] ;
+	foreach ( $data AS $d ) {
+		if ( $d['url'] != $orig_url ) continue ;
+	  $ret[] = $d['title'] ;
+	}
+	return $ret ;
+	}
 
 
-  function get_backlinks_api ( $title , $blfilterredir = 'all' , $namespaces = array() ) {
-		$ret = array () ;
+	function get_backlinks_api ( $title , $blfilterredir = 'all' , $namespaces = [] ) {
+		$ret = [] ;
 		$url = $this->get_api_base_url () ;
-		$url .= 'action=query&bllimit=500&list=backlinks&bltitle=' . myurlencode ( $title ) . "&blfilterredir=$blfilterredir" ;
+		$url .= 'action=query&bllimit=500&list=backlinks&bltitle=' . $this->urlEncode ( $title ) . "&blfilterredir=$blfilterredir" ;
 		if ( count ( $namespaces ) > 0 ) $url .= '&blnamespace=' . implode ( '|' , $namespaces ) ;
 		$data = $this->get_result ( $url ) ;
 
-    if ( !isset ( $data['query'] ) ) return $ret ;
-    $data = $data['query'] ;
+	if ( !isset ( $data['query'] ) ) return $ret ;
+	$data = $data['query'] ;
 
-    if ( !isset ( $data['backlinks'] ) ) return $ret ;
-    $data = $data['backlinks'] ;
+	if ( !isset ( $data['backlinks'] ) ) return $ret ;
+	$data = $data['backlinks'] ;
 
 
 		foreach ( $data AS $d ) {
@@ -436,14 +428,13 @@ class WikiQuery {
 		
 		return $ret ;
 	}
-	
-  function get_random_pages ( $number = 1 , $namespaces = array ( 0 ) ) {
-		$ret = array () ;
+
+	function get_random_pages ( $number = 1 , $namespaces = array ( 0 ) ) {
+		$ret = [] ;
 		if ( $number > 10 ) $number = 10 ;
 		$url = $this->get_api_base_url () ;
 		$url .= "action=query&list=random&rnlimit=$number" ;
-    $url .= "&rnnamespace=" . implode ( '|' , $namespaces ) ;
-    #print "<br/>$url</br>" ;
+	    $url .= "&rnnamespace=" . implode ( '|' , $namespaces ) ;
 		$data = $this->get_result ( $url ) ;
 		
 		if ( !isset ( $data['query'] ) ) return $ret ;
@@ -453,124 +444,79 @@ class WikiQuery {
 		$data = $data['random'] ;
 		
 		foreach ( $data AS $k => $d ) {
-      $ret[$d['title']] = $d ;
+	  $ret[$d['title']] = $d ;
 		}
 		
-    return $ret ;
-  }
-	
-  function get_random_page ( $namespaces = array ( 0 ) ) {
-    return $this->get_random_pages ( 1 , $namespaces ) ;
-  }
-  
-  function get_article_url ( $title , $action = '' ) {
-  	$ret = 'http://' . $this->language . '.' . $this->project . '.org' ;
-  	if ( $action == '' ) {
-  		return "$ret/wiki/" . myurlencode ( $title ) ;
-  	} else {
-  		return "$ret/w/index.php?action=$action&title=" . myurlencode ( $title ) ;
-  	}
-//    return get_wikipedia_url ( $this->language , $title , $action , $this->project ) ;
-  }
-  
-  function get_article_link ( $title , $text = '' , $action = '' , $target = '' ) {
-    if ( $text == '' ) $text = str_replace ( '_' , ' ' , $title ) ;
-    $url = $this->get_article_url ( $title , $action ) ;
-    if ( $target != '' ) $target = " target='$target'" ;
-    $style = '' ;
-    if ( $action == 'edit' ) $style = " style='color:red;'" ;
-    return "<a$target$style href='$url'>$text</a>" ;
-  }
-  
-  function get_page_info ( $title ) {
-		$ret = array () ;
+	return $ret ;
+	}
+
+	function get_random_page ( $namespaces = array ( 0 ) ) {
+	return $this->get_random_pages ( 1 , $namespaces ) ;
+	}
+
+	function get_article_url ( $title , $action = '' ) {
+		$ret = 'https://' . $this->language . '.' . $this->project . '.org' ;
+		if ( $action == '' ) return "$ret/wiki/" . $this->urlEncode ( $title ) ;
+		return "$ret/w/index.php?action=$action&title=" . $this->urlEncode ( $title ) ;
+	}
+
+	function get_article_link ( $title , $text = '' , $action = '' , $target = '' ) {
+	if ( $text == '' ) $text = str_replace ( '_' , ' ' , $title ) ;
+	$url = $this->get_article_url ( $title , $action ) ;
+	if ( $target != '' ) $target = " target='$target'" ;
+	$style = '' ;
+	if ( $action == 'edit' ) $style = " style='color:red;'" ;
+	return "<a$target$style href='$url'>$text</a>" ;
+	}
+
+	function get_page_info ( $title ) {
+		$ret = [] ;
 		$url = $this->get_api_base_url () ;
-		$url .= 'action=query&prop=info&titles=' . myurlencode ( $title ) ;
-		$data = $this->get_result ( $url ) ;
-		
-		if ( !isset ( $data['query'] ) ) return $ret ;
-		$data = $data['query'] ;
-		
-		if ( !isset ( $data['pages'] ) ) return $ret ;
-		$data = $data['pages'] ;
-		
-		$ret = array_shift ( $data ) ;
-		
-    return $ret ;
-  }
+		$url .= 'action=query&prop=info&titles=' . $this->urlEncode ( $title ) ;
+		return $this->getFirstResult ( $url , ['query','pages'] ) ;
+	}
 
-  function get_language_links ( $title ) {
-		$ret = array () ;
+	function get_language_links ( $title ) {
+	$ret = [] ;
+	$url = $this->get_api_url ( '' , 'action=query&prop=langlinks&lllimit=500&redirect=&titles=' . $this->urlEncode ( $title ) ) ;
+	$data = $this->getFirstResult ( $url , ['query','pages'] ) ;
+	if ( !isset ( $data['langlinks'] ) ) return $ret ;
+	$data = $data['langlinks'] ;
+	foreach ( $data AS $d ) $ret[$d['lang']] = $d['*'] ;
+	return $ret ;
+	}
+
+	function get_external_links2 ( $title ) {
+		$ret = [] ;
 		$url = $this->get_api_base_url () ;
-		$url .= 'action=query&prop=langlinks&lllimit=500&redirect=&titles=' . myurlencode ( $title ) ;
-		$data = $this->get_result ( $url ) ;
-		
-		if ( !isset ( $data['query'] ) ) return $ret ;
-		$data = $data['query'] ;
-
-		if ( !isset ( $data['pages'] ) ) return $ret ;
-		$data = $data['pages'] ;
-		
-		$data = array_shift ( $data ) ;
-		
-		if ( !isset ( $data['langlinks'] ) ) return $ret ;
-		$data = $data['langlinks'] ;
-		
-		foreach ( $data AS $d ) {
-      $ret[$d['lang']] = $d['*'] ;
-		}
-		
-    return $ret ;
-  }
-
-  function get_external_links2 ( $title ) {
-		$ret = array () ;
-		$url = $this->get_api_base_url () ;
-		$url .= 'action=query&prop=extlinks&titles=' . myurlencode ( $title ) ;
-		$data = $this->get_result ( $url ) ;
-		
-		if ( !isset ( $data['query'] ) ) return $ret ;
-		$data = $data['query'] ;
-
-		if ( !isset ( $data['pages'] ) ) return $ret ;
-		$data = $data['pages'] ;
-		
-		$data = array_shift ( $data ) ;
-		
+		$url .= 'action=query&prop=extlinks&titles=' . $this->urlEncode ( $title ) ;
+		$data = $this->getFirstResult ( $url , ['query','pages'] ) ;
 		if ( !isset ( $data['extlinks'] ) ) return $ret ;
 		$data = $data['extlinks'] ;
+		foreach ( $data AS $d ) $ret[] = $d['*'] ;
+		return $ret ;
+	}
+
+	function get_user_data ( $users ) {
+		if ( !is_array ( $users ) ) $users = array ( $users ) ;
 		
-#		print "<pre>" ;
-#		print_r ( $data ) ;
-#		print "</pre>" ;
+		$u = [] ;
+		foreach ( $users AS $v ) $u[] = $this->urlEncode ( $v ) ;
 		
-		foreach ( $data AS $d ) {
-      $ret[] = $d['*'] ;
-		}
-		
-    return $ret ;
-  }
-  
-  function get_user_data ( $users ) {
-  	if ( !is_array ( $users ) ) $users = array ( $users ) ;
-  	
-  	$u = array () ;
-  	foreach ( $users AS $v ) $u[] = myurlencode ( $v ) ;
-  	
-	$ret = array () ;
+	$ret = [] ;
 	$url = $this->get_api_base_url () ;
 	$url .= 'action=query&list=users&usprop=groups|editcount&ususers=' . implode ( '|' , $u ) ;
 	$data = $this->get_result ( $url ) ;
-  	
+		
 	if ( !isset ( $data['query'] ) ) return $ret ;
 	$data = $data['query'] ;
 
 	if ( !isset ( $data['users'] ) ) return $ret ;
 	$data = $data['users'] ;
-	
+
 	foreach ( $data AS $d ) {
 		$name = $d['name'] ;
-		$r = array () ;
+		$r = [] ;
 		$r['name'] = $name ;
 		$r['editcount'] = $d['editcount'] ;
 		if ( isset ( $d['groups'] ) ) {
@@ -579,42 +525,23 @@ class WikiQuery {
 		
 		$ret[$name] = $r ;
 	}
-	
-
-#		print "<pre>" ;
-#		print_r ( $ret ) ;
-#		print "</pre>" ;
 	return $ret ;
-  }
-  
-  function get_revisions ( $title , $last = 50 ) {
-		$ret = array () ;
+	}
+
+	function get_revisions ( $title , $last = 50 ) {
+		$ret = [] ;
 		$url = $this->get_api_base_url () ;
-		$url .= 'action=query&prop=revisions&rvlimit=' . $last . '&rvprop=ids|user|timestamp|comment|flags&titles=' . myurlencode ( $title ) ;
-		$data = $this->get_result ( $url ) ;
-
-		
-		if ( !isset ( $data['query'] ) ) return $ret ;
-		$data = $data['query'] ;
-
-		if ( !isset ( $data['pages'] ) ) return $ret ;
-		$data = $data['pages'] ;
-
-		$data = array_shift ( $data ) ;
-		
+		$url .= 'action=query&prop=revisions&rvlimit=' . $last . '&rvprop=ids|user|timestamp|comment|flags&titles=' . $this->urlEncode ( $title ) ;
+		$data = $this->getFirstResult ( $url , ['query','pages'] ) ;
 		if ( !isset ( $data['revisions'] ) ) return $ret ;
 		$data = $data['revisions'] ;
-		
-#		print "<pre>" ;
-#		print_r ( $data ) ;
-#		print "</pre>" ;
 		return $data ;
 
-  }
+	}
 
-  function user_exists ( $user ) {
+	function user_exists ( $user ) {
 		$url = $this->get_api_base_url () ;
-		$url .= 'action=query&list=users&usprop=blockinfo&ususers=' . myurlencode ( $user ) ;
+		$url .= 'action=query&list=users&usprop=blockinfo&ususers=' . $this->urlEncode ( $user ) ;
 		$data = $this->get_result ( $url ) ;
 
 		
@@ -631,10 +558,10 @@ class WikiQuery {
 		
 		return true ;
 	}
-	
-  function user_exists_unblocked ( $user ) {
+
+	function user_exists_unblocked ( $user ) {
 		$url = $this->get_api_base_url () ;
-		$url .= 'action=query&list=users&usprop=blockinfo&ususers=' . myurlencode ( $user ) ;
+		$url .= 'action=query&list=users&usprop=blockinfo&ususers=' . $this->urlEncode ( $user ) ;
 		$data = $this->get_result ( $url ) ;
 
 		
@@ -653,7 +580,7 @@ class WikiQuery {
 		
 		return true ;
 	}
-	
+
 	function search ( $key , $namespace = '' , $limit = 25 ) {
 		$url = $this->get_api_base_url () ;
 		$url .= 'action=opensearch&limit=$limit&search=' . urlencode ( $key ) ;
@@ -662,7 +589,7 @@ class WikiQuery {
 		
 		return $data[1] ;
 	}
-	
+
 	function fullSearch ( $key , $namespace = '' , $limit = 25 ) {
 		$url = $this->get_api_base_url () ;
 		$url .= 'action=query&list=search&srlimit=$limit&srsearch=' . urlencode ( $key ) ;
