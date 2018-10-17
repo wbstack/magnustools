@@ -102,6 +102,13 @@ class WikiQuery {
 	}
 
 	private function getFirstResult ( $url , $path_parts ) {
+		$data = getSubResults ( $url , $path_parts ) ;
+		if ( !isset($data) or $data === false or count($data) == 0 ) return false ;
+		$data = array_shift ( $data ) ;
+		return $data ;
+	}
+
+	private function getSubResults ( $url , $path_parts ) {
 		$data = $this->get_result ( $url ) ;
 		if ( !isset($data) or $data === false ) return false ;
 		while ( count($[$path_parts]) > 0 ) {
@@ -109,8 +116,6 @@ class WikiQuery {
 			if ( !isset ( $data[$part] ) ) return false ;
 			$data = $data[$part] ;
 		}
-		if ( count($data) == 0 ) return false ;
-		$data = array_shift ( $data ) ;
 		return $data ;
 	}
 
@@ -222,16 +227,12 @@ class WikiQuery {
 		$url = $this->get_api_base_url () ;
 		$url .= '&action=query&list=backlinks&' ;
 		$url .= 'bllimit=500&bltitle=' . $this->urlEncode ( $title ) . "&blfilterredir=$blfilterredir" ;
-		$data = $this->get_result ( $url ) ;
-		if ( !isset ( $data['query'] ) ) return $ret ; $data = $data['query'] ;
-		if ( !isset ( $data['backlinks'] ) ) return $ret ; $data = $data['backlinks'] ;
-		
+		$data = $this->getSubResults ( $url , ['query','backlinks'] ) ;
 		foreach ( $data AS $d ) {
 			$ret[$d['title']]['*'] = $d['title'] ;
 			if ( $d['ns'] != '0' ) $ret[$d['title']]['ns'] = $d['ns'] ;
 			$ret[$d['title']]['id'] = $d['pageid'] ;
 		}
-		
 		return $ret ;
 	}
 
@@ -240,14 +241,9 @@ class WikiQuery {
 	}
 
 	function get_recent_uploads ( $num = 50 ) {
-	$ret = [] ;
 		$url = $this->get_api_base_url () ;
-	$url .= "action=query&list=logevents&letype=upload&lelimit=" . $num ;
-		$data = $this->get_result ( $url ) ;
-		if ( !isset ( $data['query'] ) ) return $ret ;
-		$data = $data['query'] ;
-		$data = $data['logevents'] ;
-		return $data ;
+		$url .= "action=query&list=logevents&letype=upload&lelimit=" . $num ;
+		return $this->getSubResults ( $url , ['query','logevents'] ) ;
 	}
 
 	# All links on a page
@@ -373,19 +369,12 @@ class WikiQuery {
 	}
 
 	function get_namespaces () {
-	  $url = $this->get_api_base_url () ;
-	  $url .= "action=query&meta=siteinfo&siprop=namespaces" ;
-	  $ret = [] ;
-	  $data = $this->get_result ( $url ) ;
-	  if ( !isset ( $data['query'] ) ) return $ret ;
-	  $data = $data['query'] ;
-	  if ( !isset ( $data['namespaces'] ) ) return $ret ;
-	  $data = $data['namespaces'] ;
-	  
-	  foreach ( $data AS $k => $v ) {
-	  	$ret[$k] = $v['*'] ;
-	  }
-	 return $ret ;
+		$url = $this->get_api_base_url () ;
+		$url .= "action=query&meta=siteinfo&siprop=namespaces" ;
+		$ret = [] ;
+		$data = $this->getSubResults ( $url , ['query','namespaces'] ) ;
+		foreach ( $data AS $k => $v ) $ret[$k] = $v['*'] ;
+		return $ret ;
 	}
 
 	function get_url_usage ( $url , $namespace = '' ) {
@@ -395,11 +384,7 @@ class WikiQuery {
 		$wurl = $this->get_api_base_url () ;
 		$wurl .= "action=query&list=exturlusage&euquery=" . urlencode ( $url ) ;
 		if ( $namespace != '' ) $wurl .= "&eunamespace=" . $namespace ;
-		$data = $this->get_result ( $wurl ) ;
-		if ( !isset ( $data['query'] ) ) return $ret ;
-		$data = $data['query'] ;
-		if ( !isset ( $data['exturlusage'] ) ) return $ret ;
-		$data = $data['exturlusage'] ;
+		$data = $this->getSubResults ( $url , ['query','exturlusage'] ) ;
 		foreach ( $data AS $d ) {
 			if ( $d['url'] != $orig_url ) continue ;
 		  $ret[] = $d['title'] ;
@@ -413,16 +398,8 @@ class WikiQuery {
 		$url = $this->get_api_base_url () ;
 		$url .= 'action=query&bllimit=500&list=backlinks&bltitle=' . $this->urlEncode ( $title ) . "&blfilterredir=$blfilterredir" ;
 		if ( count ( $namespaces ) > 0 ) $url .= '&blnamespace=' . implode ( '|' , $namespaces ) ;
-		$data = $this->get_result ( $url ) ;
-
-		if ( !isset ( $data['query'] ) ) return $ret ;
-		$data = $data['query'] ;
-
-		if ( !isset ( $data['backlinks'] ) ) return $ret ;
-		$data = $data['backlinks'] ;
-
+		$data = $this->getSubResults ( $url , ['query','backlinks'] ) ;
 		foreach ( $data AS $d ) $ret[] = $d['title'] ;
-		
 		return $ret ;
 	}
 
@@ -432,11 +409,8 @@ class WikiQuery {
 		$url = $this->get_api_base_url () ;
 		$url .= "action=query&list=random&rnlimit=$number" ;
 	    $url .= "&rnnamespace=" . implode ( '|' , $namespaces ) ;
-		$data = $this->get_result ( $url ) ;
-		
-		if ( !isset($data['query']) or !isset($data['query']['random']) ) return $ret ;
-		foreach ( $data['query']['random'] AS $k => $d ) $ret[$d['title']] = $d ;
-
+		$data = $this->getSubResults ( $url , ['query','random'] ) ;
+		foreach ( $data AS $k => $d ) $ret[$d['title']] = $d ;
 		return $ret ;
 	}
 
@@ -496,13 +470,7 @@ class WikiQuery {
 		$ret = [] ;
 		$url = $this->get_api_base_url () ;
 		$url .= 'action=query&list=users&usprop=groups|editcount&ususers=' . implode ( '|' , $u ) ;
-		$data = $this->get_result ( $url ) ;
-			
-		if ( !isset ( $data['query'] ) ) return $ret ;
-		$data = $data['query'] ;
-
-		if ( !isset ( $data['users'] ) ) return $ret ;
-		$data = $data['users'] ;
+		$data = $this->getSubResults ( $url , ['query','users'] ) ;
 
 		foreach ( $data AS $d ) {
 			$name = $d['name'] ;
