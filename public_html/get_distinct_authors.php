@@ -7,7 +7,6 @@ ini_set('display_errors', 'On');
 
 require_once ( "php/common.php" ) ;
 require_once ( "php/wikiquery.php") ;
-require_once ( "php/common_images.php" ) ;
 
 
 $language = get_request ( 'language' , 'en' ) ;
