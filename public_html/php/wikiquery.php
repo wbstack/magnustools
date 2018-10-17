@@ -73,13 +73,8 @@ class WikiQuery {
 		}
 		$url = $this->get_api_base_url ( 'info' ) ;
 		$url .= 'titles=' . $add ;
-		$data = $this->get_result ( $url ) ;
-
-		if ( !isset ( $data['query'] ) ) return $ret ; $data = $data['query'] ;
-		if ( !isset ( $data['pages'] ) ) return $ret ; $data = $data['pages'] ;
-		
+		$data = $this->getSubResults ( $url , ['query','pages'] ) ;
 		if ( !isset ( $data ) ) return $ret ;
-		
 		foreach ( $data AS $d ) {
 			if ( !isset ( $d['pageid'] ) ) continue ;
 			if ( $d['pageid'] == 0 ) continue ;
