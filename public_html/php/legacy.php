@@ -1,8 +1,5 @@
 <?php
 
-function verify_tusc () { return false ; }
-
-
 function get_edit_timestamp ( $lang , $project , $title ) {
 	$t = "http://{$lang}.{$project}.org/w/index.php?title=Special:Export/" . myurlencode ( $title ) ;
 	$t = @file_get_contents ( $t ) ;
