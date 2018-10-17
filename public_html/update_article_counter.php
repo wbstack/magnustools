@@ -5,7 +5,6 @@ ini_set('display_errors', 'On');
 
 include_once ( 'php/common.php' ) ;
 include_once ( 'php/legacy.php' ) ;
-include_once ( 'php/wikiquery.php' ) ;
 ini_set('memory_limit','64M');
 
 

@@ -25,7 +25,7 @@
 error_reporting ( E_ALL ) ;
 @set_time_limit ( 20*60 ) ; # Time limit 20min
 
-include_once ( "php/wikiquery.php") ;
+include_once ( "php/common.php") ;
 
 
 # @param $str    the HTML markup

@@ -6,8 +6,6 @@ ini_set('display_errors', 'On');
 @set_time_limit ( 10*60 ) ; # Time limit 10min
 
 require_once ( "php/common.php" ) ;
-require_once ( "php/wikiquery.php") ;
-
 
 $language = get_request ( 'language' , 'en' ) ;
 $project = get_request ( 'project' , 'wikipedia' ) ;
