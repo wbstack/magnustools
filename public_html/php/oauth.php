@@ -494,32 +494,9 @@ class MW_OAuth {
 			print "<hr/>" ;
 		}
 
-
-		if ( isset($_REQUEST['test']) ) {
-			print "RESULT:<hr/>" ;
-			print_r ( $data ) ;
-			print "<hr/>" ;
-		}
-
-		if ( !$data ) {
-		return ;
-//			if ( $mode != 'userinfo' ) header( "HTTP/1.1 500 Internal Server Error" );
-			$info = curl_getinfo($ch);
-			print "<pre>" ; print_r ( $info ) ; print "</pre>" ;
-			echo 'Curl error: ' . htmlspecialchars( curl_error( $ch ) );
-			exit(0);
-		}
+		if ( !$data ) return ;
 		$ret = json_decode( $data );
-		if ( $ret == null ) {
-		return ;
-//			if ( $mode != 'userinfo' ) header( "HTTP/1.1 500 Internal Server Error" );
-			print "<h1>API trouble!</h1>" ;
-//			print "<pre>" ; print_r ($header ) ; print "</pre>" ;
-			print "<pre>" ; print_r ($post ) ; print "</pre>" ;
-			print "<pre>" ; print_r ($data ) ; print "</pre>" ;
-			print "<pre>" ; print var_export ( $ch , 1 ) ; print "</pre>" ;
-			exit(0);
-		}
+		if ( $ret == null ) return ;
 		
 		# maxlag
 		if ( isset($ret->error) and isset($ret->error->code) and $ret->error->code == 'maxlag' ) {
@@ -537,23 +514,13 @@ class MW_OAuth {
 
 
 	// Wikidata-specific methods
-	
-/*
-Claims are used like this:
-	$claim = array (
-		"prop" => 'P31' ,
-		"q" => 'Q4115189' ,
-		"target" => 'Q12345' ,
-		"type" => "item"
-	) ;
-*/
+
 	
 	function doesClaimExist ( $claim ) {
 		$q = 'Q' . str_replace('Q','',$claim['q'].'') ;
 		$p = 'P' . str_replace('P','',$claim['prop'].'') ;
 		$url = 'https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&props=claims&ids=' . $q ;
 		$j = json_decode ( file_get_contents ( $url ) ) ;
-	//	print "<pre>" ; print_r ( $j ) ; print "</pre>" ;
 
 		if ( !isset ( $j->entities ) ) return false ;
 		if ( !isset ( $j->entities->$q ) ) return false ;
@@ -564,7 +531,6 @@ Claims are used like this:
 		$does_exist = false ;
 		$cp = $j->entities->$q->claims->$p ; // Claims for this property
 		foreach ( $cp AS $k => $v ) {
-	//		print "<pre>" ; print_r ( $v ) ; print "</pre>" ;
 			if ( $claim['type'] == 'item' ) {
 				if ( !isset($v->mainsnak) ) continue ;
 				if ( !isset($v->mainsnak->datavalue) ) continue ;
@@ -1220,10 +1186,7 @@ Claims are used like this:
 		}
 		$token = $res->query->tokens->csrftoken;
 	
-//		if ( $claim['amount'] > 0 ) $claim['amount'] = '+'.$claim['amount'] ;
-//		if ( $claim['upper'] > 0 ) $claim['upper'] = '+'.$claim['upper'] ;
-//		if ( $claim['lower'] > 0 ) $claim['lower'] = '+'.$claim['lower'] ;
-	
+
 		// Now do that!
 		$value = "" ;
 		if ( $claim['type'] == 'item' ) {
@@ -1279,13 +1242,6 @@ Claims are used like this:
 
 		$this->sleepAfterEdit ( 'edit' ) ;
 
-		
-/*
-		if ( $claim['type'] == 'string' ) {
-			echo 'API edit result: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
-			echo '<hr>';
-		}
-*/		
 		return true ;
 	}
 
@@ -1332,13 +1288,7 @@ Claims are used like this:
 			$this->error = $res->error->info ;
 			return false ;
 		}
-		
-/*
-		if ( $claim['type'] == 'string' ) {
-			echo 'API edit result: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
-			echo '<hr>';
-		}
-*/		
+
 		return true ;
 	}
 
@@ -1381,13 +1331,6 @@ Claims are used like this:
 		}
 
 		$this->sleepAfterEdit ( 'edit' ) ;
-		
-/*
-		if ( $claim['type'] == 'string' ) {
-			echo 'API edit result: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
-			echo '<hr>';
-		}
-*/		
 		return true ;
 	}
 
@@ -1428,7 +1371,6 @@ Claims are used like this:
 		$this->last_res = $res ;
 		if ( !isset($res->upload) ) {
 			$this->error = $res->error->info ;
-//		print_r ( $res ) ;
 			return false ;
 		} else if ( $res->upload->result != 'Success' ) {
 			$this->error = $res->upload->result ;
@@ -1519,12 +1461,6 @@ Claims are used like this:
 		}
 
 		if ( !isset( $res->query->userinfo ) ) {
-/*			if ( isset($_REQUEST['test']) ) {
-				$info = curl_getinfo($ch);
-				print "<pre>" ;
-				print_r ( $info ) ;
-				print "</pre>" ;
-			}*/
 			$this->error = 'Not authorized (bad API response [isAuthOK]: ' . htmlspecialchars( json_encode( $res) ) . ')' ;
 			return false ;
 		}
@@ -1542,76 +1478,3 @@ Claims are used like this:
 
 
 }
-
-
-///////////////
-
-
-/*
-// Take any requested action
-switch ( isset( $_GET['action'] ) ? $_GET['action'] : '' ) {
-	case 'download':
-		header( 'Content-Type: text/plain' );
-		readfile( __FILE__ );
-		return;
-
-	case 'authorize':
-		doAuthorizationRedirect();
-		return;
-
-	case 'edit':
-		doEdit();
-		break;
-}
-*/
-
-// ******************** CODE ********************
-
-
-
-
-
-
-/*
-<!DOCTYPE html>
-<html lang="en" dir="ltr">
- <head>
-  <meta charset="UTF-8" />
-  <title>OAuth Hello World!</title>
- </head>
- <body>
-<p>This is a very simple "<a href="//en.wikipedia.org/wiki/Hello_world_program">Hello world</a>" program to show how to use OAuth. If you so desire, you may <a href="<?php echo htmlspecialchars( $_SERVER['SCRIPT_NAME'] );?>?action=download">download this file</a>. For a more end-user friendly version, look at <a href="enduser.php">enduser.php</a>.</p>
-
-<h2>Overview</h2>
-<p>OAuth is a method for your application to act on behalf of a user on a website, without having to know the user's username and password. First your application is regisetered with the website, then you send the user to a special page on the website where they give your application permission, and then you provide special HTTP headers when accessing the website.</p>
-
-<h2>Creating your consumer</h2>
-<p>To be able to use OAuth in your application, you first need to register it as a consumer. To do this, you visit Special:OAuthConsumerRegistration on the OAuth central wiki. For WMF wikis, this is currently <a href="https://www.mediawiki.org/wiki/Special:OAuthConsumerRegistration/propose">mediawiki.org</a>, but will likely change to Meta once OAuth is fully deployed.</p>
-<p>On this page, you will fill out information required by your application. Most of the fields are straightforward. Of the rest:</p>
-<ul>
- <li>OAuth "callback" URL: After the user authorizes the application, their browser will be sent to this URL. It will be given two parameters, <code>oauth_verifier</code> and <code>oauth_token</code>, which your application will need in order to complete the authorization process.</li>
- <li>Applicable wiki: If your app is only for use in one wiki, specify the wiki id here (this may be retrieved from the API with <code>action=query&amp;meta=siteinfo</code>). If your app is for use on all wikis, specify "*" (without the quotes).</li>
- <li>Applicable grants: Check the checkbox for the grants that provide the rights your application needs. Note that "Basic rights" is almost certainly required, and that even if your application specifies advanced rights such as "Delete pages" your application will still not be able to delete pages on behalf of users who don't already have the delete right.</li>
- <li>Usage restrictions (JSON): This can be used to limit usage of your application, e.g. to certain IP addresses. The default value should be fine.</li>
- <li>Public RSA key: OAuth requires that requests be signed; this can be done by using a shared secret, or by using <a href="https://en.wikipedia.org/wiki/Public-key_cryptography">public-key cryptography</a>. If you want to use the latter, provide a public key here.</li>
-</ul>
-<p>After submitting your registration request, you will be returned a "consumer token" and a "secret token". In this Hello world program, these go in your ini file as consumerKey and consumerSecret. Note you can later update the Usage restrictions and Public RSA key, and can reset the secret token.</p>
-<p>Your application must then be approved by someone with the "mwoauthmanageconsumer" user right.</p>
-
-<h2>Authorizing a user</h2>
-<p>When a new user wishes to use your application, they must first authorize it. You do this by making a call to Special:OAuth/initiate to get a request token, then send the user to Special:OAuth/authorize. If the user authorizes your app, the user will be redirected back to your callback URL with the <code>oauth_verifier</code> parameter set; you then call Special:OAuth/token to fetch the access token.</p>
-
-<h2>Deauthorizing a user</h2>
-<p>A user may revoke the authorization for the application by visiting Special:OAuthManageMyGrants on the OAuth central wiki.</p>
-
-<h2>Try it out!</h2>
-<ul>
- <li><a href="<?php echo htmlspecialchars( $_SERVER['SCRIPT_NAME'] );?>?action=authorize">Authorize this application</a></li>
- <li><a href="<?php echo htmlspecialchars( $_SERVER['SCRIPT_NAME'] );?>?action=edit">Post to your talk page</a></li>
- <li><a href="<?php echo htmlspecialchars( $mytalkUrl );?>">Visit your talk page</a></li>
-</ul>
-
-</body>
-</html>
-
-*/
