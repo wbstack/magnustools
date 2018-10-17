@@ -389,22 +389,22 @@ class WikiQuery {
 	}
 
 	function get_url_usage ( $url , $namespace = '' ) {
-	$ret = [] ;
-	$orig_url = $url ;
-	if ( substr ( $url , 0 , 7 ) == 'http://' ) $url = substr ( $url , 7 ) ;
-	$wurl = $this->get_api_base_url () ;
-	$wurl .= "action=query&list=exturlusage&euquery=" . urlencode ( $url ) ;
-	if ( $namespace != '' ) $wurl .= "&eunamespace=" . $namespace ;
-	$data = $this->get_result ( $wurl ) ;
-	if ( !isset ( $data['query'] ) ) return $ret ;
-	$data = $data['query'] ;
-	if ( !isset ( $data['exturlusage'] ) ) return $ret ;
-	$data = $data['exturlusage'] ;
-	foreach ( $data AS $d ) {
-		if ( $d['url'] != $orig_url ) continue ;
-	  $ret[] = $d['title'] ;
-	}
-	return $ret ;
+		$ret = [] ;
+		$orig_url = $url ;
+		if ( substr ( $url , 0 , 7 ) == 'http://' ) $url = substr ( $url , 7 ) ;
+		$wurl = $this->get_api_base_url () ;
+		$wurl .= "action=query&list=exturlusage&euquery=" . urlencode ( $url ) ;
+		if ( $namespace != '' ) $wurl .= "&eunamespace=" . $namespace ;
+		$data = $this->get_result ( $wurl ) ;
+		if ( !isset ( $data['query'] ) ) return $ret ;
+		$data = $data['query'] ;
+		if ( !isset ( $data['exturlusage'] ) ) return $ret ;
+		$data = $data['exturlusage'] ;
+		foreach ( $data AS $d ) {
+			if ( $d['url'] != $orig_url ) continue ;
+		  $ret[] = $d['title'] ;
+		}
+		return $ret ;
 	}
 
 
@@ -415,16 +415,13 @@ class WikiQuery {
 		if ( count ( $namespaces ) > 0 ) $url .= '&blnamespace=' . implode ( '|' , $namespaces ) ;
 		$data = $this->get_result ( $url ) ;
 
-	if ( !isset ( $data['query'] ) ) return $ret ;
-	$data = $data['query'] ;
+		if ( !isset ( $data['query'] ) ) return $ret ;
+		$data = $data['query'] ;
 
-	if ( !isset ( $data['backlinks'] ) ) return $ret ;
-	$data = $data['backlinks'] ;
+		if ( !isset ( $data['backlinks'] ) ) return $ret ;
+		$data = $data['backlinks'] ;
 
-
-		foreach ( $data AS $d ) {
-			$ret[] = $d['title'] ;
-		}
+		foreach ( $data AS $d ) $ret[] = $d['title'] ;
 		
 		return $ret ;
 	}
@@ -437,21 +434,14 @@ class WikiQuery {
 	    $url .= "&rnnamespace=" . implode ( '|' , $namespaces ) ;
 		$data = $this->get_result ( $url ) ;
 		
-		if ( !isset ( $data['query'] ) ) return $ret ;
-		$data = $data['query'] ;
-		
-		if ( !isset ( $data['random'] ) ) return $ret ;
-		$data = $data['random'] ;
-		
-		foreach ( $data AS $k => $d ) {
-	  $ret[$d['title']] = $d ;
-		}
-		
-	return $ret ;
+		if ( !isset($data['query']) or !isset($data['query']['random']) ) return $ret ;
+		foreach ( $data['query']['random'] AS $k => $d ) $ret[$d['title']] = $d ;
+
+		return $ret ;
 	}
 
 	function get_random_page ( $namespaces = array ( 0 ) ) {
-	return $this->get_random_pages ( 1 , $namespaces ) ;
+		return $this->get_random_pages ( 1 , $namespaces ) ;
 	}
 
 	function get_article_url ( $title , $action = '' ) {
@@ -461,12 +451,12 @@ class WikiQuery {
 	}
 
 	function get_article_link ( $title , $text = '' , $action = '' , $target = '' ) {
-	if ( $text == '' ) $text = str_replace ( '_' , ' ' , $title ) ;
-	$url = $this->get_article_url ( $title , $action ) ;
-	if ( $target != '' ) $target = " target='$target'" ;
-	$style = '' ;
-	if ( $action == 'edit' ) $style = " style='color:red;'" ;
-	return "<a$target$style href='$url'>$text</a>" ;
+		if ( $text == '' ) $text = str_replace ( '_' , ' ' , $title ) ;
+		$url = $this->get_article_url ( $title , $action ) ;
+		if ( $target != '' ) $target = " target='$target'" ;
+		$style = '' ;
+		if ( $action == 'edit' ) $style = " style='color:red;'" ;
+		return "<a$target$style href='$url'>$text</a>" ;
 	}
 
 	function get_page_info ( $title ) {
@@ -477,13 +467,13 @@ class WikiQuery {
 	}
 
 	function get_language_links ( $title ) {
-	$ret = [] ;
-	$url = $this->get_api_url ( '' , 'action=query&prop=langlinks&lllimit=500&redirect=&titles=' . $this->urlEncode ( $title ) ) ;
-	$data = $this->getFirstResult ( $url , ['query','pages'] ) ;
-	if ( !isset ( $data['langlinks'] ) ) return $ret ;
-	$data = $data['langlinks'] ;
-	foreach ( $data AS $d ) $ret[$d['lang']] = $d['*'] ;
-	return $ret ;
+		$ret = [] ;
+		$url = $this->get_api_url ( '' , 'action=query&prop=langlinks&lllimit=500&redirect=&titles=' . $this->urlEncode ( $title ) ) ;
+		$data = $this->getFirstResult ( $url , ['query','pages'] ) ;
+		if ( !isset ( $data['langlinks'] ) ) return $ret ;
+		$data = $data['langlinks'] ;
+		foreach ( $data AS $d ) $ret[$d['lang']] = $d['*'] ;
+		return $ret ;
 	}
 
 	function get_external_links2 ( $title ) {
@@ -503,29 +493,29 @@ class WikiQuery {
 		$u = [] ;
 		foreach ( $users AS $v ) $u[] = $this->urlEncode ( $v ) ;
 		
-	$ret = [] ;
-	$url = $this->get_api_base_url () ;
-	$url .= 'action=query&list=users&usprop=groups|editcount&ususers=' . implode ( '|' , $u ) ;
-	$data = $this->get_result ( $url ) ;
-		
-	if ( !isset ( $data['query'] ) ) return $ret ;
-	$data = $data['query'] ;
+		$ret = [] ;
+		$url = $this->get_api_base_url () ;
+		$url .= 'action=query&list=users&usprop=groups|editcount&ususers=' . implode ( '|' , $u ) ;
+		$data = $this->get_result ( $url ) ;
+			
+		if ( !isset ( $data['query'] ) ) return $ret ;
+		$data = $data['query'] ;
 
-	if ( !isset ( $data['users'] ) ) return $ret ;
-	$data = $data['users'] ;
+		if ( !isset ( $data['users'] ) ) return $ret ;
+		$data = $data['users'] ;
 
-	foreach ( $data AS $d ) {
-		$name = $d['name'] ;
-		$r = [] ;
-		$r['name'] = $name ;
-		$r['editcount'] = $d['editcount'] ;
-		if ( isset ( $d['groups'] ) ) {
-			foreach ( $d['groups'] AS $v ) $r[$v] = 1 ;
+		foreach ( $data AS $d ) {
+			$name = $d['name'] ;
+			$r = [] ;
+			$r['name'] = $name ;
+			$r['editcount'] = $d['editcount'] ;
+			if ( isset ( $d['groups'] ) ) {
+				foreach ( $d['groups'] AS $v ) $r[$v] = 1 ;
+			}
+			
+			$ret[$name] = $r ;
 		}
-		
-		$ret[$name] = $r ;
-	}
-	return $ret ;
+		return $ret ;
 	}
 
 	function get_revisions ( $title , $last = 50 ) {
@@ -542,42 +532,17 @@ class WikiQuery {
 	function user_exists ( $user ) {
 		$url = $this->get_api_base_url () ;
 		$url .= 'action=query&list=users&usprop=blockinfo&ususers=' . $this->urlEncode ( $user ) ;
-		$data = $this->get_result ( $url ) ;
-
-		
-		if ( !isset ( $data['query'] ) ) return false ;
-		$data = $data['query'] ;
-		
-		if ( !isset ( $data['users'] ) ) return false ;
-		$data = $data['users'] ;
-		
-		if ( !isset ( $data['0'] ) ) return false ;
-		$data = $data['0'] ;
-		
-		if ( isset ( $data['missing'] ) ) return false ;
-		
-		return true ;
+		$data = $this->getFirstResult ( $url , ['query','users'] ) ;
+		return ! isset ( $data['missing'] ) ;
 	}
 
 	function user_exists_unblocked ( $user ) {
 		$url = $this->get_api_base_url () ;
 		$url .= 'action=query&list=users&usprop=blockinfo&ususers=' . $this->urlEncode ( $user ) ;
-		$data = $this->get_result ( $url ) ;
-
-		
-		if ( !isset ( $data['query'] ) ) return false ;
-		$data = $data['query'] ;
-		
-		if ( !isset ( $data['users'] ) ) return false ;
-		$data = $data['users'] ;
-		
-		if ( !isset ( $data['0'] ) ) return false ;
-		$data = $data['0'] ;
-		
+		$data = $this->getFirstResult ( $url , ['query','users'] ) ;
 		if ( isset ( $data['missing'] ) ) return false ;
 		if ( isset ( $data['blockedby'] ) ) return false ;
 		if ( isset ( $data['blockreason'] ) ) return false ;
-		
 		return true ;
 	}
 
@@ -586,7 +551,6 @@ class WikiQuery {
 		$url .= 'action=opensearch&limit=$limit&search=' . urlencode ( $key ) ;
 		if ( $namespace != '' ) $url .= "&namespace=" . $namespace ;
 		$data = json_decode ( file_get_contents ( $url ) ) ;
-		
 		return $data[1] ;
 	}
 
@@ -596,7 +560,6 @@ class WikiQuery {
 		if ( $namespace != '' ) $url .= "&srnamespace=" . $namespace ;
 		$data = unserialize ( file_get_contents ( $url ) ) ;
 		$data = $data['query']['search'] ;
-		
 		return $data ;
 	}
 
