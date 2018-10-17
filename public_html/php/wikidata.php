@@ -43,7 +43,7 @@ class WDI {
 	}
 
 	public function getAliases ( $lang ) {
-		$ret = array() ;
+		$ret = [] ;
 		if ( !isset($this->j->aliases) ) return $ret ;
 		if ( !isset($this->j->aliases->$lang) ) return $ret ;
 		foreach ( $this->j->aliases->$lang AS $v ) $ret[] = $v->value ;
@@ -51,7 +51,7 @@ class WDI {
 	}
 	
 	public function getAllAliases () {
-		$ret = array() ;
+		$ret = [] ;
 		if ( !isset($this->j->aliases) ) return $ret ;
 		foreach ( $this->j->aliases AS $lang => $al ) {
 			foreach ( $al AS $v ) $ret[$lang][] = $v->value ;
@@ -122,7 +122,7 @@ class WDI {
 	}
 	
 	public function getStrings ( $p ) {
-		$ret = array() ;
+		$ret = [] ;
 		if ( !$this->hasClaims($p) ) return $ret ;
 		$claims = $this->getClaims($p) ;
 		foreach ( $claims AS $c ) {
@@ -143,7 +143,7 @@ class WDI {
 	}
 
 	public function getClaims ( $p ) {
-		$ret = array() ;
+		$ret = [] ;
 		$p = $this->sanitizeP ( $p ) ;
 		if ( !isset($this->j) ) return $ret ;
 		if ( !isset($this->j->claims) ) return $ret ;
@@ -174,7 +174,7 @@ class WDI {
 	}
 	
 	public function getSitelinks () {
-		$ret = array() ;
+		$ret = [] ;
 		if ( !isset($this->j) ) return $ret ;
 		if ( !isset($this->j->sitelinks) ) return $ret ;
 		foreach ( $this->j->sitelinks AS $wiki => $x ) $ret[$wiki] = $x->title ;
@@ -182,7 +182,7 @@ class WDI {
 	}
 	
 	public function getProps () {
-		$ret = array() ;
+		$ret = [] ;
 		if ( !isset($this->j) ) return $ret ;
 		if ( !isset($this->j->claims) ) return $ret ;
 		foreach ( $this->j->claims AS $p => $v ) $ret[] = $p ;
@@ -263,7 +263,7 @@ class WDI {
 class WikidataItemList {
 
 	public $testing = false ;
-	protected $items = array() ;
+	protected $items = [] ;
 
 	public function sanitizeQ ( &$q ) {
 		if ( preg_match ( '/^P\d+$/i' , "$q" ) ) {
@@ -274,7 +274,7 @@ class WikidataItemList {
 	}
 	
 	public function updateItems ( $list ) {
-		$last_revs = array() ;
+		$last_revs = [] ;
 		foreach ( $list AS $q ) {
 			if ( !$this->hasItem ( $q ) ) continue ;
 			$this->sanitizeQ ( $q ) ;
@@ -293,7 +293,7 @@ class WikidataItemList {
 	}
 
 	public function updateItem ( $q ) {
-		$this->updateItems ( array ( $q ) ) ;
+		$this->updateItems ( [$q] ) ;
 	}
 	
 	protected function parseEntities ( $j ) {
@@ -307,18 +307,18 @@ class WikidataItemList {
 		
     function loadItems ( $list ) {
     	global $wikidata_api_url ;
-    	$qs = array(array()) ;
+    	$qs = [ [] ] ;
     	foreach ( $list AS $q ) {
     		$this->sanitizeQ($q) ;
     		if ( $q == 'Q' || $q == 'P' ) continue ;
 	    	if ( isset($this->items[$q]) ) continue ;
-	    	if ( count($qs[count($qs)-1]) == 50 ) $qs[] = array() ;
+	    	if ( count($qs[count($qs)-1]) == 50 ) $qs[] = [] ;
     		$qs[count($qs)-1][] = $q ;
     	}
     	
     	if ( count($qs) == 1 and count($qs[0]) == 0 ) return ;
     	
-    	$urls = array() ;
+    	$urls = [] ;
     	foreach ( $qs AS $k => $sublist ) {
     		if ( count ( $sublist ) == 0 ) continue ;
 			$url = "{$wikidata_api_url}?action=wbgetentities&ids=" . implode('|',$sublist) . "&format=json" ;
@@ -367,12 +367,12 @@ class WikidataItemList {
 	}
 
 	protected function getMultipleURLsInParallel ( $urls ) {
-		$ret = array() ;
+		$ret = [] ;
 	
 		$batch_size = 50 ;
-		$batches = array( array() ) ;
+		$batches = [ [] ] ;
 		foreach ( $urls AS $k => $v ) {
-			if ( count($batches[count($batches)-1]) >= $batch_size ) $batches[] = array() ;
+			if ( count($batches[count($batches)-1]) >= $batch_size ) $batches[] = [] ;
 			$batches[count($batches)-1][$k] = $v ;
 		}
 	
@@ -380,7 +380,7 @@ class WikidataItemList {
 	
 			$mh = curl_multi_init();
 			curl_multi_setopt  ( $mh , CURLMOPT_PIPELINING , 1 ) ;
-			$ch = array() ;
+			$ch = [] ;
 			foreach ( $batch_urls AS $key => $value ) {
 				$ch[$key] = curl_init($value);
 		//		curl_setopt($ch[$key], CURLOPT_NOBODY, true);

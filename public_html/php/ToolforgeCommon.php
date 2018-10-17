@@ -24,11 +24,11 @@ final class ToolforgeCommon {
 	public $use_db_cache = true ;
 
 	private $browser_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:57.0) Gecko/20100101 Firefox/57.0" ;
-	private	$db_servers = array (
+	private	$db_servers = [
 			'fast' => '.web.db.svc.eqiad.wmflabs' ,
 			'slow' => '.analytics.db.svc.eqiad.wmflabs' ,
 			'old' => '.labsdb'
-		) ;
+		] ;
 	
 	private $cookiejar ; # For doPostRequest
 	private/*string*/  $mysql_user , $mysql_password ;
@@ -242,8 +242,8 @@ final class ToolforgeCommon {
 	}
 
 	public function findSubcats ( &$db , $root , &$subcats , $depth = -1 ) {
-		$check = array() ;
-		$c = array() ;
+		$check = [] ;
+		$c = [] ;
 		foreach ( $root AS $r ) {
 			if ( isset ( $subcats[$r] ) ) continue ;
 			$subcats[$r] = $db->real_escape_string ( $r ) ;
@@ -264,10 +264,10 @@ final class ToolforgeCommon {
 	public function getPagesInCategory ( &$db , $category , $depth = 0 , $namespace = 0 , $no_redirects = false ) {
 		$depth *= 1 ;
 		$namespace *= 1 ;
-		$ret = array() ;
-		$cats = array() ;
+		$ret = [] ;
+		$cats = [] ;
 		$category = str_replace ( ' ' , '_' , $category ) ;
-		$this->findSubcats ( $db , array($category) , $cats , $depth ) ;
+		$this->findSubcats ( $db , [$category] , $cats , $depth ) ;
 
 		if ( $namespace == 14 ) return $cats ; // Faster, and includes root category
 
@@ -347,11 +347,11 @@ final class ToolforgeCommon {
 
 	// Takes an array KEY=>URL, returns an array KEY=>PAGE_CONTENT
 	public function getMultipleURLsInParallel ( $urls , $batch_size = 50 ) {
-		$ret = array() ;
+		$ret = [] ;
 	
-		$batches = array( array() ) ;
+		$batches = [ [] ] ;
 		foreach ( $urls AS $k => $v ) {
-			if ( count($batches[count($batches)-1]) >= $batch_size ) $batches[] = array() ;
+			if ( count($batches[count($batches)-1]) >= $batch_size ) $batches[] = [] ;
 			$batches[count($batches)-1][$k] = $v ;
 		}
 	
@@ -360,7 +360,7 @@ final class ToolforgeCommon {
 			$mh = curl_multi_init();
 			curl_multi_setopt  ( $mh , CURLMOPT_PIPELINING , 1 ) ;
 		//	curl_multi_setopt  ( $mh , CURLMOPT_MAX_TOTAL_CONNECTIONS , 5 ) ;
-			$ch = array() ;
+			$ch = [] ;
 			foreach ( $batch_urls AS $key => $value ) {
 				$ch[$key] = curl_init($value);
 		//		curl_setopt($ch[$key], CURLOPT_NOBODY, true);
@@ -409,11 +409,9 @@ final class ToolforgeCommon {
 	public function getSPARQL ( $cmd ) {
 		$sparql = "$cmd\n#TOOL: {$this->toolname}" ;
 
-		$ctx = stream_context_create(array('http'=>
-			array(
-				'timeout' => 1200,  //1200 seconds is 20 minutes
-			)
-		));
+		$ctx = stream_context_create(['http'=>
+			['timeout' => 1200]  //1200 seconds is 20 minutes
+		]);
 
 		$url = "https://query.wikidata.org/sparql?format=json&query=" . urlencode($sparql) ;
 		$fc = @file_get_contents ( $url , false , $ctx ) ;
@@ -436,7 +434,7 @@ final class ToolforgeCommon {
 
 	// Returns an array of strings, usually Q IDs
 	public function getSPARQLitems ( $cmd , $varname = '' ) {
-		$ret = array() ;
+		$ret = [] ;
 		$j = $this->getSPARQL ( $cmd ) ;
 		if ( !isset($j) or !isset($j->head) ) return $ret ;
 		if ( $varname == '' ) $varname = $j->head->vars[0] ;

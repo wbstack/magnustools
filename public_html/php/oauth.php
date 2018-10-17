@@ -119,7 +119,7 @@ class MW_OAuth {
 	function fetchAccessToken() {
 		$url = $this->mwOAuthUrl . '/token';
 		$url .= strpos( $url, '?' ) ? '&' : '?';
-		$url .= http_build_query( array(
+		$url .= http_build_query( [
 			'format' => 'json',
 			'oauth_verifier' => $_GET['oauth_verifier'],
 
@@ -132,7 +132,7 @@ class MW_OAuth {
 
 			// We're using secret key signatures here.
 			'oauth_signature_method' => 'HMAC-SHA1',
-		) );
+		] );
 		$this->signature = $this->sign_request( 'GET', $url );
 		$url .= "&oauth_signature=" . urlencode( $this->signature );
 		$ch = curl_init();
@@ -190,7 +190,7 @@ class MW_OAuth {
 	 * 	data (if application/x-www-form-urlencoded).
 	 * @return string Signature
 	 */
-	function sign_request( $method, $url, $params = array() ) {
+	function sign_request( $method, $url, $params = [] ) {
 //		global $gConsumerSecret, $gTokenSecret;
 
 		$parts = parse_url( $url );
@@ -208,7 +208,7 @@ class MW_OAuth {
 		}
 
 		// Also the parameters
-		$pairs = array();
+		$pairs = [];
 		parse_str( isset( $parts['query'] ) ? $parts['query'] : '', $query );
 		$query += $params;
 		unset( $query['oauth_signature'] );
@@ -241,7 +241,7 @@ class MW_OAuth {
 		$this->gTokenSecret = '';
 		$url = $this->mwOAuthUrl . '/initiate';
 		$url .= strpos( $url, '?' ) ? '&' : '?';
-		$query = array(
+		$query = [
 			'format' => 'json',
 		
 			// OAuth information
@@ -253,7 +253,7 @@ class MW_OAuth {
 
 			// We're using secret key signatures here.
 			'oauth_signature_method' => 'HMAC-SHA1',
-		) ;
+		] ;
 		if ( $callback!='' ) $query['callback'] = $callback ;
 		$url .= http_build_query( $query );
 		$signature = $this->sign_request( 'GET', $url );
@@ -300,10 +300,10 @@ class MW_OAuth {
 		// Then we send the user off to authorize
 		$url = $this->publicMwOAuthUrl . '/authorize';
 		$url .= strpos( $url, '?' ) ? '&' : '?';
-		$arr = array(
+		$arr = [
 			'oauth_token' => $token->key,
 			'oauth_consumer_key' => $this->gConsumerKey,
-		) ;
+		] ;
 		if ( $callback != '' ) $arr['callback'] = $callback ;
 		$url .= http_build_query( $arr );
 		header( "Location: $url" );
@@ -314,7 +314,7 @@ class MW_OAuth {
 	function doIdentify() {
 
 		$url = $this->mwOAuthUrl . '/identify';
-		$headerArr = array(
+		$headerArr = [
 			// OAuth information
 			'oauth_consumer_key' => $this->gConsumerKey,
 			'oauth_token' => $this->gTokenKey,
@@ -324,11 +324,11 @@ class MW_OAuth {
 
 			// We're using secret key signatures here.
 			'oauth_signature_method' => 'HMAC-SHA1',
-		);
+		];
 		$signature = $this->sign_request( 'GET', $url, $headerArr );
 		$headerArr['oauth_signature'] = $signature;
 
-		$header = array();
+		$header = [];
 		foreach ( $headerArr as $k => $v ) {
 			$header[] = rawurlencode( $k ) . '="' . rawurlencode( $v ) . '"';
 		}
@@ -336,7 +336,7 @@ class MW_OAuth {
 
 		$ch = curl_init();
 		curl_setopt( $ch, CURLOPT_URL, $url );
-		curl_setopt( $ch, CURLOPT_HTTPHEADER, array( $header ) );
+		curl_setopt( $ch, CURLOPT_HTTPHEADER, [ $header  );
 		//curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
 		curl_setopt( $ch, CURLOPT_USERAGENT, $this->gUserAgent );
 		curl_setopt( $ch, CURLOPT_HEADER, 0 );
@@ -352,7 +352,7 @@ class MW_OAuth {
 			// We're not authorized!
 #			echo 'You haven\'t authorized this application yet! Go <a href="' . htmlspecialchars( $_SERVER['SCRIPT_NAME'] ) . '?action=authorize">here</a> to do that.';
 #			echo '<hr>';
-			return (object) array('is_authorized'=>false) ;
+			return (object) ['is_authorized'=>false] ;
 		}
 		
 		// There are three fields in the response
@@ -424,7 +424,7 @@ class MW_OAuth {
 		$post['maxlag'] = $give_maxlag ;
 		if ( isset ( $_REQUEST['test'] ) ) print "<pre>GIVEN MAXLAG:{$give_maxlag}</pre>" ;
 
-		$headerArr = array(
+		$headerArr = [
 			// OAuth information
 			'oauth_consumer_key' => $this->gConsumerKey,
 			'oauth_token' => $this->gTokenKey,
@@ -434,7 +434,7 @@ class MW_OAuth {
 
 			// We're using secret key signatures here.
 			'oauth_signature_method' => 'HMAC-SHA1',
-		);
+		];
 
 		if ( isset ( $_REQUEST['test'] ) ) {
 			print "<pre>" ;
@@ -454,7 +454,7 @@ class MW_OAuth {
 		$signature = $this->sign_request( 'POST', $url, $to_sign );
 		$headerArr['oauth_signature'] = $signature;
 
-		$header = array();
+		$header = [];
 		foreach ( $headerArr as $k => $v ) {
 			$header[] = rawurlencode( $k ) . '="' . rawurlencode( $v ) . '"';
 		}
@@ -477,7 +477,7 @@ class MW_OAuth {
 		curl_setopt( $ch, CURLOPT_POST, true );
 		curl_setopt( $ch, CURLOPT_URL, $url );
 		curl_setopt( $ch, CURLOPT_POSTFIELDS, $post_fields );
-		curl_setopt( $ch, CURLOPT_HTTPHEADER, array( $header ) );
+		curl_setopt( $ch, CURLOPT_HTTPHEADER, [ $header ] );
 		//curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
 		curl_setopt( $ch, CURLOPT_USERAGENT, $this->gUserAgent );
 		curl_setopt( $ch, CURLOPT_HEADER, 0 );
@@ -576,12 +576,12 @@ class MW_OAuth {
 
 	function getConsumerRights () {
 		$ch = null;
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query',
 			'meta' => 'userinfo',
 			'uiprop' => 'blockinfo|groups|rights'
-		), $ch );
+		], $ch );
 		
 //		$url = $this->apiUrl . "?action=query&meta=userinfo&uiprop=blockinfo|groups|rights&format=json" ;
 //		$ret = json_decode ( file_get_content ( $url ) ) ;
@@ -594,18 +594,18 @@ class MW_OAuth {
 
 		// Fetch the edit token
 		$ch = null;
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query' ,
 			'meta' => 'tokens'
-		), $ch );
+		], $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
 			$this->error = 'Bad API response [setLabel]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
 		$token = $res->query->tokens->csrftoken;
 
-		$params = array(
+		$params = [
 			'format' => 'json',
 			'action' => 'wbsetlabel',
 			'id' => $q,
@@ -613,7 +613,7 @@ class MW_OAuth {
 			'value' => $text ,
 			'token' => $token,
 			'bot' => 1
-		) ;
+		] ;
 
 		global $tool_hashtag ;
 		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
@@ -637,18 +637,18 @@ class MW_OAuth {
 
 		// Fetch the edit token
 		$ch = null;
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query' ,
 			'meta' => 'tokens'
-		), $ch );
+		], $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
 			$this->error = 'Bad API response [setLabel]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
 		$token = $res->query->tokens->csrftoken;
 
-		$params = array(
+		$params = [
 			'format' => 'json',
 			'action' => 'wbsetsitelink',
 			'id' => $q,
@@ -656,7 +656,7 @@ class MW_OAuth {
 			'linktitle' => $title,
 			'token' => $token,
 			'bot' => 1
-		) ;
+		] ;
 
 		global $tool_hashtag ;
 		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
@@ -681,18 +681,18 @@ class MW_OAuth {
 
 		// Fetch the edit token
 		$ch = null;
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query' ,
 			'meta' => 'tokens'
-		), $ch );
+		], $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
 			$this->error = 'Bad API response [setLabel]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
 		$token = $res->query->tokens->csrftoken;
 
-		$params = array(
+		$params = [
 			'format' => 'json',
 			'action' => 'wbsetdescription',
 			'id' => $q,
@@ -700,7 +700,7 @@ class MW_OAuth {
 			'value' => $text ,
 			'token' => $token,
 			'bot' => 1
-		) ;
+		] ;
 
 		global $tool_hashtag ;
 		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
@@ -724,18 +724,18 @@ class MW_OAuth {
 
 		// Fetch the edit token
 		$ch = null;
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query' ,
 			'meta' => 'tokens'
-		), $ch );
+		], $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
 			$this->error = 'Bad API response [setLabel]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
 		$token = $res->query->tokens->csrftoken;
 
-		$params = array(
+		$params = [
 			'format' => 'json',
 			'action' => 'wbsetaliases',
 			$mode => $text ,
@@ -744,7 +744,7 @@ class MW_OAuth {
 //			'value' => $text ,
 			'token' => $token,
 			'bot' => 1
-		) ;
+		] ;
 
 		global $tool_hashtag ;
 		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
@@ -768,25 +768,25 @@ class MW_OAuth {
 
 		// Fetch the edit token
 		$ch = null;
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query' ,
 			'meta' => 'tokens'
-		), $ch );
+		], $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
 			$this->error = 'Bad API response [setPageText]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
 		$token = $res->query->tokens->csrftoken;
 
-		$params = array(
+		$params = [
 			'format' => 'json',
 			'action' => 'edit',
 			'title' => $page,
 			'text' => $text ,
 			'minor' => '' ,
 			'token' => $token,
-		) ;
+		] ;
 		
 		global $tool_hashtag ;
 		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
@@ -810,18 +810,18 @@ class MW_OAuth {
 
 		// Fetch the edit token
 		$ch = null;
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query' ,
 			'meta' => 'tokens'
-		), $ch );
+		], $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
 			$this->error = 'Bad API response [setPageText]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
 		$token = $res->query->tokens->csrftoken;
 		
-		$p = array(
+		$p = [
 			'format' => 'json',
 			'action' => 'edit',
 			'title' => $page,
@@ -829,7 +829,7 @@ class MW_OAuth {
 			'sectiontitle' => $header ,
 			'minor' => '' ,
 			'token' => $token,
-		) ;
+		] ;
 		
 		if ( isset ( $section ) and $section != '' ) $p['section'] = $section ;
 
@@ -852,15 +852,15 @@ class MW_OAuth {
 	
 	function createItem ( $data = '' ) {
 	
-		if ( $data == '' ) $data = (object) array() ;
+		if ( $data == '' ) $data = (object) [] ;
 	
 		// Next fetch the edit token
 		$ch = null;
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query' ,
 			'meta' => 'tokens'
-		), $ch );
+		], $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
 			$this->error = 'Bad API response [createItem]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
@@ -868,14 +868,14 @@ class MW_OAuth {
 		$token = $res->query->tokens->csrftoken;
 
 
-		$params = array(
+		$params = [
 			'format' => 'json',
 			'action' => 'wbeditentity',
 			'new' => 'item' ,
 			'data' => json_encode ( $data ) ,
 			'token' => $token,
 			'bot' => 1
-		) ;
+		] ;
 		
 		global $tool_hashtag ;
 		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
@@ -900,11 +900,11 @@ class MW_OAuth {
 	
 		// Next fetch the edit token
 		$ch = null;
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query' ,
 			'meta' => 'tokens'
-		), $ch );
+		], $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
 			$this->error = 'Bad API response [createItemFromPage]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
@@ -912,14 +912,12 @@ class MW_OAuth {
 		$token = $res->query->tokens->csrftoken;
 
 
-		$data = array ( 
-			'sitelinks' => array ( $site => array ( "site" => $site ,"title" => $page ) )
-		) ;
-		$m = array () ;
+		$data = [ 'sitelinks' => [ $site => [ "site" => $site ,"title" => $page ] ] ] ;
+		$m = [] ;
 		if ( preg_match ( '/^(.+)wiki(|quote)$/' , $site , $m ) ) {
 			$nice_title = preg_replace ( '/\s+\(.+\)$/' , '' , str_replace ( '_' , ' ' , $page ) ) ;
 			$lang = $m[1] ;
-			$lang_map = array (
+			$lang_map = [
 				'als' => 'gsw',
 				'bat_smg' => 'sgs',
 				'be_x_old' => 'be-tarask',
@@ -936,20 +934,20 @@ class MW_OAuth {
 				'zh_classical' => 'lzh',
 				'zh_min_nan' => 'nan',
 				'zh_yue' => 'yue',
-			) ;
+			] ;
 			if ( isset( $lang_map[ $lang ] ) ) $lang = $lang_map[ $lang ] ;
-			$data['labels'] = array ( $lang => array ( 'language' => $lang , 'value' => $nice_title ) ) ;
+			$data['labels'] = [ $lang => [ 'language' => $lang , 'value' => $nice_title ] ] ;
 		}
 //		print "<pre>" ; print_r ( json_encode ( $data ) ) ; print " </pre>" ; return true ;
 
-		$params = array(
+		$params = [
 			'format' => 'json',
 			'action' => 'wbeditentity',
 			'new' => 'item' ,
 			'data' => json_encode ( $data ) ,
 			'token' => $token,
 			'bot' => 1
-		) ;
+		] ;
 		
 		global $tool_hashtag ;
 		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
@@ -977,11 +975,11 @@ class MW_OAuth {
 	function removeClaim ( $id , $baserev ) {
 		// Fetch the edit token
 		$ch = null;
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query' ,
 			'meta' => 'tokens'
-		), $ch );
+		], $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
 			$this->error = 'Bad API response [removeClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
@@ -991,13 +989,13 @@ class MW_OAuth {
 	
 	
 		// Now do that!
-		$params = array(
+		$params = [
 			'format' => 'json',
 			'action' => 'wbremoveclaims',
 			'claim' => $id ,
 			'token' => $token,
 			'bot' => 1
-		) ;
+		] ;
 		if ( isset ( $baserev ) and $baserev != '' ) $params['baserevid'] = $baserev ;
 
 		global $tool_hashtag ;
@@ -1026,25 +1024,25 @@ class MW_OAuth {
 
 		// Next fetch the edit token
 		$ch = null;
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query' ,
 			'meta' => 'tokens'
-		), $ch );
+		], $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
 			$this->error = 'Bad API response [setSource]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
 		$token = $res->query->tokens->csrftoken;
 
-		$params = array(
+		$params = [
 			'format' => 'json',
 			'action' => 'wbsetreference',
 			'statement' => $statement ,
 			'snaks' => $snaks_json ,
 			'token' => $token,
 			'bot' => 1
-		) ;
+		] ;
 
 		global $tool_hashtag ;
 		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
@@ -1078,25 +1076,25 @@ class MW_OAuth {
 	
 		// Next fetch the edit token
 		$ch = null;
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query' ,
 			'meta' => 'tokens'
-		), $ch );
+		], $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
 			$this->error = 'Bad API response [createRedirect]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
 		$token = $res->query->tokens->csrftoken;
 
-		$params = array(
+		$params = [
 			'format' => 'json',
 			'action' => 'wbcreateredirect',
 			'from' => $from ,
 			'to' => $to ,
 			'token' => $token,
 			'bot' => 1
-		) ;
+		] ;
 
 		$res = $this->doApiQuery( $params, $ch );
 		
@@ -1122,11 +1120,11 @@ class MW_OAuth {
 		
 		// Next fetch the edit token
 		$ch = null;
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query' ,
 			'meta' => 'tokens'
-		), $ch );
+		], $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
 			$this->error = 'Bad API response [genericAction]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
@@ -1136,7 +1134,7 @@ class MW_OAuth {
 		$j->format = 'json' ;
 		$j->bot = 1 ;
 		
-		$params = array() ;
+		$params = [] ;
 		foreach ( $j AS $k => $v ) $params[$k] = $v ;
 
 
@@ -1175,11 +1173,11 @@ class MW_OAuth {
 
 		// Next fetch the edit token
 		$ch = null;
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query' ,
 			'meta' => 'tokens'
-		), $ch );
+		], $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
 			$this->error = 'Bad API response [setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
@@ -1204,7 +1202,7 @@ class MW_OAuth {
 			$value = '{"text":' . json_encode($claim['text']) . ',"language":' . json_encode($claim['language']) . '}' ;
 		}
 		
-		$params = array(
+		$params = [
 			'format' => 'json',
 			'action' => 'wbcreateclaim',
 			'snaktype' => 'value' ,
@@ -1212,7 +1210,7 @@ class MW_OAuth {
 			'value' => $value ,
 			'token' => $token,
 			'bot' => 1
-		) ;
+		] ;
 
 
 		global $tool_hashtag ;
@@ -1249,19 +1247,19 @@ class MW_OAuth {
 
 		// Next fetch the edit token
 		$ch = null;
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query' ,
 			'ignoreconflicts' => 'description' ,
 			'meta' => 'tokens'
-		), $ch );
+		], $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
 			$this->error = 'Bad API response [setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
 		$token = $res->query->tokens->csrftoken;
 	
-		$opt = array(
+		$opt = [
 			'format' => 'json',
 			'action' => 'wbmergeitems',
 			'fromid' => $q_from ,
@@ -1269,7 +1267,7 @@ class MW_OAuth {
 			'ignoreconflicts' => 'description|sitelink' ,
 			'token' => $token,
 			'bot' => 1
-		) ;
+		] ;
 			
 		global $tool_hashtag ;
 		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
@@ -1298,24 +1296,24 @@ class MW_OAuth {
 
 		// Next fetch the edit token
 		$ch = null;
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query' ,
 			'meta' => 'tokens'
-		), $ch );
+		], $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
 			$this->error = 'Bad API response [setClaim]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>';
 			return false ;
 		}
 		$token = $res->query->tokens->csrftoken;
 		
-		$p = array(
+		$p = [
 			'format' => 'json',
 			'action' => 'delete',
 			'title' => $page ,
 			'token' => $token,
 			'bot' => 1
-		) ;
+		] ;
 		if ( $reason != '' ) $p['reason'] = $reason ;
 	
 		$res = $this->doApiQuery( $p , $ch );
@@ -1343,18 +1341,18 @@ class MW_OAuth {
 
 		// Next fetch the edit token
 		$ch = null;
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query' ,
 			'meta' => 'tokens'
-		), $ch );
+		], $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
 			$this->error = 'Bad API response [uploadFromURL]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>' ;
 			return false ;
 		}
 		$token = $res->query->tokens->csrftoken;
 
-		$params = array(
+		$params = [
 			'format' => 'json',
 			'action' => 'upload' ,
 			'comment' => $comment ,
@@ -1362,7 +1360,7 @@ class MW_OAuth {
 			'token' => $token ,
 			'filename' => $new_file_name ,
 			'file' => $local_file // '@' . 
-		) ;
+		] ;
 		
 		if ( $ignorewarnings ) $params['ignorewarnings'] = 1 ;
 		
@@ -1400,11 +1398,11 @@ class MW_OAuth {
 
 		// Next fetch the edit token
 		$ch = null;
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query' ,
 			'meta' => 'tokens'
-		), $ch );
+		], $ch );
 		if ( !isset( $res->query->tokens->csrftoken ) ) {
 			$this->error = 'Bad API response [uploadFromURL]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>' ;
 			unlink ( $tmpfile ) ;
@@ -1412,7 +1410,7 @@ class MW_OAuth {
 		}
 		$token = $res->query->tokens->csrftoken;
 
-		$params = array(
+		$params = [
 			'format' => 'json',
 			'action' => 'upload' ,
 			'comment' => $comment ,
@@ -1420,7 +1418,7 @@ class MW_OAuth {
 			'token' => $token ,
 			'filename' => $new_file_name ,
 			'file' => $tmpfile // '@' . 
-		) ;
+		] ;
 		
 		if ( $ignorewarnings ) $params['ignorewarnings'] = 1 ;
 		
@@ -1447,12 +1445,12 @@ class MW_OAuth {
 		$ch = null;
 
 		// First fetch the username
-		$res = $this->doApiQuery( array(
+		$res = $this->doApiQuery( [
 			'format' => 'json',
 			'action' => 'query',
 			'uiprop' => 'groups|rights' ,
 			'meta' => 'userinfo',
-		), $ch , 'userinfo' );
+		], $ch , 'userinfo' );
 
 		if ( isset( $res->error->code ) && $res->error->code === 'mwoauth-invalid-authorization' ) {
 			// We're not authorized!

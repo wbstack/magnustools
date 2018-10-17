@@ -6,7 +6,7 @@ if ( !isset($noheaderwhatsoever) ) header("Connection: close");
 $tools_webproxy = 'tools-webproxy' ;
 $tusc_url = "http://$tools_webproxy/tusc/tusc.php" ; // http://tools-webserver-01/ // tools.wmflabs.org
 $use_db_cache = false ;
-$common_db_cache = array() ;
+$common_db_cache = [] ;
 $wdq_internal_url = 'http://wdq.wmflabs.org/api' ; // 'http://wikidata-wdq-mm.eqiad.wmflabs/api'
 $pagepile_enabeled = true ; //isset($_REQUEST['pagepile_enabeled']) ;
 $maxlag = 5 ; // https://www.mediawiki.org/wiki/Manual:Maxlag_parameter
@@ -32,18 +32,12 @@ function get_common_footer () { global $wrapper_tfc ; return $wrapper_tfc->getCo
 function get_request ( $key , $default = "" ) {  global $wrapper_tfc , $prefilled_requests ; $wrapper_tfc->prefilled_requests = $prefilled_requests ; return $wrapper_tfc->getRequest ( $key , $default ) ; }
 
 # Database access
-function getDBname ( $s ) { global $wrapper_tfc ; return $wrapper_tfc->getDBname ( $s ) ; }
 function openToolDB ( $dbname = '' , $server = '' , $force_user = '' ) { global $wrapper_tfc ; return $wrapper_tfc->openDBtool($dbname,$server,$force_user) ; }
 function openDBwiki ( $wiki , $slow_queries = false ) { global $wrapper_tfc ; return $wrapper_tfc->openDBwiki ( $wiki , $slow_queries ) ; }
 function openDB ( $language , $project , $slow_queries = false ) { global $wrapper_tfc ; return $wrapper_tfc->openDB ( $language , $project , $slow_queries ) ; }
 function getSQL ( &$db , &$sql , $max_tries = 2 , $message = '' ) { global $wrapper_tfc ; return $wrapper_tfc->getSQL ( $db , $sql , $max_tries , $message ) ; }
 function getPagesInCategory ( $db , $category , $depth = 0 , $namespace = 0 , $no_redirects = false ) { global $wrapper_tfc ; return $wrapper_tfc->getPagesInCategory ( $db , $category , $depth , $namespace , $no_redirects ) ; }
 function findSubcats ( $db , $root , &$subcats , $depth = -1 ) { global $wrapper_tfc ; return $wrapper_tfc->findSubcats ( $db , $root , $subcats , $depth ) ; }
-
-# External
-function do_post_request($url, $data, $optional_headers = null) { global $wrapper_tfc ; return $wrapper_tfc->doPostRequest ( $url , $params , $optional_headers ) ; }
-function getMultipleURLsInParallel ( $urls , $batch_size = 50 ) { global $wrapper_tfc ; return $wrapper_tfc->getMultipleURLsInParallel ( $urls , $batch_size ) ; }
-function do_post_request_curl ( $url , $params , $format = 'php' ) { global $wrapper_tfc ; $ret = $wrapper_tfc->doPostRequest ( $url , $params ) ; return  ($format=='php')?unserialize($output):$output ; }
 
 # SPARQL
 function getSPARQL ( $cmd ) { global $wrapper_tfc ; return $wrapper_tfc->getSPARQL ( $cmd ) ; }
