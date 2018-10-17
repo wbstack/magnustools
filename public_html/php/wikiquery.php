@@ -1,14 +1,12 @@
 <?PHP
 
-require_once ( 'common.php' ) ;
-
 # ______________________________________________________________________
 # BEGIN OF CLASS WikiQuery
 
 # This class offers access to many "properties" of pages, via API
 # Its original purpose was to get around the unreliable database connections on the toolserver
 # The ToolforgeCommon class likely makes most of the API calls obsolete, but this class is still widely used
-# It also includes "common.php"
+# No other dependencies
 
 class WikiQuery {
 	public $language , $project ;
