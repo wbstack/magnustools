@@ -81,9 +81,8 @@ function get_wikipedia_article ( $lang , $title , $allow_redirect = true , $proj
 	$wiki = $wrapper_tfc->getWikiForLanguageProject ( $lang , $project ) ;
 	$text = $wrapper_tfc->getWikiPageText ( $wiki , $title ) ;
 	# TODO check redirect?
-	if ( $remove_comments ) $text = trim ( strip_html_comments ( $text ) ) ;
-	else $text = trim ( $text ) ;
-	return $text ;
+	if ( $remove_comments ) $text = strip_html_comments ( $text ) ;
+	return trim ( $text ) ;
 }
 
 
