@@ -6,13 +6,14 @@ ini_set('display_errors', 'On');
 ini_set('memory_limit','1500M');
 set_time_limit ( 60 * 10 ) ; // Seconds
 
-include_once ( 'php/common.php' ) ;
+require_once ( '/data/project/magnustools/public_html/php/ToolforgeCommon.php' ) ;
+$tfc = new ToolforgeCommon() ;
 
 function getPagesInCategoryRandom ( $db , $category , $depth = 0 , $namespace = 0 , $no_redirects = false ) {
-	global $testing ;
-	$ret = array() ;
-	$cats = array() ;
-	findSubcats ( $db , array($category) , $cats , $depth ) ;
+	global $tfc ;
+	$ret = [] ;
+	$cats = [] ;
+	$tfc->findSubcats ( $db , [$category] , $cats , $depth ) ;
 	if ( $namespace == 14 ) return $cats ; // Faster, and includes root category
 
 	$namespace *= 1 ;
@@ -20,7 +21,7 @@ function getPagesInCategoryRandom ( $db , $category , $depth = 0 , $namespace = 
 	if ( $no_redirects ) $sql .= " AND page_is_redirect=0" ;
 	$sql .= " ORDER BY rand() LIMIT 1" ;
 
-	if(!$result = $db->query($sql)) die('There was an error running the query [' . $db->error . ']');
+	$result = $tfc->getSQL ( $db , $sql ) ;
 	while($o = $result->fetch_object()){
 		$ret[$o->page_title] = $o->page_title ;
 	}
@@ -29,11 +30,11 @@ function getPagesInCategoryRandom ( $db , $category , $depth = 0 , $namespace = 
 
 $lang = 'commons' ;//get_request ( 'lang' , 'en' ) ;
 $project = 'wikimedia' ; //get_request ( 'project' , 'wikipedia' ) ;
-$category = get_request ( 'category' , '' ) ;
-$depth = get_request ( 'd' , 3 ) ;
+$category = $tfc->getRequest ( 'category' , '' ) ;
+$depth = $tfc->getRequest ( 'd' , 3 ) ;
 
 if ( $category == '' ) {
-	print get_common_header ( '' , 'Random image' ) ;
+	print $tfc->getCommonHeader ( '' , 'Random image' ) ;
 	print "<lead>Loads a random image from a category tree on Commons</lead>" ;
 // 	<tr><th>Site</th><td><input type='text' name='lang' value='$lang' class='span1' />.<input type='text' name='project' value='$project' class='span2' /></td></tr>
 	print "<form method='get'><table class='table table-striped'><tbody>
@@ -41,15 +42,13 @@ if ( $category == '' ) {
 	</tbody><tfoot>
 	<tr><td/><td><input class='btn btn-primary' type='submit' value='Do it!'> (will auto-forward to random image)</td></tr>
 	</tfoot></table></form>" ;
-	print get_common_footer() ;
+	print $tfc->getCommonFooter() ;
 	exit ( 0 ) ;
 }
 
-$db = openDB ( $lang , $project ) ;
+$db = $tfc->openDB ( $lang , $project ) ;
 $pages = getPagesInCategoryRandom ( $db , $category , $depth , 6 , true ) ;
 $page = array_pop ( $pages ) ;
-#$k = array_rand ( $pages , 1 ) ;
-#$page = $pages[$k] ;
 
 
 header('Content-type: text/html');

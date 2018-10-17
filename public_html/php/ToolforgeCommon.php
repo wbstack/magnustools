@@ -13,8 +13,10 @@ set_time_limit ( 60 * 10 ) ; // Seconds
 //define('CLI', PHP_SAPI === 'cli');
 //if ( !isset($noheaderwhatsoever) ) header("Connection: close");
 
-
-//$tfc = new ToolforgeCommon() ;
+/*
+require_once ( '/data/project/magnustools/public_html/php/ToolforgeCommon.php' ) ;
+$tfc = new ToolforgeCommon('mytoolname') ;
+*/
 
 final class ToolforgeCommon {
 

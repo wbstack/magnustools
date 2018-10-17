@@ -37,7 +37,6 @@ function openDBwiki ( $wiki , $slow_queries = false ) { global $wrapper_tfc ; re
 function openDB ( $language , $project , $slow_queries = false ) { global $wrapper_tfc ; return $wrapper_tfc->openDB ( $language , $project , $slow_queries ) ; }
 function getSQL ( &$db , &$sql , $max_tries = 2 , $message = '' ) { global $wrapper_tfc ; return $wrapper_tfc->getSQL ( $db , $sql , $max_tries , $message ) ; }
 function getPagesInCategory ( $db , $category , $depth = 0 , $namespace = 0 , $no_redirects = false ) { global $wrapper_tfc ; return $wrapper_tfc->getPagesInCategory ( $db , $category , $depth , $namespace , $no_redirects ) ; }
-function findSubcats ( $db , $root , &$subcats , $depth = -1 ) { global $wrapper_tfc ; return $wrapper_tfc->findSubcats ( $db , $root , $subcats , $depth ) ; }
 
 # SPARQL
 function getSPARQL ( $cmd ) { global $wrapper_tfc ; return $wrapper_tfc->getSPARQL ( $cmd ) ; }
