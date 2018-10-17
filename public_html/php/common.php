@@ -27,7 +27,6 @@ function myurlencode ( $t ) { global $wrapper_tfc ; return $wrapper_tfc->urlEnco
 function getWebserverForWiki ( $wiki ) { global $wrapper_tfc ; return $wrapper_tfc->getWebserverForWiki ( $wiki ) ; }
 function escape_attribute ( $s ) { global $wrapper_tfc ; return $wrapper_tfc->escapeAttribute ( $s ) ; }
 function myflush () { global $wrapper_tfc ; return $wrapper_tfc->flush() ; }
-function load_common_header () { global $wrapper_tfc ; return $wrapper_tfc->loadCommonHeader ; }
 function get_common_header ( $script , $title = '' , $p = [] ) { global $wrapper_tfc ; return $wrapper_tfc->getCommonHeader ( $title , $p ) ; }
 function get_common_footer () { global $wrapper_tfc ; return $wrapper_tfc->getCommonFooter() ; }
 function get_request ( $key , $default = "" ) {  global $wrapper_tfc , $prefilled_requests ; $wrapper_tfc->prefilled_requests = $prefilled_requests ; return $wrapper_tfc->getRequest ( $key , $default ) ; }
