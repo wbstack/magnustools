@@ -1,15 +1,22 @@
 <?PHP
 
-# declare(strict_types=1); # PHP7
+# Requires PHP7
+# Run with ./vendor/bin/phpunit --bootstrap vendor/autoload.php wikidataTest.php
+
+declare(strict_types=1);
+
+require __DIR__ . '/vendor/autoload.php';
 
 use PHPUnit\Framework\TestCase;
+
+require_once ( '/data/project/magnustools/public_html/php/wikidata.php' ) ;
 
 /**
  * @covers wikidata
  */
 final class wikidataTest extends TestCase {
 
-	public function testCanSanitize() { //:void
+	public function testCanSanitize() :void {
 		$wil = new WikidataItemList() ;
 
 		$value = 'P123' ;
@@ -29,7 +36,7 @@ final class wikidataTest extends TestCase {
 		$this->assertEquals ( 'Q123' , $value , 'numeric => Q' ) ;
 	}
 	
-	public function testCanLoadItems() { //:void
+	public function testCanLoadItems() :void {
 		$q = 'Q42' ;
 		$wil = new WikidataItemList() ;
 		$wil->loadItem ( $q ) ;
@@ -39,7 +46,7 @@ final class wikidataTest extends TestCase {
 		$this->i = $i ;
 	}
 
-	public function testCanGetLabel() { //:void
+	public function testCanGetLabel() :void {
 		$q = 'Q42' ;
 		$wil = new WikidataItemList() ;
 		$wil->loadItem ( $q ) ;

@@ -1,8 +1,14 @@
 <?PHP
 
-# declare(strict_types=1); # PHP7
+# Requires PHP7
+# Run with ./vendor/bin/phpunit --bootstrap vendor/autoload.php ToolforgeCommonTest.php
 
+declare(strict_types=1);
+
+require __DIR__ . '/vendor/autoload.php';
 use PHPUnit\Framework\TestCase;
+
+require_once ( '/data/project/magnustools/public_html/php/ToolforgeCommon.php' ) ;
 
 /**
  * @covers ToolforgeCommon
@@ -11,7 +17,7 @@ final class ToolforgeCommonTest extends TestCase {
 
 	private $test_url = 'https://tools.wmflabs.org/magnustools/test.file' ;
 
-	public function testCanConnectToLanguageProject() { //:void
+	public function testCanConnectToLanguageProject() :void {
 		$tfc = new ToolforgeCommon() ;
 		$db = $tfc->openDB ( 'en' , 'wikipedia' ) ;
 		$this->assertEquals ( $db->ping() , true ) ;
@@ -21,7 +27,7 @@ final class ToolforgeCommonTest extends TestCase {
 		$this->assertEquals ( $o->page_id , 15580374 ) ;
 	}
 
-	public function testCanConnectToWiki() { //:void
+	public function testCanConnectToWiki() :void {
 		$tfc = new ToolforgeCommon() ;
 		$db = $tfc->openDBwiki ( 'enwiki' ) ;
 		$this->assertEquals ( $db->ping() , true ) ;
@@ -31,7 +37,7 @@ final class ToolforgeCommonTest extends TestCase {
 		$this->assertEquals ( $o->page_id , 15580374 ) ;
 	}
 
-	public function testCanConnectToTool() { //:void
+	public function testCanConnectToTool() :void {
 		$tfc = new ToolforgeCommon() ;
 		$db = $tfc->openDBtool ( 'mixnmatch_p' , '' , 's51434' ) ;
 		$this->assertEquals ( $db->ping() , true ) ;
@@ -41,14 +47,14 @@ final class ToolforgeCommonTest extends TestCase {
 		$this->assertEquals ( $o->name , 'ODNB' ) ;
 	}
 	
-	public function testCanDoPostRequest() { //:void
+	public function testCanDoPostRequest() :void {
 		$tfc = new ToolforgeCommon() ;
 		$s = $tfc->doPostRequest ( $this->test_url , [] ) ;
 		$s = trim ( $s ) ;
 		$this->assertEquals ( $s , 'THIS IS A TEST!' ) ;
 	}
 	
-	public function testCanDoParallelRequests() { //:void
+	public function testCanDoParallelRequests() :void {
 		$tfc = new ToolforgeCommon() ;
 		$urls = [ 'testing' => $this->test_url ] ;
 		$result = $tfc->getMultipleURLsInParallel ( $urls ) ;
@@ -57,7 +63,7 @@ final class ToolforgeCommonTest extends TestCase {
 		$this->assertEquals ( $s , 'THIS IS A TEST!' ) ;
 	}
 	
-	public function testCanDoSPARQL() { //:void
+	public function testCanDoSPARQL() :void {
 		$tfc = new ToolforgeCommon() ;
 		$sparql = 'SELECT ?q { ?q wdt:P214 "113230702" }' ;
 		$items = $tfc->getSPARQLitems ( $sparql ) ;
@@ -65,7 +71,7 @@ final class ToolforgeCommonTest extends TestCase {
 		$this->assertEquals ( $items[0] , 'Q42' ) ;
 	}
 
-	public function testCanGetRequest() { //:void
+	public function testCanGetRequest() :void {
 		$_REQUEST['test_defined'] = 'abc' ;
 		$tfc = new ToolforgeCommon() ;
 		$result_with_default = $tfc->getRequest ( 'test_undefined' , 'default' ) ;
@@ -74,7 +80,7 @@ final class ToolforgeCommonTest extends TestCase {
 		$this->assertEquals ( $result_no_default , 'abc' ) ;
 	}
 	
-	public function testCanGetPagesInCategoryTree() { //:void
+	public function testCanGetPagesInCategoryTree() :void {
 		$tfc = new ToolforgeCommon() ;
 		$db = $tfc->openDBwiki ( 'enwiki' ) ;
 		$pages = $tfc->getPagesInCategory ( $db , 'Secularism in the United Kingdom' , 2 , 0 , true ) ;
