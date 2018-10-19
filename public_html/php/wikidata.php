@@ -8,7 +8,7 @@ class WDI {
 	public $q ;
 	public $j ;
 	
-	public function WDI ( $q = '' ) {
+	public function __construct ( $q = '' ) {
 		global $wikidata_api_url ;
 		if ( $q != '' ) {
 			$q = 'Q' . preg_replace ( '/\D/' , '' , "$q" ) ;

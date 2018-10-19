@@ -8,7 +8,7 @@ declare(strict_types=1);
 require __DIR__ . '/vendor/autoload.php';
 use PHPUnit\Framework\TestCase;
 
-require_once ( '/data/project/magnustools/public_html/php/ToolforgeCommon.php' ) ;
+require_once ( __DIR__ . '/../public_html/php/ToolforgeCommon.php' ) ;
 
 /**
  * @covers ToolforgeCommon
@@ -58,7 +58,6 @@ final class ToolforgeCommonTest extends TestCase {
 		$tfc = new ToolforgeCommon() ;
 		$urls = [ 'testing' => $this->test_url ] ;
 		$result = $tfc->getMultipleURLsInParallel ( $urls ) ;
-//		$this->assertEquals ( $s , 'THIS IS A TEST!' ) ; $result['testing']
 		$s = trim ( $result['testing'] ) ;
 		$this->assertEquals ( $s , 'THIS IS A TEST!' ) ;
 	}

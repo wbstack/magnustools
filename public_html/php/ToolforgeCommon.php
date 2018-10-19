@@ -289,7 +289,7 @@ final class ToolforgeCommon {
 // INTERFACE
 
 	private function loadCommonHeader () /*:string*/ {
-		$dir = '/data/project/magnustools/public_html/resources/html' ;
+		$dir = __DIR__ . '/../resources/html' ;
 		$f1 = file_get_contents ( "$dir/index_bs4.html" ) ;
 		$f2 = file_get_contents ( "$dir/menubar_bs4.html" ) ;
 		

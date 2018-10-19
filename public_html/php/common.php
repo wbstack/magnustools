@@ -18,7 +18,7 @@ $petscan_note2 .= "Please add any blocking issues to the <a href='https://bitbuc
 
 
 // LEGACY WRAPPER FUNCTIONS AROUND ToolforgeCommon METHODS TO AVOID CODE DUPLICATION
-require_once ( '/data/project/magnustools/public_html/php/ToolforgeCommon.php' ) ;
+require_once ( __DIR__ . '/ToolforgeCommon.php' ) ;
 $wrapper_tfc = new ToolforgeCommon ( 'legacy code' );
 $wrapper_tfc->use_db_cache = false ; # Some scripts close the DB
 

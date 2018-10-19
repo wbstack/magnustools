@@ -9,7 +9,7 @@ require __DIR__ . '/vendor/autoload.php';
 
 use PHPUnit\Framework\TestCase;
 
-require_once ( '/data/project/magnustools/public_html/php/wikidata.php' ) ;
+require_once ( __DIR__ . '/../public_html/php/wikidata.php' ) ;
 
 /**
  * @covers wikidata
