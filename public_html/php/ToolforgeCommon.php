@@ -54,37 +54,37 @@ final class ToolforgeCommon {
 
 // CONVENIENCE
 
-	function getRequest ( $key , $default = "" ) {
+	function getRequest ( $key , $default = "" ) /*:string*/ {
 		if ( isset ( $this->prefilled_requests[$key] ) ) return $this->prefilled_requests[$key] ;
 		if ( isset ( $_REQUEST[$key] ) ) return str_replace ( "\'" , "'" , $_REQUEST[$key] ) ;
 		return $default ;
 	}
 	
-	function urlEncode ( $t ) {
+	function urlEncode ( $t ) /*:string*/ {
 		$t = str_replace ( " " , "_" , $t ) ;
 		$t = urlencode ( $t ) ;
 		return $t ;
 	}
 	
-	function escapeAttribute ( $s ) {
+	function escapeAttribute ( $s ) /*:string*/ {
 		$ret = preg_replace ( "/\"/" , '&quot;' , $s ) ;
 		$ret = preg_replace ( "/'/" , '&apos;' , $ret ) ;
 		return $ret ;
 	}
 
-	function flush () {
+	function flush () /*:void*/ {
 		@ob_flush();
 		flush();
 	}
 
-	function getCurrentTimestamp () {
+	function getCurrentTimestamp () /*:string*/ {
 		return date ( 'YmdHis' ) ;
 	}
 
 
 // Toolforge/Wikimedia name conversions
 
-	function getWebserverForWiki ( $wiki ) {
+	function getWebserverForWiki ( $wiki ) /*:string*/ {
 		$wiki = preg_replace ( '/_p$/' , '' , $wiki ) ; // Paranoia
 		if ( $wiki == 'commonswiki' ) return "commons.wikimedia.org" ;
 		if ( $wiki == 'wikidatawiki' ) return "www.wikidata.org" ;
@@ -96,7 +96,7 @@ final class ToolforgeCommon {
 		return '' ;
 	}
 
-	function trimWikitextMarkup ( $wikitext ) {
+	function trimWikitextMarkup ( $wikitext ) /*:string*/ {
 		$wikitext = preg_replace ( '/\[\[(.+?)[\#\|].*?\]\]/' , '$1' , $wikitext ) ;
 		$wikitext = preg_replace ( '/\[\[(.+?)\]\]/' , '$1' , $wikitext ) ;
 		$wikitext = preg_replace ( '/\{\{(.+?)\}\}/' , '' , $wikitext ) ;
@@ -104,7 +104,7 @@ final class ToolforgeCommon {
 		return $wikitext ;
 	}
 
-	function getWikiPageText ( $wiki , $page ) {
+	function getWikiPageText ( $wiki , $page ) /*:string*/ {
 		$server = $this->getWebserverForWiki ( $wiki ) ;
 		$url = "https://{$server}/w/api.php?action=parse&prop=wikitext&format=json&page=" . $this->urlEncode ( $page ) ;
 		$json = json_decode ( @file_get_contents ( $url ) ) ;
@@ -120,7 +120,7 @@ final class ToolforgeCommon {
 		return $ret ;
 	}
 
-	function getWikiForLanguageProject ( $language , $project ) {
+	function getWikiForLanguageProject ( $language , $project ) /*:string*/ {
 		$language = trim ( strtolower ( $language ) ) ;
 		if ( $language == 'commons' ) return 'commonswiki' ;
 		if ( $language == 'wikidata' ) return 'wikidatawiki' ;
@@ -132,7 +132,7 @@ final class ToolforgeCommon {
 // DATABASE
 
 
-	function getDBname ( $language , $project ) {
+	function getDBname ( $language , $project ) /*:string*/ {
 		$ret = $language ;
 		if ( $language == 'commons' ) $ret = 'commonswiki_p' ;
 		elseif ( $language == 'wikidata' || $project == 'wikidata' ) $ret = 'wikidatawiki_p' ;
@@ -154,7 +154,7 @@ final class ToolforgeCommon {
 		return $ret ;
 	}
 
-	private function getDBpassword () {
+	private function getDBpassword () /*:string*/ {
 		if ( isset ( $this->tool_user_name ) and $this->tool_user_name != '' ) $user = $this->tool_user_name ;
 		else $user = str_replace ( 'tools.' , '' , get_current_user() ) ;
 		$passwordfile = '/data/project/' . $user . '/replica.my.cnf' ;
@@ -288,7 +288,7 @@ final class ToolforgeCommon {
 
 // INTERFACE
 
-	private function loadCommonHeader () {
+	private function loadCommonHeader () /*:string*/ {
 		$dir = '/data/project/magnustools/public_html/resources/html' ;
 		$f1 = file_get_contents ( "$dir/index_bs4.html" ) ;
 		$f2 = file_get_contents ( "$dir/menubar_bs4.html" ) ;
@@ -303,7 +303,7 @@ final class ToolforgeCommon {
 		return "$f1$f2$f3\n" ;
 	}
 
-	public function getCommonHeader ( $title = '' , $p = [] ) {
+	public function getCommonHeader ( $title = '' , $p = [] ) /*:string*/ {
 		if ( $title == '' ) $title = ucfirst ( strtolower ( $this->toolname ) ) ;
 		
 		if ( !headers_sent() ) {
@@ -323,7 +323,7 @@ final class ToolforgeCommon {
 		return $s ;
 	}
 
-	public function getCommonFooter () {
+	public function getCommonFooter () /*:string*/ {
 		return "</div></div></body></html>" ;
 	}
 
@@ -430,7 +430,7 @@ final class ToolforgeCommon {
 		return json_decode ( $fc ) ;
 	}
 
-	public function parseItemFromURL ( $url ) {
+	public function parseItemFromURL ( $url ) /*:string*/ {
 		return preg_replace ( '/^.+([A-Z]\d+)$/' , '$1' , $url ) ;
 	}
 
@@ -480,7 +480,7 @@ final class ToolforgeCommon {
 		return $last_item ;
 	}
 
-	private function guessConfigFile () {
+	private function guessConfigFile () /*:string*/ {
 		if ( preg_match ( '/(\/mnt\/nfs\/labstore-secondary-tools-project\/[^\/]+)/' , getcwd() , $m ) ) {
 			$dir = $m[1] ;
 			$files = scandir ( $dir ) ;

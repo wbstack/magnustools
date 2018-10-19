@@ -104,7 +104,7 @@ class WikiQuery {
 	private function getSubResults ( $url , $path_parts ) {
 		$data = $this->get_result ( $url ) ;
 		if ( !isset($data) or $data === false ) return false ;
-		while ( count($[$path_parts]) > 0 ) {
+		while ( count($data[$path_parts]) > 0 ) {
 			$part = array_shift ( $path_parts ) ; # First part
 			if ( !isset ( $data[$part] ) ) return false ;
 			$data = $data[$part] ;
@@ -132,7 +132,7 @@ class WikiQuery {
 
 	function get_categories ( $title ) {
 		$ret = [] ;
-		$url = $this->get_api_url ( 'categories' , 'cllimit=500&titles=' . $this->urlEncode ( $title ) . ) ;
+		$url = $this->get_api_url ( 'categories' , 'cllimit=500&titles=' . $this->urlEncode ( $title ) ) ;
 		$data = $this->getFirstResult ( $url , ['query','pages'] ) ;
 		if ( !isset ( $data['categories'] ) ) return $ret ; # Error
 		$data = $data['categories'] ;

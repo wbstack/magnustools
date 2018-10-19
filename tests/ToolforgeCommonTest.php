@@ -87,6 +87,14 @@ final class ToolforgeCommonTest extends TestCase {
 		$this->assertArrayHasKey ( 'Richard_Dawkins' , $pages ) ;
 	}
 
+	public function testHasWikidataItemEverBeenEditedWithString() :void {
+		$tfc = new ToolforgeCommon() ;
+		$x = $tfc->hasWikidataItemEverBeenEditedWithString ( 'Q6431265' , 'mixnmatch:microsync for catalog 238' ) ;
+		$this->assertEquals ( $x , true ) ;
+		$x = $tfc->hasWikidataItemEverBeenEditedWithString ( 'Q6431265' , '79vsbvisvsvbhuseghkseghk7sgevbesesfksfsekfb' ) ; # Unlikely string
+		$this->assertEquals ( $x , false ) ;
+	}
+
 }
 
 ?>
