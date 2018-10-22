@@ -95,7 +95,7 @@ class WikiQuery {
 	}
 
 	private function getFirstResult ( $url , $path_parts ) {
-		$data = getSubResults ( $url , $path_parts ) ;
+		$data = $this->getSubResults ( $url , $path_parts ) ;
 		if ( !isset($data) or $data === false or count($data) == 0 ) return false ;
 		$data = array_shift ( $data ) ;
 		return $data ;
