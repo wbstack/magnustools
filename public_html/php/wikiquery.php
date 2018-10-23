@@ -104,7 +104,7 @@ class WikiQuery {
 	private function getSubResults ( $url , $path_parts ) {
 		$data = $this->get_result ( $url ) ;
 		if ( !isset($data) or $data === false ) return false ;
-		while ( count($data[$path_parts]) > 0 ) {
+		while ( count($path_parts) > 0 ) {
 			$part = array_shift ( $path_parts ) ; # First part
 			if ( !isset ( $data[$part] ) ) return false ;
 			$data = $data[$part] ;
