@@ -285,7 +285,7 @@ var flickr2commons = {
 		var name_base = o.photo.title._content ;
 		name_base = name_base.replace ( /[\[\]:\/]/ , '-' ) ;
 		if ( name_base.length > 200 ) name_base = name_base.substr(0,200) ;
-		if ( name_base == '' ) name_base = 'File from Flickr ' ;
+		if ( name_base == '' || /^IMG_\d+$/.test(name_base) ) name_base = 'File from Flickr ' ;
 		name_base += ' (' + o.photo.id + ')' ;
 		var full_name = name_base ;
 		if ( iter > 0 ) full_name += ' ('+iter+')' ;

@@ -398,7 +398,7 @@ final class ToolforgeCommon {
 		if ( preg_match ( '/^[pP]/',$item) ) $ns = 120 ;
 		$item = $db->real_escape_string ( $item ) ;
 		$string = $db->real_escape_string ( $string ) ;
-		$sql = "SELECT * FROM page,revision WHERE rev_comment LIKE '%{$string}%' AND rev_page=page_id AND page_namespace={$ns} AND page_title='{$item}' LIMIT 1" ;
+		$sql = "SELECT * FROM page,revision_compat WHERE rev_comment LIKE '%{$string}%' AND rev_page=page_id AND page_namespace={$ns} AND page_title='{$item}' LIMIT 1" ;
 		$result = $this->getSQL ( $db , $sql ) ;
 		while($row = $result->fetch_assoc()) return true ;
 		return false ;
