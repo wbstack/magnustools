@@ -11,7 +11,7 @@ class WDI {
 	public function __construct ( $q = '' ) {
 		global $wikidata_api_url ;
 		if ( $q != '' ) {
-			$q = 'Q' . preg_replace ( '/\D/' , '' , "$q" ) ;
+			if ( !preg_match('/^[PLM]\d+$/',$q) ) $q = 'Q' . preg_replace ( '/\D/' , '' , "$q" ) ;
 			$this->q = $q ;
 			$url = "$wikidata_api_url?action=wbgetentities&ids=$q&format=json" ;
 			$j = json_decode ( file_get_contents ( $url ) ) ;
@@ -82,8 +82,8 @@ class WDI {
 		if ( !isset($claim->mainsnak) ) return false ;
 		if ( !isset($claim->mainsnak->datavalue) ) return false ;
 		if ( !isset($claim->mainsnak->datavalue->value) ) return false ;
-		if ( !isset($claim->mainsnak->datavalue->value->$nid) ) return false ;
-		return 'Q'.$claim->mainsnak->datavalue->value->$nid ;
+		if ( !isset($claim->mainsnak->datavalue->value->id) ) return false ;
+		return $claim->mainsnak->datavalue->value->id ;
 	}
 	
 	public function hasLabel ( $label ) {
@@ -118,7 +118,7 @@ class WDI {
 	}
 
 	public function sanitizeQ ( &$q ) {
-		$q = 'Q'.preg_replace('/\D/','',"$q") ;
+		if ( preg_match ( '/^[0-9 ]+$/' , $q ) ) $q = 'Q'.preg_replace('/\D/','',"$q") ;
 	}
 	
 	public function getStrings ( $p ) {
@@ -264,9 +264,10 @@ class WikidataItemList {
 
 	public $testing = false ;
 	protected $items = [] ;
+	public $testing_output = [] ;
 
 	public function sanitizeQ ( &$q ) {
-		if ( preg_match ( '/^(?:[PL]\d+|L\d+-[FS]\d+)$/i' , "$q" ) ) {
+		if ( preg_match ( '/^(?:[PLM]\d+|L\d+-[FS]\d+)$/i' , "$q" ) ) {
 			$q = strtoupper ( $q ) ;
 		} else {
 			$q = 'Q'.preg_replace('/\D/','',"$q") ;
@@ -310,7 +311,7 @@ class WikidataItemList {
     	$qs = [ [] ] ;
     	foreach ( $list AS $q ) {
     		$this->sanitizeQ($q) ;
-    		if ( $q == 'Q' || $q == 'P' ) continue ;
+    		if ( !preg_match ( '/^[A-Z]\d+/' , $q ) ) continue ; # Paranoia
 	    	if ( isset($this->items[$q]) ) continue ;
 	    	if ( count($qs[count($qs)-1]) == 50 ) $qs[] = [] ;
     		$qs[count($qs)-1][] = $q ;
