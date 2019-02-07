@@ -1112,6 +1112,7 @@ class MW_OAuth {
 
 
 	function genericAction ( $j , $summary = '' ) {
+		if ( is_array($j) ) $j = (object) $j ;
 		if ( !isset($j->action) ) { // Paranoia
 			$this->error = "No action in " . json_encode ( $j ) ;
 			return false ;

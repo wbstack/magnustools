@@ -240,7 +240,8 @@ final class ToolforgeCommon {
 		}
 		$e = new \Exception;
 		var_dump($e->getTraceAsString());
-		die ( 'There was an error running the query [' . $db->error . '/' . $db->errno . ']'."\n$sql\n$message\n" ) ;
+		throw $e;
+#		die ( 'There was an error running the query [' . $db->error . '/' . $db->errno . ']'."\n$sql\n$message\n" ) ;
 	}
 
 	public function findSubcats ( &$db , $root , &$subcats , $depth = -1 ) {
