@@ -12,7 +12,7 @@ class WikiQuery {
 	public $language , $project ;
 	private $retry_api_url = 3 ; # Now many times to try file_get_contents for an API page before giving up
 
-	function WikiQuery ( $language , $project = 'wikipedia' ) {
+	function __construct ( $language , $project = 'wikipedia' ) {
 		if ( $language == 'commons' ) $project = 'wikimedia' ;
 		if ( $language == 'wikidata' ) { $project = $language ; $language = 'www' ; }
 		if ( $language == "xxx" ) $language = "" ;

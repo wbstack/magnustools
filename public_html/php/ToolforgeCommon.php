@@ -239,6 +239,7 @@ final class ToolforgeCommon {
 			$max_tries-- ;
 		}
 		$e = new \Exception;
+		var_dump($sql);
 		var_dump($e->getTraceAsString());
 		throw $e;
 #		die ( 'There was an error running the query [' . $db->error . '/' . $db->errno . ']'."\n$sql\n$message\n" ) ;
@@ -411,19 +412,27 @@ final class ToolforgeCommon {
 	// Takes a SPARQL query, adds the tool name (for reacking at query server), returns the decoded JSON result
 	public function getSPARQL ( $cmd ) {
 		$sparql = "$cmd\n#TOOL: {$this->toolname}" ;
-
-		$ctx = stream_context_create(['http'=>
-			['timeout' => 1200]  //1200 seconds is 20 minutes
-		]);
-
 		$url = "https://query.wikidata.org/sparql?format=json&query=" . urlencode($sparql) ;
-		$fc = @file_get_contents ( $url , false , $ctx ) ;
-	
+
+		$cnt = 0 ;
+		$max = 10 ;
+		do {
+			$ctx = stream_context_create(['http'=> ['timeout' => 1200] ]); //1200 seconds is 20 minutes
+			$fc = @file_get_contents ( $url , false , $ctx ) ;
+			$again = preg_match ( '/429/' , $http_response_header[0] ) ;
+			if ( $again ) {
+				$cnt++ ;
+				if ( $cnt > $max ) die ( "SPARQL wait too long ({$cnt}x):\n{$sparql}\n") ;
+				sleep ( 5 ) ;
+			}
+		} while ( $again ) ;
+/*	
 		// Catch "wait" response, wait 5, retry
 		if ( preg_match ( '/429/' , $http_response_header[0] ) ) {
 			sleep ( 5 ) ;
 			return $this->getSPARQL ( $cmd ) ;
 		}
+*/
 		
 		assert ( $fc !== false , 'SPARQL query failed: '.$sparql ) ;
 

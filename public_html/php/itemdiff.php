@@ -1,7 +1,7 @@
 <?PHP
 
-require_once ( "/data/project/magnustools/public_html/php/ToolforgeCommon.php" ) ;
-require_once ( "/data/project/magnustools/public_html/php/wikidata.php" ) ;
+require_once ( "ToolforgeCommon.php" ) ;
+require_once ( "wikidata.php" ) ;
 
 
 $fake_item_wil = new WikidataItemList ;
@@ -185,7 +185,26 @@ class BlankWikidataItem {
 	}
 
 	private function qualifiersMatch ( $claim1 , $claim2 , $options ) {
-		return true ; # TODO
+		if ( !isset($claim1->qualifiers) and !isset($claim2->qualifiers) ) return true ;
+		foreach ( $claim1->qualifiers AS $k => $v1 ) {
+			if ( !isset($claim2->qualifiers->$k) ) return false ;
+			$v2 = $claim2->qualifiers->$k ;
+			if ( count($v1) != count($v2) ) return false ;
+			foreach ( $v1 AS $snak1 ) {
+				$found = false ;
+				foreach ( $v2 AS $snak2 ) {
+					if ( !$this->snakMatches($snak1,$snak2) ) continue ;
+					$found = true ;
+					break ;
+				}
+				if ( !$found ) return false ;
+			}
+		}
+		foreach ( $claim2->qualifiers AS $k => $v ) {
+			if ( !isset($claim1->qualifiers->$k) ) return false ;
+			# That's all. Equality already checked above.
+		}
+		return true ;
 	}
 
 	private function findReference ( $reference , $refence_list , $options ) {
@@ -254,7 +273,11 @@ class BlankWikidataItem {
 		if ( isset($options['validator']) ) { # Try final validator function
 			if ( !($options['validator'] ( $type , $action , $i , $this ) ) ) return ;
 		}
+		if ( !isset($ret) ) $ret = (object) [] ;
 		if ( $type == 'labels' || $type == 'descriptions' ) {
+			if ( !isset($ret->$type) ) $ret->$type = (object) [] ;
+			foreach ( $action AS $k => $v ) $ret->$type->$k = $v ;
+		} else if ( $type == 'aliases' ) {
 			if ( !isset($ret->$type) ) $ret->$type = (object) [] ;
 			foreach ( $action AS $k => $v ) $ret->$type->$k = $v ;
 		} else {
@@ -280,7 +303,7 @@ class BlankWikidataItem {
 				}
 			}
 		}
-		if ( isset($options['no_remove']) and is_bool($options['no_remove']) ) continue ;
+		if ( isset($options['no_remove']) and is_bool($options['no_remove']) ) return ;
 		if ( isset($i->j->claims) ) {
 			foreach ( $i->j->claims AS $p => $claims ) {
 				if ( isset($options['no_remove']) and is_array($options['no_remove']) and in_array($p,$options['no_remove']) ) continue ;
@@ -300,7 +323,7 @@ class BlankWikidataItem {
 		else $x1 = (object) [] ;
 		if ( isset($i->j->$type) ) $x2 = $i->j->$type ;
 		else $x2 = (object) [] ;
-		$out = [] ;
+#		$out = [] ;
 
 		$using_lang = [] ;
 		foreach ( $x1 AS $lang => $x ) {
@@ -328,8 +351,57 @@ class BlankWikidataItem {
 				$this->addAction ( $ret , $type , [$lang => (object) ['language'=>$lang,'value'=>$x->value,'remove'=>'']] , $options , $i ) ;
 			}
 		}
-		if ( count($out) == 0 ) return ;
-		$ret->$type = (object) $out ;
+#		if ( count($out) == 0 ) return ;
+#		$ret->$type = (object) $out ;
+	}
+
+	function diffLanguageAliases ( $lang , $a1 , $a2 , &$ret , $options , $i , $removing = false ) {
+		$l1 = [] ;
+		$l2 = [] ;
+		foreach ( $a1 AS $av ) $l1[] = $av->value ;
+		foreach ( $a2 AS $av ) $l2[] = $av->value ;
+		sort ( $l1 ) ;
+		sort ( $l2 ) ;
+		if ( json_encode($l1) == json_encode($l2) ) return ;
+
+		$this->addAction ( $ret , 'aliases' , [$lang => $a2 ], $options , $i ) ;
+/*		foreach ( $a1 AS $a1v ) {
+			$found = false ;
+			foreach ( $a2 AS $a2v ) {
+				if ( $av1->value == $av2->value ) $found = true ;
+			}
+			if ( $found ) continue ;
+			$o = ['language'=>$lang,'value'=>$x->value] ;
+			if ( $removing ) $o['remove'] = '' ;
+			$this->addAction ( $ret , $type , [$lang => (object) $o] , $options , $i ) ;
+		}
+*/
+	}
+
+	function diffToItemAliases ( $i , &$ret , $options ) {
+return ; # THIS DOESN"T WORK YET!
+		if ( isset($this->j->aliases) ) $x1 = $this->j->aliases ;
+		else $x1 = (object) [] ;
+		if ( isset($i->j->aliases) ) $x2 = $i->j->aliases ;
+		else $x2 = (object) [] ;
+
+		foreach ( $x1 AS $lang => $a1 ) {
+			if ( isset($options['aliases']['ignore']) and in_array($lang,$options['aliases']['ignore']) ) continue ;
+			if ( isset($options['aliases']['ignore_except']) and !in_array($lang,$options['aliases']['ignore_except']) ) continue ;
+			$a2 = [] ;
+			if ( isset($x2->$lang) ) $a2 = $x2->$lang ;
+			$this->diffLanguageAliases ( $lang , $a1 , $a2 , $out , $options , $i , false ) ;
+		}
+/*
+		foreach ( $x2 AS $lang => $a1 ) {
+			if ( isset($options['aliases']['remove']) and !$options['aliases']['remove'] ) continue ;
+			if ( isset($options['aliases']['ignore']) and in_array($lang,$options['aliases']['ignore']) ) continue ;
+			if ( isset($options['aliases']['ignore_except']) and !in_array($lang,$options['aliases']['ignore_except']) ) continue ;
+			$a2 = [] ;
+			if ( isset($x1->$lang) ) $a2 = $x2->$lang ;
+			$this->diffLanguageAliases ( $a1 , $a2 , $out , $options , true ) ;
+		}
+*/
 	}
 
 	/*
@@ -346,7 +418,7 @@ class BlankWikidataItem {
 		$this->diffToItemClaims ( $i , $ret , $options ) ;
 		$this->diffToItemLabelsOrDescriptions ( 'labels' , $i , $ret , $options ) ;
 		$this->diffToItemLabelsOrDescriptions ( 'descriptions' , $i , $ret , $options ) ;
-		# TODO aliases
+		$this->diffToItemAliases ( $i , $ret , $options ) ;
 		# TODO sitelinks
 		return $ret ;
 	}
