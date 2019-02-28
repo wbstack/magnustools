@@ -1,18 +1,19 @@
 <?PHP
 
-require_once ( "ToolforgeCommon.php" ) ;
-require_once ( "wikidata.php" ) ;
+require_once ( __DIR__ . '/ToolforgeCommon.php' ) ;
+require_once ( __DIR__ . '/wikidata.php' ) ;
 
 
 $fake_item_wil = new WikidataItemList ;
 
 class BlankWikidataItem {
 
+	public $object_list = ['labels','descriptions','aliases','claims','sitelinks'] ;
 	public $j ;
 
 	function __construct() {
 		$this->j = (object) [] ;
-		foreach ( ['labels','descriptions','aliases','claims','sitelinks'] AS $k ) {
+		foreach ( $this->object_list AS $k ) {
 			$this->j->$k = (object) [] ;
 		}
 	}
@@ -33,21 +34,23 @@ class BlankWikidataItem {
 		return (object) [ "value"=>(object)['entity-type'=>$et,'numeric-id'=>preg_replace('/\D/','',$q),'id'=>$q] , 'type'=>'wikibase-entityid' ] ;
 	}
 
-	public function newTime ( $time , $precision = -1 , $calendarmodel = 'http://www.wikidata.org/entity/Q1985727' ) {
+	public function newTime ( $time , $precision = -1 , $calendarmodel = 'Q1985727' ) {
 		$orig_time = $time ;
 		if ( preg_match ( '/^\d+$/' , $time ) ) { $time = "{$time}-01-01" ; if($precision==-1) $precision = 9 ; }
 		if ( preg_match ( '/^\d+-\d{2}$/' , $time ) ) { $time = "{$time}-01" ; if($precision==-1) $precision = 10 ; }
 		if ( preg_match ( '/^\d{1,4}-\d{2}-\d{2}$/' , $time ) ) { $time = "+{$time}T00:00:00Z" ; if($precision==-1) $precision = 11 ; }
 		if ( $precision == -1 ) die ( "Cannot get precision from {$orig_time}\n" ) ;
-		return (object) [ "value"=>(object)['time'=>$time,'timezone'=>0,'before'=>0,'after'=>0,'precision'=>$precision,'calendarmodel'=>$calendarmodel] , 'type'=>'time' ] ;
+		return (object) [ "value"=>(object)['time'=>$time,'timezone'=>0,'before'=>0,'after'=>0,'precision'=>$precision,'calendarmodel'=>"http://www.wikidata.org/entity/{$calendarmodel}"] , 'type'=>'time' ] ;
 	}
 
-	public function newCoord ( $lat , $lon , $globe = 'http://www.wikidata.org/entity/Q2' , $precision = 0.0002 , $altitude = null ) {
-		return (object) [ "value"=>(object)['latitude'=>$lat*1,'longitude'=>$lon*1,'altitude'=>$altitude,'precision'=>$precision,'globe'=>$globe] , 'type'=>'globecoordinate' ] ;
+	public function newCoord ( $lat , $lon , $globe = 'Q2' , $precision = 0.0002 , $altitude = null ) {
+		return (object) [ "value"=>(object)['latitude'=>$lat*1,'longitude'=>$lon*1,'altitude'=>$altitude,'precision'=>$precision,'globe'=>"http://www.wikidata.org/entity/{$globe}"] , 'type'=>'globecoordinate' ] ;
 	}
 
-	public function newQuantity ( $amount , $unit = 1 ) {
-		return (object) [ "value"=>(object)['amount'=>$amount,'unit'=>"$unit"] , 'type'=>'time' ] ;
+	public function newQuantity ( $amount , $unit = '1' ) {
+		if ( preg_match ( '/^Q\d+$/' , $unit ) ) $unit = "http://www.wikidata.org/entity/{$unit}" ;
+		if ( $amount*1 > 0 and $amount[0] != '+' ) $amount = "+{$amount}" ;
+		return (object) [ "value"=>(object)['amount'=>$amount,'unit'=>"$unit"] , 'type'=>'quantity' ] ;
 	}
 
 	public function newString ( $s ) {
@@ -270,6 +273,7 @@ class BlankWikidataItem {
 
 	private function addAction ( &$ret , $type , $action , $options , $i ) {
 		if ( is_array($action) ) $action = (object) $action ;
+		if ( count((array)$action) == 0 ) return ; # Nothing to add
 		if ( isset($options['validator']) ) { # Try final validator function
 			if ( !($options['validator'] ( $type , $action , $i , $this ) ) ) return ;
 		}
@@ -278,8 +282,8 @@ class BlankWikidataItem {
 			if ( !isset($ret->$type) ) $ret->$type = (object) [] ;
 			foreach ( $action AS $k => $v ) $ret->$type->$k = $v ;
 		} else if ( $type == 'aliases' ) {
-			if ( !isset($ret->$type) ) $ret->$type = (object) [] ;
-			foreach ( $action AS $k => $v ) $ret->$type->$k = $v ;
+			if ( !isset($ret->$type) ) $ret->$type = [] ;
+			foreach ( $action AS $k => $v ) array_push ( $ret->$type , $v ) ;
 		} else {
 			if ( !isset($ret->$type) ) $ret->$type = [] ;
 			array_push ( $ret->$type , $action ) ;
@@ -323,7 +327,6 @@ class BlankWikidataItem {
 		else $x1 = (object) [] ;
 		if ( isset($i->j->$type) ) $x2 = $i->j->$type ;
 		else $x2 = (object) [] ;
-#		$out = [] ;
 
 		$using_lang = [] ;
 		foreach ( $x1 AS $lang => $x ) {
@@ -351,8 +354,6 @@ class BlankWikidataItem {
 				$this->addAction ( $ret , $type , [$lang => (object) ['language'=>$lang,'value'=>$x->value,'remove'=>'']] , $options , $i ) ;
 			}
 		}
-#		if ( count($out) == 0 ) return ;
-#		$ret->$type = (object) $out ;
 	}
 
 	function diffLanguageAliases ( $lang , $a1 , $a2 , &$ret , $options , $i , $removing = false ) {
@@ -364,22 +365,19 @@ class BlankWikidataItem {
 		sort ( $l2 ) ;
 		if ( json_encode($l1) == json_encode($l2) ) return ;
 
-		$this->addAction ( $ret , 'aliases' , [$lang => $a2 ], $options , $i ) ;
-/*		foreach ( $a1 AS $a1v ) {
+		foreach ( $a1 AS $a1v ) {
 			$found = false ;
 			foreach ( $a2 AS $a2v ) {
-				if ( $av1->value == $av2->value ) $found = true ;
+				if ( $a1v->value == $a2v->value ) $found = true ;
 			}
 			if ( $found ) continue ;
-			$o = ['language'=>$lang,'value'=>$x->value] ;
+			$o = ['language'=>$lang,'value'=>$a1v->value] ;
 			if ( $removing ) $o['remove'] = '' ;
-			$this->addAction ( $ret , $type , [$lang => (object) $o] , $options , $i ) ;
+			$this->addAction ( $ret , 'aliases' , [$lang => (object) $o] , $options , $i ) ;
 		}
-*/
 	}
 
 	function diffToItemAliases ( $i , &$ret , $options ) {
-return ; # THIS DOESN"T WORK YET!
 		if ( isset($this->j->aliases) ) $x1 = $this->j->aliases ;
 		else $x1 = (object) [] ;
 		if ( isset($i->j->aliases) ) $x2 = $i->j->aliases ;
@@ -390,18 +388,17 @@ return ; # THIS DOESN"T WORK YET!
 			if ( isset($options['aliases']['ignore_except']) and !in_array($lang,$options['aliases']['ignore_except']) ) continue ;
 			$a2 = [] ;
 			if ( isset($x2->$lang) ) $a2 = $x2->$lang ;
-			$this->diffLanguageAliases ( $lang , $a1 , $a2 , $out , $options , $i , false ) ;
+			$this->diffLanguageAliases ( $lang , $a1 , $a2 , $ret , $options , $i , false ) ;
 		}
-/*
+
 		foreach ( $x2 AS $lang => $a1 ) {
 			if ( isset($options['aliases']['remove']) and !$options['aliases']['remove'] ) continue ;
 			if ( isset($options['aliases']['ignore']) and in_array($lang,$options['aliases']['ignore']) ) continue ;
 			if ( isset($options['aliases']['ignore_except']) and !in_array($lang,$options['aliases']['ignore_except']) ) continue ;
 			$a2 = [] ;
-			if ( isset($x1->$lang) ) $a2 = $x2->$lang ;
-			$this->diffLanguageAliases ( $a1 , $a2 , $out , $options , true ) ;
+			if ( isset($x1->$lang) ) $a2 = $x1->$lang ;
+			$this->diffLanguageAliases ( $lang , $a1 , $a2 , $ret , $options , $i , true ) ;
 		}
-*/
 	}
 
 	/*
