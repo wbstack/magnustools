@@ -61,9 +61,43 @@ class BlankWikidataItem {
 		$ret = (object) [
 			'snaktype' => $snaktype ,
 			'property' => $property ,
-			'datavalue' => $datavalue ,
 			'datatype' => $this->getDatatype ( $property )
 		] ;
+		if ( $snaktype == 'value' ) $ret->datavalue = $datavalue ;
+		return $ret ;
+	}
+
+	private function addReferencesToClaim ( &$claim , $references ) {
+		if ( count($references) > 0 ) {
+			$claim->references = [] ;
+			foreach ( $references AS $r ) {
+				if ( is_array($r) ) $r = $this->formatReference ( $r ) ;
+				$claim->references[] = $r ;
+			}
+		}
+	}
+
+	private function addQualifiersToClaim ( &$claim , $qualifiers ) {
+		if ( is_object($qualifiers) and count($qualifiers) > 0 ) { # Qualifiers as object
+			$claim->qualifiers = $qualifiers ;
+		} else if ( is_array($qualifiers) and count($qualifiers) > 0 ) { # Qualifiers as array (easier to build)
+			$claim->qualifiers = (object) [] ;
+			foreach ( $qualifiers AS $qualifier ) {
+				$p = $qualifier->property ;
+				if ( !isset($claim->qualifiers->$p) ) $claim->qualifiers->$p = [] ;
+				array_push ( $claim->qualifiers->$p , $qualifier ) ;
+			}
+		}
+	}
+
+	public function newSomevalue ( $property , $references = [] , $qualifiers = [] ) {
+		$ret = (object) [
+			'mainsnak' => $this->newSnak ( $property , '' , 'somevalue' ) ,
+			'type' => 'statement' ,
+			'rank' => 'normal'
+		] ;
+		$this->addReferencesToClaim ( $ret , $references ) ;
+		$this->addQualifiersToClaim ( $ret , $qualifiers ) ;
 		return $ret ;
 	}
 
@@ -73,25 +107,17 @@ class BlankWikidataItem {
 			'type' => 'statement' ,
 			'rank' => 'normal'
 		] ;
-#		$ret->hash = md5 ( serialize ( $ret->mainsnak ) ) ;
-		if ( count($references) > 0 ) {
-			$ret->references = [] ;
-			foreach ( $references AS $r ) {
-				if ( is_array($r) ) $r = $this->formatReference ( $r ) ;
-				$ret->references[] = $r ;
-			}
-		}
-		if ( is_object($qualifiers) and count($qualifiers) > 0 ) { # Qualifiers as object
-			$ret->qualifiers = $qualifiers ;
-		} else if ( is_array($qualifiers) and count($qualifiers) > 0 ) { # Qualifiers as array (easier to build)
-			$ret->qualifiers = (object) [] ;
-			foreach ( $qualifiers AS $qualifier ) {
-				$p = $qualifier->property ;
-				if ( !isset($ret->qualifiers->$p) ) $ret->qualifiers->$p = [] ;
-				array_push ( $ret->qualifiers->$p , $qualifier ) ;
-			}
-		}
+		$this->addReferencesToClaim ( $ret , $references ) ;
+		$this->addQualifiersToClaim ( $ret , $qualifiers ) ;
 		return $ret ;
+	}
+
+	public function getClaimByID ( $claim_id ) {
+		foreach ( $this->j->claims AS $p => $claims ) {
+			foreach ( $claims AS $claim ) {
+				if ( $claim->id == $claim_id ) return $claim ;
+			}
+		}
 	}
 
 	public function addClaim ( $claim ) {
@@ -168,6 +194,7 @@ class BlankWikidataItem {
 			if ( !isset($snak1->$k) and isset($snak2->$k) ) return false ;
 			if ( $snak1->$k != $snak2->$k ) return false ;
 		}
+		if ( $snak1->snaktype == 'somevalue' ) return true ; # Both of them
 		if ( !isset($snak1->datavalue) or !isset($snak2->datavalue) ) return false ; # Can't compare those?
 		if ( $snak1->datavalue->type != $snak2->datavalue->type ) return false ;
 		if ( is_string($snak1->datavalue->value) and is_string($snak2->datavalue->value) ) {
@@ -189,6 +216,9 @@ class BlankWikidataItem {
 
 	private function qualifiersMatch ( $claim1 , $claim2 , $options ) {
 		if ( !isset($claim1->qualifiers) and !isset($claim2->qualifiers) ) return true ;
+		if ( isset($claim1->mainsnak->property) and isset($options['ignore_qualifiers']) and in_array($claim1->mainsnak->property,$options['ignore_qualifiers']) ) {
+			return true ;
+		}
 		foreach ( $claim1->qualifiers AS $k => $v1 ) {
 			if ( !isset($claim2->qualifiers->$k) ) return false ;
 			$v2 = $claim2->qualifiers->$k ;
