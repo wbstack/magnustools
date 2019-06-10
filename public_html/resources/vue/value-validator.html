@@ -132,7 +132,7 @@ Vue.component ( 'value-validator' , {
 					if ( me.datatype  == 'external-id' ) {
 						ret.statement.mainsnak.datavalue = { value:$.trim(me.string_value) , type:'string' } ;
 					} else if ( me.datatype  == 'monolingualtext' ) {
-						ret.statement.mainsnak.datavalue = { text:$.trim(me.string_value) , language:$.trim(me.language_code.toLowerCase()) } ;
+						ret.statement.mainsnak.datavalue = { value:{ text:$.trim(me.string_value) , language:$.trim(me.language_code.toLowerCase()) } , 'type':'monolingualtext' } ;
 					} else if ( me.datatype  == 'commonsMedia' ) {
 						ret.statement.mainsnak.datavalue = { value:$.trim(me.string_value) , type:'string' } ;
 					} else if ( me.datatype  == 'string' ) {

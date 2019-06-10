@@ -376,7 +376,7 @@ function WikiData () {
 	this.max_get_entities = 50 ;
 	this.max_get_entities_smaller = 25 ;
 	this.language = 'en' ; // Default
-	this.main_languages = [ 'en' , 'de' , 'fr' , 'nl' , 'es' , 'it' , 'pl' , 'pt' , 'ja' , 'ru' , 'hu' , 'sv' , 'fi' , 'da' , 'cs' , 'sk' , 'et' , 'tr' , 'az' , 'zh' ] ;
+	this.main_languages = [ 'en' , 'de' , 'fr' , 'nl' , 'es' , 'it' , 'pl' , 'pt' , 'ja' , 'ru' , 'hu' , 'sv' , 'fi' , 'da' , 'cs' , 'sk' , 'et' , 'tr' , 'az' , 'zh' , 'el' ] ;
 	this.items = {} ;
 	this.default_props = 'info|aliases|labels|descriptions|claims|sitelinks|datatype' ;
 	this.currently_loading = {} ;
@@ -446,7 +446,7 @@ function WikiData () {
 		$.each ( item_list , function ( dummy , q ) {
 			if ( typeof q == 'number' ) q = 'Q' + q ;
 			if ( !q.match(/^(?:[PQL]\d+|L\d+-[FS]\d+)/i) ) return ; // Not a known entity type
-			if ( self.items[q] !== undefined ) return ; // Have that one
+			if ( typeof self.items[q] != 'undefined' ) return ; // Have that one
 			if ( typeof hadthat[q] != 'undefined' ) return ;
 			hadthat[q] = 1 ;
 //			if ( -1 != $.inArray ( q , ids ) ) return ; // Already planning to load that one

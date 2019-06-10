@@ -358,15 +358,18 @@ class WikidataItemList {
     public function getItemLabels ( $list , $language = 'en' ) {
     	global $wikidata_api_url ;
     	$ret = [] ;
+    	$list = array_unique($list);
 
     	$qs = [ [] ] ;
     	foreach ( $list AS $q ) {
     		$this->sanitizeQ($q) ;
     		if ( !preg_match ( '/^[A-Z]\d+/' , $q ) ) continue ; # Paranoia
+/*
 	    	if ( isset($this->items[$q]) ) { # Have the entire item already
 	    		$ret[$q] = $this->items[$q]->getLabel($language,true) ;
 	    		continue ;
 	    	}
+*/
 	    	if ( count($qs[count($qs)-1]) == 50 ) $qs[] = [] ;
     		$qs[count($qs)-1][] = $q ;
     	}

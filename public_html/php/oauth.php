@@ -3,6 +3,7 @@
 class MW_OAuth {
 
 	var $use_cookies = true ;
+	var $testing = false ;
 	var $tool ;
 	var $debugging = false ;
 	var $language , $project ;
@@ -333,6 +334,7 @@ class MW_OAuth {
 			$header[] = rawurlencode( $k ) . '="' . rawurlencode( $v ) . '"';
 		}
 		$header = 'Authorization: OAuth ' . join( ', ', $header );
+		if ( $this->testing ) print "HEADER: {$header}\n" ;
 
 		$ch = curl_init();
 		curl_setopt( $ch, CURLOPT_URL, $url );

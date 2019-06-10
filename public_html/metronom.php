@@ -33,7 +33,7 @@ myflush();
 
 if ( $user != '' && isset ( $_REQUEST['doit'] ) ) {
 	$db = openDB ( $language , $project ) ;
-	$sql = "select page_title,rev_timestamp FROM page,revision_userindex where page_id=rev_page and page_is_redirect=0 and page_namespace=0 and rev_user_text='" . $db->real_escape_string($user) . "' and rev_parent_id=0" ;
+	$sql = "select page_title,rev_timestamp FROM page,revision_userindex,actor where rev_actor=actor_id AND page_id=rev_page and page_is_redirect=0 and page_namespace=0 and actor_name='" . $db->real_escape_string($user) . "' and rev_parent_id=0" ;
 	if(!$result = $db->query($sql)) die('There was an error running the query [' . $db->error . ']');
 	$pages = array() ;
 	$creation_date = array() ;

@@ -52,7 +52,7 @@ if ( isset ( $_REQUEST['doit'] ) ) {
 		$u2[] = str_replace ( '_' , ' ' , get_db_safe ( trim ( $u ) ) ) ;
 	}
 
-	$sql = "SELECT rev_user_text,page_title,page_namespace,rev_timestamp FROM revision_userindex,page WHERE page_namespace=0 AND rev_page=page_id AND rev_user_text IN ('" . implode ( "','" , $u2 ) . "')" ;
+	$sql = "SELECT actor_name,page_title,page_namespace,rev_timestamp FROM revision_userindex,page,actor WHERE actor_id=rev_actor AND page_namespace=0 AND rev_page=page_id AND actor_name IN ('" . implode ( "','" , $u2 ) . "')" ;
 	if ( $timestamp != '' ) $sql .= " AND rev_timestamp<='" . get_db_safe ( $timestamp ) . "'" ;
 	if ( $timestamp_stop != '' ) $sql .= " AND rev_timestamp>='" . get_db_safe ( $timestamp_stop ) . "'" ;
 	$sql .= " ORDER BY rev_timestamp DESC LIMIT " . get_db_safe($limit) ;
@@ -73,9 +73,9 @@ if ( isset ( $_REQUEST['doit'] ) ) {
 	if(!$result = $db->query($sql)) die('There was an error running the query [' . $db->error . ']');
 	while($o = $result->fetch_object()){
 		$page = $o->page_title ;
-		$ut = str_replace ( '_' , ' ' , $o->rev_user_text ) ;
+		$ut = str_replace ( '_' , ' ' , $o->actor_name ) ;
 		print "<tr><td><a target='_blank' href='//$language.$project.org/wiki/" . urlencode ( $page ) . "'>" . str_replace ( '_' , ' ' , $page ) . "</a></td>" ;
-		print "<td><a target='_blank' href='//$language.$project.org/wiki/User:" . urlencode ( str_replace ( ' ' , '_' , $o->rev_user_text ) ) . "'>$ut</a></td>" ;
+		print "<td><a target='_blank' href='//$language.$project.org/wiki/User:" . urlencode ( str_replace ( ' ' , '_' , $o->actor_name ) ) . "'>$ut</a></td>" ;
 		print "<td>" . format_ts ( $o->rev_timestamp ) . "</td></tr>" ;
 		$last_ts = $o->rev_timestamp ;
 		$cnt++ ;

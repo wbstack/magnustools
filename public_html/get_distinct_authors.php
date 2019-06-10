@@ -42,15 +42,15 @@ if ( count ( $pages ) == 0 ) {
 		$p[] = $page ;
 	}
 	
-#	$sql = "SELECT rev_user_text FROM page,revision_userindex WHERE rev_user > 0 AND rev_page=page_id AND page_title IN (\"" . implode ( '","' , $p ) . "\")" ;
+#	$sql = "SELECT actor_name FROM page,revision_userindex WHERE rev_user > 0 AND rev_page=page_id AND page_title IN (\"" . implode ( '","' , $p ) . "\")" ;
 	$sql = "select page_id from page where page_namespace=0 AND page_title IN (\"" . implode ( '","' , $p ) . "\")" ;
-	$sql = "SELECT rev_user_text,count(*) AS cnt FROM revision_userindex WHERE rev_user>0 AND rev_page IN ($sql) GROUP BY rev_user_text" ;
+	$sql = "SELECT actor_name,count(*) AS cnt FROM revision_userindex,actor WHERE actor_id=rev_actor AND actor_user IS NOT NULL AND rev_page IN ($sql) GROUP BY actor_name" ;
 
 #	header('Content-type: text/plain; charset=utf-8'); print $sql ; exit(0);
 
 	if(!$result = $db->query($sql)) die('There was an error running the query [' . $db->error . ']');
 	while($o = $result->fetch_object()){
-		$authors[$o->rev_user_text] = $o->cnt * 1 ;
+		$authors[$o->actor_name] = $o->cnt * 1 ;
 	}
 
 	arsort ( $authors ) ;
