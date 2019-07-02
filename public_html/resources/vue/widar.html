@@ -56,7 +56,7 @@ Vue.component ( 'widar' , {
 			params.botmode = 1 ;
 			$.post ( me.widar_api , params , function ( d ) {
 				if ( d.error != 'OK' ) {
-					console.log ( 'WIDAR' , params ) ;
+					//console.log ( 'WIDAR' , params ) ;
 					if ( null != d.error.match(/Invalid token/) || null != d.error.match(/happen/) || null != d.error.match(/Problem creating item/) || ( params.action!='create_redirect' && null != d.error.match(/failed/) ) ) {
 						console.log ( "ERROR (re-trying)" , params , d ) ;
 						setTimeout ( function () { me.run ( params , callback ) } , 500 ) ; // Again

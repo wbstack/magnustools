@@ -14,7 +14,7 @@
             </video>
         </span>
     	<a v-else-if='img.imageinfo[0].mediatype=="BITMAP" || img.imageinfo[0].mediatype=="DRAWING"' target='_blank' :href='img.imageinfo[0].descriptionurl' :title='img.title.replace(/^.+?:/,"")'>
-    		<img :src='img.imageinfo[0].thumburl' border=0 :width='img.imageinfo[0].thumbwidth' :height='img.imageinfo[0].thumbheight' />
+    		<img :src='img.imageinfo[0].thumburl' border=0 :width='img.imageinfo[0].thumbwidth' :height='img.imageinfo[0].thumbheight' class="wiki_thumbnail" />
     	</a>
         <span v-else>
             <i>Don't know how to show a {{img.imageinfo[0].mediatype}}</i>

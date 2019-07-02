@@ -77,14 +77,14 @@ function setFromDate ( $k1 , $k2 , $prop , $j ) {
 	$d = $j->claims->$prop ;
 	$d2 = $d[0]->mainsnak->datavalue->value ;
 
-	$year = substr ( $d2->time , 0 , 12 ) * 1 ;
+	if (!preg_match('/^\+{0,1}(-{0,1}0*\d+)-(\d{2})-(\d{2})/',$d2->time,$m)) return ;
+	$year = $m[1] * 1 ;
 	$wd[$k2] = $year ;
 	if ( $d2->precision*1 == 11 ) {
 		$months = array ( 'January' , 'February' , 'March' , 'April' , 'May' , 'June' , 'July' , 'August' , 'September' , 'October' , 'November' , 'December' ) ;
-		$month = substr ( $d2->time , 13 , 2 ) * 1 ;
-		$day = substr ( $d2->time , 16 , 2 ) * 1 ;
+		$month = $m[2] * 1 ;
+		$day = $m[3] * 1 ;
 		$wd[$k1] = $months[$month-1] . " " . $day ;
-//		print "<pre>" ; print_r ( $month.'/'.$day ) ; print "</pre>" ;
 	}
 }
 
