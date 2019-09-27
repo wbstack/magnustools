@@ -445,6 +445,7 @@ function WikiData () {
 		var hadthat = {} ;
 		$.each ( item_list , function ( dummy , q ) {
 			if ( typeof q == 'number' ) q = 'Q' + q ;
+			if ( q == 'Q0' ) return;
 			if ( !q.match(/^(?:[PQL]\d+|L\d+-[FS]\d+)/i) ) return ; // Not a known entity type
 			if ( typeof self.items[q] != 'undefined' ) return ; // Have that one
 			if ( typeof hadthat[q] != 'undefined' ) return ;

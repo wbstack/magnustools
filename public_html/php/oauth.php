@@ -2,6 +2,8 @@
 
 class MW_OAuth {
 
+	var $use_tag_parameter = true ;
+	var $tag_parameter_whitelist = ['distributed-game'];
 	var $use_cookies = true ;
 	var $testing = false ;
 	var $tool ;
@@ -591,6 +593,22 @@ class MW_OAuth {
 		return $res ;
 	}
 
+	function setToolTag ( &$params , $summary = '' ) {
+		global $tool_hashtag ;
+		if ( $this->use_tag_parameter and isset($tool_hashtag) and $tool_hashtag!='undefined' and in_array($tool_hashtag,$this->tag_parameter_whitelist) ) {
+			if ( isset($tool_hashtag) and $tool_hashtag != '' ) {
+				if (isset($params['tags'])) $params['tags'] .= "|{$tool_hashtag}";
+				else $params['tags'] = $tool_hashtag ;
+			}
+		} else {
+			if ( isset($tool_hashtag) and $tool_hashtag != '' and $tool_hashtag!='undefined' ) {
+				if ( $summary == '' ) $summary = "#{$tool_hashtag}" ;
+				else $summary .= " #{$tool_hashtag}" ;
+			}
+		}
+		if ( $summary != '' ) $params['summary'] = $summary ;
+	}
+
 	
 	function setLabel ( $q , $text , $language ) {
 
@@ -616,10 +634,7 @@ class MW_OAuth {
 			'token' => $token,
 			'bot' => 1
 		] ;
-
-		global $tool_hashtag ;
-		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
-		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+		$this->setToolTag($params,$summary);
 
 		// Now do that!
 		$res = $this->doApiQuery( $params , $ch );
@@ -659,10 +674,7 @@ class MW_OAuth {
 			'token' => $token,
 			'bot' => 1
 		] ;
-
-		global $tool_hashtag ;
-		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
-		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+		$this->setToolTag($params,$summary);
 
 		// Now do that!
 		$res = $this->doApiQuery( $params , $ch );
@@ -703,10 +715,7 @@ class MW_OAuth {
 			'token' => $token,
 			'bot' => 1
 		] ;
-
-		global $tool_hashtag ;
-		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
-		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+		$this->setToolTag($params,$summary);
 
 		// Now do that!
 		$res = $this->doApiQuery( $params , $ch );
@@ -747,10 +756,7 @@ class MW_OAuth {
 			'token' => $token,
 			'bot' => 1
 		] ;
-
-		global $tool_hashtag ;
-		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
-		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+		$this->setToolTag($params,$summary);
 
 		// Now do that!
 		$res = $this->doApiQuery( $params , $ch );
@@ -789,11 +795,7 @@ class MW_OAuth {
 			'minor' => '' ,
 			'token' => $token,
 		] ;
-		
-		global $tool_hashtag ;
-		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
-		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
-
+		$this->setToolTag($params,$summary);
 		
 		// Now do that!
 		$res = $this->doApiQuery( $params, $ch );
@@ -823,7 +825,7 @@ class MW_OAuth {
 		}
 		$token = $res->query->tokens->csrftoken;
 		
-		$p = [
+		$params = [
 			'format' => 'json',
 			'action' => 'edit',
 			'title' => $page,
@@ -832,15 +834,12 @@ class MW_OAuth {
 			'minor' => '' ,
 			'token' => $token,
 		] ;
+		$this->setToolTag($params,$summary);
 		
-		if ( isset ( $section ) and $section != '' ) $p['section'] = $section ;
-
-		global $tool_hashtag ;
-		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
-		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+		if ( isset ( $section ) and $section != '' ) $params['section'] = $section ;
 		
 		// Now do that!
-		$res = $this->doApiQuery( $p , $ch );
+		$res = $this->doApiQuery( $params , $ch );
 		
 		if ( isset ( $res->error ) ) {
 			$this->error = $res->error->info ;
@@ -878,10 +877,7 @@ class MW_OAuth {
 			'token' => $token,
 			'bot' => 1
 		] ;
-		
-		global $tool_hashtag ;
-		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
-		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+		$this->setToolTag($params,$summary);
 
 		$res = $this->doApiQuery( $params , $ch );
 		
@@ -950,10 +946,7 @@ class MW_OAuth {
 			'token' => $token,
 			'bot' => 1
 		] ;
-		
-		global $tool_hashtag ;
-		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
-		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+		$this->setToolTag($params,$summary);
 
 		if ( isset ( $_REQUEST['test'] ) ) {
 			print "<pre>" ; print_r ( $params ) ; print "</pre>" ;
@@ -998,12 +991,8 @@ class MW_OAuth {
 			'token' => $token,
 			'bot' => 1
 		] ;
+		$this->setToolTag($params,$summary);
 		if ( isset ( $baserev ) and $baserev != '' ) $params['baserevid'] = $baserev ;
-
-		global $tool_hashtag ;
-		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
-		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
-
 
 		$res = $this->doApiQuery( $params , $ch );
 		
@@ -1045,10 +1034,7 @@ class MW_OAuth {
 			'token' => $token,
 			'bot' => 1
 		] ;
-
-		global $tool_hashtag ;
-		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
-		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+		$this->setToolTag($params,$summary);
 		
 		// TODO : baserevid
 
@@ -1141,9 +1127,7 @@ class MW_OAuth {
 		foreach ( $j AS $k => $v ) $params[$k] = $v ;
 
 
-		global $tool_hashtag ;
-		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = ($summary!='') ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
-		if ( $summary != '' ) $params['summary'] = $summary ;
+		$this->setToolTag($params,$summary);
 		
 		if ( isset ( $_REQUEST['test'] ) ) {
 			print "!!!!!<pre>" ; print_r ( $params ) ; print "</pre>" ;
@@ -1214,11 +1198,7 @@ class MW_OAuth {
 			'token' => $token,
 			'bot' => 1
 		] ;
-
-
-		global $tool_hashtag ;
-		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
-		if ( isset($summary) and $summary != '' ) $params['summary'] = $summary ;
+		$this->setToolTag($params,$summary);
 	
 		if ( isset ( $claim['claim'] ) ) { // Set qualifier
 			$params['action'] = 'wbsetqualifier' ;
@@ -1262,7 +1242,7 @@ class MW_OAuth {
 		}
 		$token = $res->query->tokens->csrftoken;
 	
-		$opt = [
+		$params = [
 			'format' => 'json',
 			'action' => 'wbmergeitems',
 			'fromid' => $q_from ,
@@ -1271,14 +1251,9 @@ class MW_OAuth {
 			'token' => $token,
 			'bot' => 1
 		] ;
-			
-		global $tool_hashtag ;
-		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $summary = isset($summary) ? trim("$summary #$tool_hashtag") : "#$tool_hashtag" ;
-		if ( $summary != '' ) $opt['summary'] = $summary ;
-		
-	
+		$this->setToolTag($params,$summary);
 
-		$res = $this->doApiQuery( $opt, $ch );
+		$res = $this->doApiQuery( $params, $ch );
 
 		if ( isset ( $_REQUEST['test'] ) ) {
 			print "1<pre>" ; print_r ( $claim ) ; print "</pre>" ;
@@ -1294,8 +1269,6 @@ class MW_OAuth {
 	}
 
 	function deletePage ( $page , $reason ) {
-		global $tool_hashtag ;
-		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $reason = isset($reason) ? trim("$reason #$tool_hashtag") : "#$tool_hashtag" ;
 
 		// Next fetch the edit token
 		$ch = null;
@@ -1310,16 +1283,17 @@ class MW_OAuth {
 		}
 		$token = $res->query->tokens->csrftoken;
 		
-		$p = [
+		$params = [
 			'format' => 'json',
 			'action' => 'delete',
 			'title' => $page ,
 			'token' => $token,
 			'bot' => 1
 		] ;
-		if ( $reason != '' ) $p['reason'] = $reason ;
+		$this->setToolTag($params,$summary);
+		if ( $reason != '' ) $params['reason'] = $reason ;
 	
-		$res = $this->doApiQuery( $p , $ch );
+		$res = $this->doApiQuery( $params , $ch );
 		
 		if ( isset ( $_REQUEST['test'] ) ) {
 			print "1<pre>" ; print_r ( $claim ) ; print "</pre>" ;
@@ -1337,8 +1311,6 @@ class MW_OAuth {
 
 
 	function doUploadFromFile ( $local_file , $new_file_name , $desc , $comment , $ignorewarnings ) {
-		global $tool_hashtag ;
-		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $comment = isset($comment) ? trim("$desc #$tool_hashtag") : "#$tool_hashtag" ;
 	
 		$new_file_name = ucfirst ( str_replace ( ' ' , '_' , $new_file_name ) ) ;
 
@@ -1364,7 +1336,7 @@ class MW_OAuth {
 			'filename' => $new_file_name ,
 			'file' => $local_file // '@' . 
 		] ;
-		
+		$this->setToolTag($params,$summary);
 		if ( $ignorewarnings ) $params['ignorewarnings'] = 1 ;
 		
 		$res = $this->doApiQuery( $params , $ch , 'upload' );
@@ -1385,9 +1357,6 @@ class MW_OAuth {
 
 
 	function doUploadFromURL ( $url , $new_file_name , $desc , $comment , $ignorewarnings ) {
-		global $tool_hashtag ;
-		if ( isset($tool_hashtag) and $tool_hashtag != '' ) $comment = isset($comment) ? trim("$desc #$tool_hashtag") : "#$tool_hashtag" ;
-	
 		if ( $new_file_name == '' ) {
 			$a = explode ( '/' , $url ) ;
 			$new_file_name = array_pop ( $a ) ;
@@ -1422,7 +1391,7 @@ class MW_OAuth {
 			'filename' => $new_file_name ,
 			'file' => $tmpfile // '@' . 
 		] ;
-		
+		$this->setToolTag($params,$summary);
 		if ( $ignorewarnings ) $params['ignorewarnings'] = 1 ;
 		
 		$res = $this->doApiQuery( $params , $ch , 'upload' );
