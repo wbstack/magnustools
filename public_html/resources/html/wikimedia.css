@@ -46,3 +46,36 @@ input[type=text]:focus {
 	border-bottom-color:#2a4b8d;
 	box-shadow:none;
 }
+
+/*
+@media (prefers-color-scheme: dark) {
+	body {
+		background: black;
+		color: #ddd;
+	}
+	a {
+		color:#2764db;
+	}
+	a.wikidata {
+		color:#4c82ec;
+	}
+	input[type=text],textarea {
+		background: black;
+		color: #ddd;
+		border-color: #ddd;
+	}
+	.bg-success,.bg-info,.bg-warning,.bg-danger {
+		color:black;
+	}
+	.btn-primary,.btn-waring,.btn-danger,.btn-success {
+		color:black !important;
+	}
+	img {
+		opacity: .75;
+		transition: opacity .5s ease-in-out;
+	}
+	img:hover {
+		opacity: 1;
+	}
+}
+*/

@@ -96,6 +96,17 @@ function uploadFromURL () {
 	$out['res'] = $oa->last_res ;
 }
 
+function sdc() {
+	global $out , $oa , $botmode ;
+	if ( !checkAuth() ) return error ( "Auth not OK: " . $oa->error ) ;
+	$j = json_decode ( $_REQUEST['params'] ) ;
+	$out['jle'] = json_last_error() ;
+	$out['j'] = $j ;
+	if ( $oa->genericAction ( $j , $summary ) ) {
+	} else {
+		if ( isset ( $oa->error ) ) $out['error'] = $oa->error ;
+	}
+}
 
 
 function bot_out () {
@@ -139,6 +150,9 @@ switch ( isset( $_REQUEST['action'] ) ? $_REQUEST['action'] : '' ) {
 		break;
 	case 'upload':
 		uploadFromURL() ;
+		break;
+	case 'sdc':
+		sdc();
 		break;
 	default:
 		if ( !$botmode ) {

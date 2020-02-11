@@ -45,7 +45,7 @@ Vue.component ( 'wd-link' , {
 			let i = me.wikidata.getItem ( me.getItemID() ) ;
 			if ( typeof i == 'undefined' ) return ;
 			if ( typeof me.language == 'undefined' ) me.use_label = i.getLabel () ;
-			else me.use_label = i.getLabel ( language ) ;
+			else me.use_label = i.getLabel ( me.language ) ;
 		} ) ;
 	} ,
 	methods : {

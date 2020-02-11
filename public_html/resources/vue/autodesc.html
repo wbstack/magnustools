@@ -29,12 +29,24 @@ var autodesc = {
 } ;
 
 Vue.component ( 'autodesc' , {
-	props : [ 'item' , 'mode' , 'language' , 'add_manual' ] ,
+	props : [ 'item' , 'mode' , 'language' , 'add_manual' , 'highlight' ] ,
 	data : function () { return { loaded:false , data:{} , error_message:'' , key:'' } } ,
 	created : function () {
 		this.loadDescription() ;
 	} ,
+	/*
+	updated : function () {
+		let me = this ;
+		me.$nextTick(function () {
+			$(me.$el).find('span.autodesc_result_text').each(function(x){me.do_highlight($(x))});
+			$(me.$el).find('span.manual_description').each(function(x){me.do_highlight($(x))});
+		});
+	} ,
+	*/
 	methods : {
+		do_highlight : function (element) {
+			console.log(element.text());
+		} ,
 		loadDescription : function () {
 			var me = this ;
 			me.key = me.item+"|"+(me.mode||'short')+"|"+(me.language||'en') ;
@@ -65,6 +77,11 @@ Vue.component ( 'autodesc' , {
 				autodesc.cache[me.key] = d ;
 	//			console.log ( JSON.parse(JSON.stringify(d)) ) ;
 				me.loaded = true ;
+				/*
+				me.$nextTick(function () {
+					console.log("tick");
+				});
+				*/
 			} , 'json' )
 			.always ( function () { autodesc.loading[me.key] = false } )
 			.fail ( function () {

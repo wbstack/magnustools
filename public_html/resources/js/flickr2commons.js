@@ -406,4 +406,61 @@ var flickr2commons = {
 		} , 'json' ) . fail ( function () { o.error = 'Upload failed for unknown reasons' ; callback(o) } );
 
 	} ,
+	check_statement : function ( mid , property , target , callback ) {
+		$.getJSON ( 'https://commons.wikimedia.org/w/api.php?callback=?' , {
+			action:'wbgetentities',
+			ids:mid,
+			format:'json'
+		} , function ( d ) {
+			d = d.entities[mid] ;
+			if ( typeof d.statements == 'undefined' ) return callback ( false ) ;
+			if ( typeof d.statements[property] == 'undefined' ) return callback ( false ) ;
+			let has_statement = false ;
+			$.each ( d.statements[property] , function ( dummy , statement ) {
+				if ( typeof statement.mainsnak == 'undefined' ) return ;
+				if ( typeof statement.mainsnak.datavalue == 'undefined' ) return ;
+				if ( typeof statement.mainsnak.datavalue.value == 'undefined' ) return ;
+				if ( typeof statement.mainsnak.datavalue.value.id == 'undefined' ) return ;
+				if ( statement.mainsnak.datavalue.value.id != target ) return ;
+				has_statement = true ;
+			} ) ;
+			callback ( has_statement ) ;
+		} ) ;
+	} ,
+	get_sdc_id_from_name : function ( filename_with_prefix , callback ) {
+		let params = {
+			action:'query',
+			prop:'info',
+			titles:filename_with_prefix,
+			format:'json'
+		} ;
+		$.getJSON ( 'https://commons.wikimedia.org/w/api.php?callback=?' , params , function(d) {
+			let found = false ;
+			$.each ( d.query.pages , function ( page_id , dummy ) {
+				found = true ;
+				callback ( 'M'+page_id ) ;
+			} ) ;
+			if ( !found ) callback() ;
+		} )
+	} ,
+	set_sdc_prop_q_rank : function ( sdc_id , property , q , rank , callback ) {
+		let data = {claims:[{type:"statement",mainsnak:{snaktype:"value",property:property,datavalue:{type:"wikibase-entityid",value:{id:q}}},rank:rank}]} ;
+		var params = {
+			action:'wbeditentity',
+			id:sdc_id,
+			data:JSON.stringify ( data ) ,
+			format:'json'
+		} ;
+		this.sdc(params,callback);
+	} ,
+	sdc : function ( sdc_params , callback ) {
+		let params = {
+			action:'sdc',
+			params:JSON.stringify(sdc_params),
+			botmode:1
+		} ;
+		$.post ( '/magnustools/oauth_uploader.php' , params , function ( d ) {
+			callback(d)
+		} , 'json' ) ;
+	}
 } ;

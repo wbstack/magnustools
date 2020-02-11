@@ -82,7 +82,7 @@ Vue.component ( 'typeahead-search' , {
 			wd.getItemBatch ( [me.initial_q] , function () {
 				let i = wd.getItem ( me.initial_q ) ;
 				if ( typeof i == 'undefined' ) return ;
-				me.last_query = $.trim(i.getLabel()) ;
+				me.last_query = $.trim(i.getLabel(me.getLanguage())) ;
 				me.query = me.last_query ;
 			} ) ;
 		}
@@ -111,6 +111,8 @@ Vue.component ( 'typeahead-search' , {
 
 			me.results = [] ;
 
+			let language = me.getLanguage() ;
+
 			if ( me.fulltext ) {
 
 				$.getJSON ( 'https://www.wikidata.org/w/api.php?callback=?' , {
@@ -123,46 +125,51 @@ Vue.component ( 'typeahead-search' , {
 				} , function ( d ) {
 					let to_load = [] ;
 					$.each ( d.query.search , function ( k , v ) {
-						me.results.push ( {
-							id:v.title
-						} ) ;
 						to_load.push ( v.title ) ;
 					} ) ;
-
-					wd.getItemBatch ( to_load , function () {
-						$.each ( me.results , function ( k , v ) {
-							let i = wd.getItem ( v.id ) ;
-							if ( typeof i == 'undefined' ) return ;
-							me.results[k].label = i.getLabel() ;
-							me.results[k].description = i.getDesc() ;
-							me.results[k].url = i.getURL() ;
-						} ) ;
-						me.processResults() ;
-					} ) ;
+					me.loadSearchResultItems(to_load);
 				} ) ;
 
 			} else {
 
 				$.getJSON ( 'https://www.wikidata.org/w/api.php?callback=?' , {
 					action:'wbsearchentities',
-					language:(me.language||tt.language),
+					language:language,
 					type:(me.type||'item'),
 					limit:(me.limit||10),
 					search:query,
 					format:'json'
 				} , function ( d ) {
+					let to_load = [] ;
 					$.each ( d.search , function ( k , v ) {
-						me.results.push ( {
-							id:v.title,
-							label:v.label,
-							url:v.concepturi,
-							description:v.description
-						} ) ;
+						to_load.push ( v.title ) ;
 					} ) ;
-					me.processResults() ;
+					me.loadSearchResultItems(to_load);
 				} ) ;
 
 			}
+		} ,
+		loadSearchResultItems : function ( to_load ) {
+			let me = this ;
+			let language = me.getLanguage() ;
+			$.each ( to_load , function ( dummy , q ) {
+				me.results.push ( { id:q } ) ;
+			} ) ;
+
+			wd.getItemBatch ( to_load , function () {
+				$.each ( me.results , function ( k , v ) {
+					let i = wd.getItem ( v.id ) ;
+					if ( typeof i == 'undefined' ) return ;
+					me.results[k].label = i.getLabel(language) ;
+					me.results[k].description = i.getDesc(language) ;
+					me.results[k].url = i.getURL() ;
+					me.results[k].entity = i ;
+				} ) ;
+				me.processResults() ;
+			} ) ;
+		} ,
+		getLanguage : function () {
+			return this.language||tt.language ;
 		} ,
 		processResults : function () {
 			var me = this ;
@@ -231,7 +238,7 @@ Vue.component ( 'typeahead-search' , {
 				let i = wd.getItem ( new_q ) ;
 				let r = {
 					id : new_q ,
-					label : (typeof i=='undefined'?new_q:i.getLabel())
+					label : (typeof i=='undefined'?new_q:i.getLabel(me.getLanguage()))
 				}
 				me.onSelectResult ( r ) ;
 			} ) ;
