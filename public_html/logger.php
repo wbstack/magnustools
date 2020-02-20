@@ -39,10 +39,12 @@ if ( $toolname == '' ) {
 	micDrop ( "No tool name supplied" ) ;
 }
 
+$date = date ( 'Ymd' ) * 1 ;
+
 $db = $tfc->openDBtool ( 'tool_logging' ) ;
 $tool_id = getToolByNameAndMethod () ;
 if ( !isset($tool_id) ) {
-	$sql = "INSERT IGNORE INTO `tools` (`name`,`method`) VALUES ('" . $db->real_escape_string($toolname) . "','" . $db->real_escape_string($method) . "')" ;
+	$sql = "INSERT IGNORE INTO `tools` (`name`,`method`,`start_log`) VALUES ('" . $db->real_escape_string($toolname) . "','" . $db->real_escape_string($method) . "',{$date})" ;
 	$tfc->getSQL ( $db , $sql ) ;
 	$tool_id = getToolByNameAndMethod () ;
 	if ( !isset($tool_id) ) micDrop ( "Could not create tool '{$toolname}' method '{$method}'" ) ;
@@ -51,7 +53,6 @@ if ( !isset($tool_id) ) {
 #$out->tool_id = $tool_id ;
 
 # Create tool/date entry if necessary, increase usage count
-$date = date ( 'Ymd' ) * 1 ;
 $sql = "INSERT INTO `logs` (`tool_id`,`date`,`used`) VALUES ({$tool_id},{$date},1) ON DUPLICATE KEY UPDATE `used`=`used`+1" ;
 $tfc->getSQL ( $db , $sql ) ;
 
