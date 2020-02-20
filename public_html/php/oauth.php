@@ -417,15 +417,18 @@ class MW_OAuth {
 
 		global $maxlag ;
 		if ( !isset($maxlag) ) $maxlag = 5 ;
+		$maxlag *= 1 ;
+		$last_maxlag *= 1 ;
 		$give_maxlag = $maxlag ;
 		if ( $last_maxlag != -1 ) $give_maxlag = $last_maxlag ;
+		$give_maxlag *= 1 ;
 
 		// Not an edit, high maxlag allowed
 		if ( isset($post['action']) and $post['action']=='query' and isset($post['meta']) and $post['meta']=='userinfo' ) {
 			$give_maxlag = 99999 ;
 		}
 
-		$post['maxlag'] = $give_maxlag ;
+		$post['maxlag'] = round ( $give_maxlag * 1 ) ;
 		if ( isset ( $_REQUEST['test'] ) ) print "<pre>GIVEN MAXLAG:{$give_maxlag}</pre>" ;
 
 		$headerArr = [
@@ -504,11 +507,11 @@ class MW_OAuth {
 		
 		# maxlag
 		if ( isset($ret->error) and isset($ret->error->code) and $ret->error->code == 'maxlag' ) {
-			$lag = $maxlag ;
-			if ( isset($ret->error->lag) ) $last_maxlag = $ret->error->lag*1 + $maxlag ;
+			$lag = $maxlag * 1 ;
+			if ( isset($ret->error->lag) ) $last_maxlag = $ret->error->lag*1 + $maxlag*1 ;
 			sleep ( $lag ) ;
 			$ch = null ;
-			$ret = $this->doApiQuery( $post, $ch , '' , $iterations_left-1 , $last_maxlag ) ;
+			$ret = $this->doApiQuery( $post, $ch , '' , $iterations_left-1 , $last_maxlag*1 ) ;
 		}
 		
 		return $ret ;

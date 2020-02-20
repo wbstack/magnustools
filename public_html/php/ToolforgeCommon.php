@@ -501,6 +501,16 @@ final class ToolforgeCommon {
 		return '' ; // No luck
 	}
 
+	public function logToolUse ( $toolname = '' , $method = '' ) {
+		if ( $toolname == '' ) {
+			if ( isset($this->toolname) and $this->toolname != '' ) $toolname = $this->toolname ;
+			else return ;
+		}
+		$url = 'https://tools.wmflabs.org/magnustools/logger.php?tool=' . urlencode($toolname) ;
+		if ( trim($method) != '' ) $url .= '&method=' . urlencode(trim($method)) ;
+		$j = json_decode ( file_get_contents ( $url ) ) ;
+		return $j ;
+	}
 
 } ;
 
