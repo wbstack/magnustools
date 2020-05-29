@@ -15,8 +15,9 @@ function WikiDataItem ( init_wd , init_raw ) {
 	
 	this.getURL = function () {
 		if ( typeof(this.raw) == 'undefined' ) return '' ;
-		var ret = "https://www.wikidata.org/wiki/" ;
-		ret += this.raw.title ;
+		var ret = "https://www.wikidata.org/wiki/$1" ; // Default, fallback if no wd set
+		if ( typeof this.wd != 'undefined' ) ret = this.wd.page_path ;
+		ret = ret.replace ( /\$1/ , this.raw.title ) ;
 		return ret ;
 	}
 	
@@ -372,6 +373,7 @@ function WikiData () {
 
 	// Variables
 	this.api = 'https://www.wikidata.org/w/api.php?callback=?' ;
+	this.page_path = 'https://www.wikidata.org/wiki/$1' ;
 	this.sparql_url = 'https://query.wikidata.org/sparql' ;
 	this.max_get_entities = 50 ;
 	this.max_get_entities_smaller = 25 ;
@@ -381,12 +383,30 @@ function WikiData () {
 	this.default_props = 'info|aliases|labels|descriptions|claims|sitelinks|datatype' ;
 	this.currently_loading = {} ;
 	
-	// Constructor
-//	this.clear() ;
-
 	// Methods
 	this.clear = function () {
 		this.items = {} ;
+	}
+
+	// `api` is the MediaWiki API path only, eg "https://www.wikidata.org/w/api.php"
+	this.set_custom_api = function ( api , callback ) {
+		let self = this ;
+		api += "?callback=?"
+		if ( self.api == api ) { // No need for a query
+			if ( typeof callback!='undefined' ) callback();
+			return ;
+		}
+		self.api = api ;
+		$.getJSON ( self.api , {
+			action:'query',
+			meta:'siteinfo',
+			format:'json'
+		} ,function ( d ) {
+			if ( typeof d!='undefined' && typeof d.query!='undefined' && typeof d.query.general!='undefined' ) {
+				self.page_path = 'https:' + d.query.general.server + d.query.general.articlepath ;
+			}
+			if ( typeof callback!='undefined' ) callback();
+		} ) ;
 	}
 	
 	this.countItemsLoaded = function () {

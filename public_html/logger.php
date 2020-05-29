@@ -1,5 +1,23 @@
 <?PHP
 
+/*
+This script logs user events for tools.
+
+PHP:
+$tfc->logToolUse ( 'toolname' , 'method' ) ;
+
+or:
+require_once ( "php/ToolforgeCommon.php" ) ;
+$tfc = new ToolforgeCommon('toolname') ;
+$tfc->logToolUse('') ;
+
+
+JavaScript:
+// Logging
+$.getJSON ( 'https://tools.wmflabs.org/magnustools/logger.php?tool=flickr2commons&method=upload to commons&callback=?' , function(j){} ) ;
+
+*/
+
 set_time_limit ( 60 * 2 ) ; // Seconds
 error_reporting(E_ERROR|E_CORE_ERROR|E_COMPILE_ERROR); // E_ALL|
 ini_set('display_errors', 'On');

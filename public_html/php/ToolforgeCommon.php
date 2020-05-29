@@ -238,7 +238,7 @@ final class ToolforgeCommon {
 			if($ret = @$db->query($sql)) return $ret ;
 			$max_tries-- ;
 		}
-		$e = new \Exception;
+		$e = new \Exception ("ToolforgeCommon::getSQL: {$db->error}/{$db->errno} :\n{$sql}");
 		var_dump($sql);
 		var_dump($e->getTraceAsString());
 		throw $e;

@@ -243,17 +243,18 @@ class WikiQuery {
 	# Returns array of array ( ns , title )
 	function get_links ( $title , $ns , $cont = '' ) {
 		$ret = [] ;
+		if ( !isset ( $ns ) ) $ns = '' ;
 		$url = $this->get_api_base_url ( 'links' ) ;
 		$url .= 'pllimit=500&titles=' . $this->urlEncode ( $title ) ;
-		$url .= '&rawcontinue=1' ;
-		if ( $cont != '' ) $url .= "&plcontinue=" . $cont ;
-		if ( isset ( $ns ) ) $url .= '&plnamespace=' . $ns ;
-
+		#$url .= '&rawcontinue=1' ;
+		if ( $ns != '' ) $url .= '&plnamespace=' . $ns ;
+		if ( $cont != '' ) $url .= "&plcontinue=" . urlencode($cont) ;
 		$data = $this->get_result ( $url ) ;
 		if ( !isset ( $data['query'] ) ) return $ret ;
 
 		$cont = '' ;
-		if ( isset($data['query-continue']) and isset($data['query-continue']['links']) ) $cont = $data['query-continue']['links']['plcontinue'] ;
+		#if ( isset($data['query-continue']) and isset($data['query-continue']['links']) ) $cont = $data['query-continue']['links']['plcontinue'] ;
+		if ( isset($data['continue']) and isset($data['continue']['plcontinue']) ) $cont = $data['continue']['plcontinue'] ;
 
 		$data = $data['query'] ;
 		$data = $data['pages'] ;

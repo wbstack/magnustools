@@ -152,20 +152,17 @@ class MW_OAuth {
 
 		if ( !$data ) {
 //			header( "HTTP/1.1 500 Internal Server Error" );
-			echo 'Curl error: ' . htmlspecialchars( curl_error( $ch ) );
-			exit(0);
+			throw new Exception ( 'Curl error: ' . htmlspecialchars( curl_error( $ch ) ) ) ;
 		}
 		curl_close( $ch );
 		$token = json_decode( $data );
 		if ( is_object( $token ) && isset( $token->error ) ) {
 //			header( "HTTP/1.1 500 Internal Server Error" );
-			echo 'Error retrieving token: ' . htmlspecialchars( $token->error );
-			exit(0);
+			throw new Exception ( 'Error retrieving token: ' . htmlspecialchars( $token->error ) ) ;
 		}
 		if ( !is_object( $token ) || !isset( $token->key ) || !isset( $token->secret ) ) {
 //			header( "HTTP/1.1 500 Internal Server Error" );
-			echo 'Invalid response from token request';
-			exit(0);
+			throw new Exception ( 'Invalid response from token request' ) ;
 		}
 
 		// Save the access token
@@ -270,8 +267,7 @@ class MW_OAuth {
 		$data = curl_exec( $ch );
 		if ( !$data ) {
 			header( "HTTP/1.1 500 Internal Server Error" );
-			echo 'Curl error: ' . htmlspecialchars( curl_error( $ch ) );
-			exit(0);
+			throw new Exception ( 'Curl error: ' . htmlspecialchars( curl_error( $ch ) ) ) ;
 		}
 		curl_close( $ch );
 		$token = json_decode( $data );
@@ -280,13 +276,11 @@ class MW_OAuth {
 		}
 		if ( is_object( $token ) && isset( $token->error ) ) {
 			header( "HTTP/1.1 500 Internal Server Error" );
-			echo 'Error retrieving token: ' . htmlspecialchars( $token->error );
-			exit(0);
+			throw new Exception ( 'Error retrieving token: ' . htmlspecialchars( $token->error ) ) ;
 		}
 		if ( !is_object( $token ) || !isset( $token->key ) || !isset( $token->secret ) ) {
 			header( "HTTP/1.1 500 Internal Server Error" );
-			echo 'Invalid response from token request';
-			exit(0);
+			throw new Exception ( 'Invalid response from token request' ) ;
 		}
 
 		// Now we have the request token, we need to save it for later.
@@ -348,8 +342,7 @@ class MW_OAuth {
 		$data = curl_exec( $ch );
 		if ( !$data ) {
 			header( "HTTP/1.1 $errorCode Internal Server Error" );
-			echo 'Curl error: ' . htmlspecialchars( curl_error( $ch ) );
-			exit(0);
+			throw new Exception ( 'Curl error: ' . htmlspecialchars( curl_error( $ch ) ) ) ;
 		}
 		$err = json_decode( $data );
 		if ( is_object( $err ) && isset( $err->error ) && $err->error === 'mwoauthdatastore-access-token-not-found' ) {
@@ -363,8 +356,7 @@ class MW_OAuth {
 		$fields = explode( '.', $data );
 		if ( count( $fields ) !== 3 ) {
 			header( "HTTP/1.1 $errorCode Internal Server Error" );
-			echo 'Invalid identify response: ' . htmlspecialchars( $data );
-			exit(0);
+			throw new Exception ( 'Invalid identify response: ' . htmlspecialchars( $data ) ) ;
 		}
 
 		// Validate the header. MWOAuth always returns alg "HS256".
@@ -374,8 +366,7 @@ class MW_OAuth {
 		}
 		if ( !is_object( $header ) || $header->typ !== 'JWT' || $header->alg !== 'HS256' ) {
 			header( "HTTP/1.1 $errorCode Internal Server Error" );
-			echo 'Invalid header in identify response: ' . htmlspecialchars( $data );
-			exit(0);
+			throw new Exception ( 'Invalid header in identify response: ' . htmlspecialchars( $data ) ) ;
 		}
 
 		// Verify the signature
@@ -383,9 +374,9 @@ class MW_OAuth {
 		$check = hash_hmac( 'sha256', $fields[0] . '.' . $fields[1], $this->gConsumerSecret, true );
 		if ( $sig !== $check ) {
 			header( "HTTP/1.1 $errorCode Internal Server Error" );
-			echo 'JWT signature validation failed: ' . htmlspecialchars( $data );
-			echo '<pre>'; var_dump( base64_encode($sig), base64_encode($check) ); echo '</pre>';
-			exit(0);
+			$out = 'JWT signature validation failed: ' . htmlspecialchars( $data );
+			$out .= '<pre>'; var_dump( base64_encode($sig), base64_encode($check) ); echo '</pre>';
+			throw new Exception ( $out ) ;
 		}
 
 		// Decode the payload
@@ -395,8 +386,7 @@ class MW_OAuth {
 		}
 		if ( !is_object( $payload ) ) {
 			header( "HTTP/1.1 $errorCode Internal Server Error" );
-			echo 'Invalid payload in identify response: ' . htmlspecialchars( $data );
-			exit(0);
+			throw new Exception ( 'Invalid payload in identify response: ' . htmlspecialchars( $data ) ) ;
 		}
 		
 		$payload->is_authorized = true ;

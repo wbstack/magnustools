@@ -144,11 +144,12 @@ class WDI {
 
 	public function getClaims ( $p ) {
 		$ret = [] ;
+		$claims = $this->q[0] == 'M' ? 'statements' : 'claims' ; # Commons MediaInfo fallback
 		$p = $this->sanitizeP ( $p ) ;
 		if ( !isset($this->j) ) return $ret ;
-		if ( !isset($this->j->claims) ) return $ret ;
-		if ( !isset($this->j->claims->$p) ) return $ret ;
-		return $this->j->claims->$p ;
+		if ( !isset($this->j->$claims) ) return $ret ;
+		if ( !isset($this->j->$claims->$p) ) return $ret ;
+		return $this->j->$claims->$p ;
 	}
 	
 	public function hasTarget ( $p , $q ) {
@@ -279,7 +280,7 @@ class WikidataItemList {
 		foreach ( $list AS $q ) {
 			if ( !$this->hasItem ( $q ) ) continue ;
 			$this->sanitizeQ ( $q ) ;
-			$last_revs[$q] = $this->items[$q]->j->lastrevid ;
+			if ( isset($this->items[$q]->j->lastrevid) ) $last_revs[$q] = $this->items[$q]->j->lastrevid ;
 			unset ( $this->items[$q] ) ;
 		}
 		$this->loadItems ( $list ) ;
