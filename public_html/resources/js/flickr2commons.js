@@ -1,6 +1,7 @@
 
 var flickr2commons = {
-	flinfo: 'https://tools.wmflabs.org/fist/flinfo/flinfo.php' , // '/flickr2commons/flinfo_proxy.php'
+	flinfo: 'https://fist.toolforge.org/fist/flinfo/flinfo.php' , // '/flickr2commons/flinfo_proxy.php'
+	oauth_uploader_base : 'https://tools.wmflabs.org/magnustools/oauth_uploader.php' ,
 	oauth_uploader_api : 'https://tools.wmflabs.org/magnustools/oauth_uploader.php?botmode=1&callback=?' ,
 	flickr_api_url : 'https://secure.flickr.com/services/rest' ,
 	flickr_api_key : '' ,
@@ -18,13 +19,13 @@ var flickr2commons = {
 	checkAuth : function ( callback ) {
 		var me = this ;
 		if ( me.is_authorized ) return callback ( 'OK' ) ;
-		$.getJSON ( me.oauth_uploader_api , {
-			action:'checkauth'
+		$.get ( me.oauth_uploader_api , {
+			action:'get_rights'
 		} , function ( d ) {
 			me.is_authorized = d.error=='OK' ;
-			if ( me.is_authorized ) me.userinfo = d.data.query.userinfo ;
+			if ( me.is_authorized ) me.userinfo = d.result.query.userinfo ;
 			callback ( d.error ) ;
-		}) ;
+		},'json') ;
 	} ,
 	generateFilenameForCommons : function ( file , default_prefix = '"Unnamed Flickr file"' ) {
 		var t = file.title ;
@@ -376,7 +377,7 @@ var flickr2commons = {
 		if ( !me.is_authorized ) return ;
 
 		var params = {
-			action:'upload',
+			action:'upload_from_url',
 			newfile:o.filename_on_commons,
 			url:o.best_size.source,
 			desc:o.information_template,
@@ -386,7 +387,7 @@ var flickr2commons = {
 			botmode:1
 		} ;
 		
-		$.post ( '/magnustools/oauth_uploader.php' , params , function ( d ) {
+		$.post ( me.oauth_uploader_base , params , function ( d ) {
 			if ( ''+d.error == 'OK' ) {
 				o.filename_on_commons = d.res.upload.filename ;
 			} else {
@@ -454,12 +455,13 @@ var flickr2commons = {
 		this.sdc(params,callback);
 	} ,
 	sdc : function ( sdc_params , callback ) {
+		let me = this ;
 		let params = {
 			action:'sdc',
 			params:JSON.stringify(sdc_params),
 			botmode:1
 		} ;
-		$.post ( '/magnustools/oauth_uploader.php' , params , function ( d ) {
+		$.post ( me.oauth_uploader_base , params , function ( d ) {
 			callback(d)
 		} , 'json' ) ;
 	}

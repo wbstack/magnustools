@@ -95,8 +95,11 @@ class MW_OAuth {
 	function loadIniFile () {
 		$this->params = parse_ini_file ( $this->ini_file ) ;
 		$this->gUserAgent = $this->params['agent'];
+		if ( !isset($this->gUserAgent) or $this->gUserAgent == '' ) throw new Exception ( "Cannot get user agent from ini file '{$this->ini_file}'" ) ;
 		$this->gConsumerKey = $this->params['consumerKey'];
+		if ( !isset($this->gConsumerKey) or $this->gConsumerKey == '' ) throw new Exception ( "Cannot get consumer key from ini file '{$this->ini_file}'" ) ;
 		$this->gConsumerSecret = $this->params['consumerSecret'];
+		if ( !isset($this->gConsumerSecret) or $this->gConsumerSecret == '' ) throw new Exception ( "Cannot get consumer secret from ini file '{$this->ini_file}'" ) ;
 	}
 	
 	// Load the user token (request or access) from the session
@@ -158,7 +161,7 @@ class MW_OAuth {
 		$token = json_decode( $data );
 		if ( is_object( $token ) && isset( $token->error ) ) {
 //			header( "HTTP/1.1 500 Internal Server Error" );
-			throw new Exception ( 'Error retrieving token: ' . htmlspecialchars( $token->error ) ) ;
+			throw new Exception ( 'Error retrieving token2: ' . htmlspecialchars( json_encode($token) ) ) ;
 		}
 		if ( !is_object( $token ) || !isset( $token->key ) || !isset( $token->secret ) ) {
 //			header( "HTTP/1.1 500 Internal Server Error" );
@@ -254,7 +257,7 @@ class MW_OAuth {
 			// We're using secret key signatures here.
 			'oauth_signature_method' => 'HMAC-SHA1',
 		] ;
-		if ( $callback!='' ) $query['callback'] = $callback ;
+		if ( $callback!='' ) $query['oauth_callback'] = $callback ;
 		$url .= http_build_query( $query );
 		$signature = $this->sign_request( 'GET', $url );
 		$url .= "&oauth_signature=" . urlencode( $signature );
@@ -272,11 +275,12 @@ class MW_OAuth {
 		curl_close( $ch );
 		$token = json_decode( $data );
 		if ( $token === NULL ) {
-			print_r ( $data ) ; exit ( 0 ) ; // SHOW MEDIAWIKI ERROR
+			throw new Exception ( $data ) ;
 		}
 		if ( is_object( $token ) && isset( $token->error ) ) {
 			header( "HTTP/1.1 500 Internal Server Error" );
-			throw new Exception ( 'Error retrieving token: ' . htmlspecialchars( $token->error ) ) ;
+			$token->callback = $callback ;
+			throw new Exception ( 'Error retrieving token1: ' . htmlspecialchars( json_encode($token) ) ) ;
 		}
 		if ( !is_object( $token ) || !isset( $token->key ) || !isset( $token->secret ) ) {
 			header( "HTTP/1.1 500 Internal Server Error" );
@@ -1349,7 +1353,7 @@ class MW_OAuth {
 	}
 
 
-	function doUploadFromURL ( $url , $new_file_name , $desc , $comment , $ignorewarnings ) {
+	function doUploadFromURL ( $url , $new_file_name , $desc , $comment = '' , $ignorewarnings = true , $summary = '' ) {
 		if ( $new_file_name == '' ) {
 			$a = explode ( '/' , $url ) ;
 			$new_file_name = array_pop ( $a ) ;

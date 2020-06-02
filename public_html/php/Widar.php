@@ -18,6 +18,7 @@ class Widar {
 	public $oa ;
 	public $json_last_error = JSON_ERROR_NONE ;
 	public $result = '' ;
+	public $authorization_callback = '' ;
 
 	public function __construct ( /*string*/ $toolname = '' ) {
 		$this->tfc = new ToolforgeCommon ( $toolname ) ;
@@ -29,6 +30,7 @@ class Widar {
 		return $this->tfc->toolname ;
 	}
 
+	# Interface using $_REQUEST parameters to call the appropriate method
 	# Returns true if an action was performed, and false if not
 	public function process_request ( $parameter_name = 'action' ) {
 		$action = $this->tfc->getRequest ( $parameter_name , '' ) ;
@@ -159,6 +161,14 @@ class Widar {
 					$this->tfc->getRequest('snaks','')
 				) ;
 				break ;
+			case 'set_text':
+				$this->set_text (
+					$this->tfc->getRequest('language',''),
+					$this->tfc->getRequest('project',''),
+					$this->tfc->getRequest('page',''),
+					$this->tfc->getRequest('text','')
+				) ;
+				break ;
 			case 'delete':
 				$this->delete_page (
 					$this->tfc->getRequest('page',''),
@@ -184,6 +194,22 @@ class Widar {
 					$this->tfc->getRequest('summary','')
 				) ;
 				break ;
+			case 'upload_from_url':
+				$this->upload_from_url (
+					$this->tfc->getRequest('language','commons'),
+					$this->tfc->getRequest('project','wikimedia'),
+					$this->tfc->getRequest('url',''),
+					$this->tfc->getRequest('newfile',''),
+					$this->tfc->getRequest('desc',''),
+					$this->tfc->getRequest('comment',''),
+					isset($_REQUEST['ignorewarnings'])
+				) ;
+				break ;
+			case 'sdc':
+				$this->sdc_tag (
+					$this->tfc->getRequest('params','')
+				) ;
+				break ;
 			case 'generic':
 				$this->generic_action (
 					$this->tfc->getRequest('json',''),
@@ -200,7 +226,7 @@ class Widar {
 	public function render_reponse ( $botmode = true , $parameter_name = 'action' ) {
 		# Bot output
 		$out = [ 'error' => 'OK' , 'data' => [] ] ;
-
+		$ret = false ;
 		$callback = $this->tfc->getRequest('callback2','') ; # For botmode
 
 		try {
@@ -208,11 +234,11 @@ class Widar {
 		} catch ( Exception $e ) { # Error
 			$error_message = $e->getMessage() ;
 			if ( $botmode ) {
-				$out['error2'] = $this->oa->error ;
-				$out['jle'] = $this->json_last_error ;
-				$out['res'] = $this->oa->last_res ;
-				$out['result'] = $this->result ; # For get_rights
-				$out['error'] = $error_message ;
+				$out['error2'] = $this->oa->error??'' ;
+				$out['jle'] = $this->json_last_error??'' ;
+				$out['res'] = $this->oa->last_res??'' ;
+				$out['result'] = $this->result??'' ; # For get_rights
+				$out['error'] = $error_message??'' ;
 				$this->output_bot ( $out , $callback ) ;
 			} else {
 				$this->output_widar_header() ;
@@ -227,10 +253,10 @@ class Widar {
 			return true ; # Handled that 
 		}
 
-		$out['error2'] = $this->oa->error ;
-		$out['jle'] = $this->json_last_error ;
-		$out['res'] = $this->oa->last_res ;
-		$out['result'] = $this->result ; # For get_rights
+		$out['error2'] = $this->oa->error??'' ;
+		$out['jle'] = $this->json_last_error??'' ;
+		$out['res'] = $this->oa->last_res??'' ;
+		$out['result'] = $this->result??'' ; # For get_rights
 
 		if ( !$ret ) {} # No action found, return false
 		else if ( $botmode ) {
@@ -244,8 +270,17 @@ class Widar {
 		return $ret ;
 	}
 
+	public function attempt_verification_auto_forward ( $url ) {
+		if ( $this->tfc->getRequest('oauth_verifier','')  == '' ) return ;
+		if ( $this->tfc->getRequest('oauth_token','')  == '' ) return ;
+		header( "Location: $url" );
+		echo 'Please see <a href="' . htmlspecialchars( $url ) . '">' . htmlspecialchars( $url ) . '</a>';
+		exit(0);
+	}
+
 	protected function output_bot ( $out , $callback = '' ) {
 		if ( $callback != '' ) print "{$callback}(" ;
+		else header('Content-Type: application/json');
 		print json_encode ( $out ) ;
 		if ( $callback != '' ) print ");" ;
 	}
@@ -294,7 +329,7 @@ class Widar {
 
 	public function authorize() {
 		$this->result = $this->toolname() ;
-		$this->oa->doAuthorizationRedirect();
+		$this->oa->doAuthorizationRedirect($this->authorization_callback);
 		exit ( 0 ) ;
 	}
 
@@ -427,10 +462,10 @@ class Widar {
 	}
 
 	public function add_row ( $language , $project , $page , $row ) {
-		$this->ensureAuth() ;
 		$server = "{$language}.{$project}.org" ;
 		if ( $language != '' and $project != '' ) $this->oa = new MW_OAuth ( $this->toolname() , $language , $project ) ;
 		else $server = 'www.wikidata.org' ;
+		$this->ensureAuth() ;
 		$text = file_get_contents ( "http://{$server}/w/index.php?action=raw&title=".urlencode(trim($page)) ) ;
 		$text = trim ( $text ) . "\n" . trim($row) ;
 		if ( !$this->oa->setPageText ( $page , $text ) ) throw new Exception ( "Problem adding row to {$language}.{$project}.org/wiki/{$page}" ) ;
@@ -441,12 +476,38 @@ class Widar {
 		if ( !$this->oa->deletePage ( $page , $reason ) ) throw new Exception ( "Problem deleting page '{$page}'" ) ;
 	}
 
-	public function append_text ( $language , $project , $page , $text , $header = '' , $section = '' , $summary = '' ) {
+	public function set_text ( $language , $project , $page , $text ) {
 		$this->ensureAuth() ;
 		$server = "{$language}.{$project}.org" ;
 		if ( $language != '' and $project != '' ) $this->oa = new MW_OAuth ( $this->toolname() , $language , $project ) ;
 		else $server = 'www.wikidata.org' ;
-		if ( !$this->oa->addPageText ( $page , $text , $header , $summary , $section ) )  throw new Exception ( "Problem appending text to {$language}.{$project}.org/wiki/{$page}" ) ;
+		if ( !$this->oa->setPageText ( $page , $text ) )  throw new Exception ( "Problem setting text of {$language}.{$project}.org/wiki/{$page}" ) ;
+	}
+
+	public function append_text ( $language , $project , $page , $text , $header = '' , $section = '' , $summary = '' ) {
+		$server = "{$language}.{$project}.org" ;
+		if ( $language != '' and $project != '' ) $this->oa = new MW_OAuth ( $this->toolname() , $language , $project ) ;
+		else $server = 'www.wikidata.org' ;
+		$this->ensureAuth() ;
+		if ( !$this->oa->addPageText ( $page , $text , $header , $summary , $section ) ) throw new Exception ( "Problem appending text to {$language}.{$project}.org/wiki/{$page}" ) ;
+	}
+
+	public function upload_from_url ( $language , $project , $url , $new_file_name , $description = '' , $comment = '' , $ignore_warnings = false ) {
+		$server = "{$language}.{$project}.org" ;
+		if ( $language != '' and $project != '' ) $this->oa = new MW_OAuth ( $this->toolname() , $language , $project ) ;
+		else $server = 'commons.wikimedia.org' ;
+		$this->ensureAuth() ;
+		if ( $url == '' ) throw new Exception ( "No URL given" ) ;
+		if ( !$this->oa->doUploadFromURL ( $url , $new_file_name , $description , $comment , $ignore_warnings ) ) throw new Exception ( $oa->error ) ;
+	}
+
+	public function sdc_tag ( $json , $summary = '' ) {
+		$this->oa = new MW_OAuth ( $this->toolname() , 'commons' , 'wikimedia' ) ;
+		$this->ensureAuth() ;
+		$j = json_decode ( $json ) ;
+		$this->json_last_error = json_last_error() ;
+		if ( $this->json_last_error != JSON_ERROR_NONE ) throw new Exception ( 'sdc_tag JSON parsing error' ) ;
+		if ( !$this->oa->genericAction ( $j , $summary ) ) throw new Exception ( "sdc_tag failed: {$json}/{$summary}" ) ;
 	}
 
 	public function get_rights () {
