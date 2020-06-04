@@ -63,7 +63,8 @@ $tfc = new Toolforge\Common ( 'magnustools' ) ;
 $wd = new Toolforge\Wikidata ;
 $wdi = new Toolforge\WikidataItem ( 'https://www.wikidata.org/w/api.php' ) ;
 
-error_reporting(E_ERROR|E_CORE_ERROR|E_COMPILE_ERROR); # Silence session/header warnings
+# Silence session/header warnings
+error_reporting(E_ERROR|E_CORE_ERROR|E_COMPILE_ERROR);
 $widar = new Toolforge\Widar ( 'magnustools' ) ;
 
 ?>
