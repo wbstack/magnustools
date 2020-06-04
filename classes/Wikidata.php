@@ -12,6 +12,11 @@ class Wikidata {
 	public $testing = false ;
 	protected $items = [] ;
 	public $testing_output = [] ;
+	protected $wikibase_api = '' ;
+
+	public function __construct ( $wikibase_api = '' ) {
+		$this->wikibase_api = $wikibase_api ;
+	}
 
 	public function sanitizeQ ( &$q ) {
 		if ( preg_match ( '/^(?:[PLM]\d+|L\d+-[FS]\d+)$/i' , "$q" ) ) {
@@ -19,6 +24,13 @@ class Wikidata {
 		} else {
 			$q = 'Q'.preg_replace('/\D/','',"$q") ;
 		}
+	}
+
+	public function get_wikidata_api_url() {
+		if ( $this->wikibase_api != '' ) return $this->wikibase_api ;
+		global $wikidata_api_url ;
+		if ( !isset($wikidata_api_url) ) return 'https://www.wikidata.org/w/api.php' ;
+		return $wikidata_api_url ;
 	}
 	
 	public function updateItems ( $list ) {
@@ -54,7 +66,6 @@ class Wikidata {
 	}
 		
     function loadItems ( $list ) {
-    	global $wikidata_api_url ;
     	$qs = [ [] ] ;
     	foreach ( $list AS $q ) {
     		$this->sanitizeQ($q) ;
@@ -69,7 +80,7 @@ class Wikidata {
     	$urls = [] ;
     	foreach ( $qs AS $k => $sublist ) {
     		if ( count ( $sublist ) == 0 ) continue ;
-			$url = "{$wikidata_api_url}?action=wbgetentities&ids=" . implode('|',$sublist) . "&format=json" ;
+			$url = $this->get_wikidata_api_url()."?action=wbgetentities&ids=" . implode('|',$sublist) . "&format=json" ;
 			$urls[$k] = $url ;
     	}
 #print_r ( $urls ) ;
@@ -103,7 +114,6 @@ class Wikidata {
     }
 
     public function getItemLabels ( $list , $language = 'en' ) {
-    	global $wikidata_api_url ;
     	$ret = [] ;
     	$list = array_unique($list);
 
@@ -125,7 +135,7 @@ class Wikidata {
     	$urls = [] ;
     	foreach ( $qs AS $k => $sublist ) {
     		if ( count ( $sublist ) == 0 ) continue ;
-			$url = "{$wikidata_api_url}?action=wbformatentities&ids=" . implode('|',$sublist) . "&uselang={$language}&format=json" ;
+			$url = $this->get_wikidata_api_url()."?action=wbformatentities&ids=" . implode('|',$sublist) . "&uselang={$language}&format=json" ;
 			$urls[$k] = $url ;
     	}
     	$res = $this->getMultipleURLsInParallel ( $urls ) ;
@@ -141,9 +151,8 @@ class Wikidata {
     }
 	
 	public function loadItemByPage ( $page , $wiki ) {
-		global $wikidata_api_url ;
 		$page = urlencode ( ucfirst ( str_replace ( ' ' , '_' , trim($page) ) ) ) ;
-		$url = $wikidata_api_url . "?action=wbgetentities&sites=$wiki&titles=$page&format=json" ;
+		$url = $this->get_wikidata_api_url() . "?action=wbgetentities&sites=$wiki&titles=$page&format=json" ;
 		$j = json_decode ( file_get_contents ( $url ) ) ;
 		if ( !isset($j) or !isset($j->entities) ) return false ;
 		$this->parseEntities ( $j ) ;
