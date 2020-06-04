@@ -2,7 +2,7 @@
 
 namespace Toolforge ;
 
-require_once dirname(__DIR__) . '/vendor/autoload.php';
+require_once 'vendor/autoload.php';
 
 $wikidata_api_url = 'https://www.wikidata.org/w/api.php' ;
 

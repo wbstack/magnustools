@@ -2,7 +2,7 @@
 
 namespace Toolforge ;
 
-require_once dirname(__DIR__) . '/vendor/autoload.php';
+require_once 'vendor/autoload.php';
 
 # declare(strict_types=1); # PHP7
 
