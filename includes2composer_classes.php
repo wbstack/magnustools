@@ -48,6 +48,7 @@ foreach ( $files AS $filename_inc ) {
 	foreach ( $classname_replacements as $from => $to ) {
 		$php = preg_replace ( '~\b(new|class) *'.$from.'\b~' , "$1 {$to}" , $php ) ;
 	}
+	$php = preg_replace ( '|Toolforge\\Exception|' , '\\Exception' , $php ) ;
 	$php = preg_replace ( '~\b(require|include)(_once){0,1}[ \(]*[\"\']'.$dir_inc.".*?;\s~" , '' , $php ) ;
 	file_put_contents($filename_class, $php) ;
 	$check = `php -l '{$filename_class}'` ;
