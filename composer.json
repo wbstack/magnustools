@@ -1,8 +1,18 @@
 {
     "name": "magnusmanske/toolforge",
     "description": "Useful classes for Wikimedia Toolforge",
+    "homepage": "https://bitbucket.com/magnusmanske/magnustools",
+    "license": "GPLv3",
     "version": "1.0.0",
-    "type": "project",
+    "type": "library",
+	"authors": [
+        {
+            "name": "Magnus Manske",
+            "email": "magnusmanske@gmail.com",
+            "homepage": "http://magnusmanske.de",
+            "role": "Developer"
+        }
+    ],
     "autoload": {
         "psr-4": {
             "Toolforge\\": "classes/"
@@ -12,5 +22,6 @@
         "phpunit/phpunit": "^8.0"
     },
     "require": {
+		"php": ">=7.0.0"
     }
 }
