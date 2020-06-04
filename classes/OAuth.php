@@ -99,11 +99,11 @@ class OAuth {
 	function loadIniFile () {
 		$this->params = parse_ini_file ( $this->ini_file ) ;
 		$this->gUserAgent = $this->params['agent'];
-		if ( !isset($this->gUserAgent) or $this->gUserAgent == '' ) throw new Exception ( "Cannot get user agent from ini file '{$this->ini_file}'" ) ;
+		if ( !isset($this->gUserAgent) or $this->gUserAgent == '' ) throw new \Exception ( "Cannot get user agent from ini file '{$this->ini_file}'" ) ;
 		$this->gConsumerKey = $this->params['consumerKey'];
-		if ( !isset($this->gConsumerKey) or $this->gConsumerKey == '' ) throw new Exception ( "Cannot get consumer key from ini file '{$this->ini_file}'" ) ;
+		if ( !isset($this->gConsumerKey) or $this->gConsumerKey == '' ) throw new \Exception ( "Cannot get consumer key from ini file '{$this->ini_file}'" ) ;
 		$this->gConsumerSecret = $this->params['consumerSecret'];
-		if ( !isset($this->gConsumerSecret) or $this->gConsumerSecret == '' ) throw new Exception ( "Cannot get consumer secret from ini file '{$this->ini_file}'" ) ;
+		if ( !isset($this->gConsumerSecret) or $this->gConsumerSecret == '' ) throw new \Exception ( "Cannot get consumer secret from ini file '{$this->ini_file}'" ) ;
 	}
 	
 	// Load the user token (request or access) from the session
@@ -159,17 +159,17 @@ class OAuth {
 
 		if ( !$data ) {
 //			header( "HTTP/1.1 500 Internal Server Error" );
-			throw new Exception ( 'Curl error: ' . htmlspecialchars( curl_error( $ch ) ) ) ;
+			throw new \Exception ( 'Curl error: ' . htmlspecialchars( curl_error( $ch ) ) ) ;
 		}
 		curl_close( $ch );
 		$token = json_decode( $data );
 		if ( is_object( $token ) && isset( $token->error ) ) {
 //			header( "HTTP/1.1 500 Internal Server Error" );
-			throw new Exception ( 'Error retrieving token2: ' . htmlspecialchars( json_encode($token) ) ) ;
+			throw new \Exception ( 'Error retrieving token2: ' . htmlspecialchars( json_encode($token) ) ) ;
 		}
 		if ( !is_object( $token ) || !isset( $token->key ) || !isset( $token->secret ) ) {
 //			header( "HTTP/1.1 500 Internal Server Error" );
-			throw new Exception ( 'Invalid response from token request' ) ;
+			throw new \Exception ( 'Invalid response from token request' ) ;
 		}
 
 		// Save the access token
@@ -274,21 +274,21 @@ class OAuth {
 		$data = curl_exec( $ch );
 		if ( !$data ) {
 			header( "HTTP/1.1 500 Internal Server Error" );
-			throw new Exception ( 'Curl error: ' . htmlspecialchars( curl_error( $ch ) ) ) ;
+			throw new \Exception ( 'Curl error: ' . htmlspecialchars( curl_error( $ch ) ) ) ;
 		}
 		curl_close( $ch );
 		$token = json_decode( $data );
 		if ( $token === NULL ) {
-			throw new Exception ( $data ) ;
+			throw new \Exception ( $data ) ;
 		}
 		if ( is_object( $token ) && isset( $token->error ) ) {
 			header( "HTTP/1.1 500 Internal Server Error" );
 			$token->callback = $callback ;
-			throw new Exception ( 'Error retrieving token1: ' . htmlspecialchars( json_encode($token) ) ) ;
+			throw new \Exception ( 'Error retrieving token1: ' . htmlspecialchars( json_encode($token) ) ) ;
 		}
 		if ( !is_object( $token ) || !isset( $token->key ) || !isset( $token->secret ) ) {
 			header( "HTTP/1.1 500 Internal Server Error" );
-			throw new Exception ( 'Invalid response from token request' ) ;
+			throw new \Exception ( 'Invalid response from token request' ) ;
 		}
 
 		// Now we have the request token, we need to save it for later.
@@ -350,7 +350,7 @@ class OAuth {
 		$data = curl_exec( $ch );
 		if ( !$data ) {
 			header( "HTTP/1.1 $errorCode Internal Server Error" );
-			throw new Exception ( 'Curl error: ' . htmlspecialchars( curl_error( $ch ) ) ) ;
+			throw new \Exception ( 'Curl error: ' . htmlspecialchars( curl_error( $ch ) ) ) ;
 		}
 		$err = json_decode( $data );
 		if ( is_object( $err ) && isset( $err->error ) && $err->error === 'mwoauthdatastore-access-token-not-found' ) {
@@ -364,7 +364,7 @@ class OAuth {
 		$fields = explode( '.', $data );
 		if ( count( $fields ) !== 3 ) {
 			header( "HTTP/1.1 $errorCode Internal Server Error" );
-			throw new Exception ( 'Invalid identify response: ' . htmlspecialchars( $data ) ) ;
+			throw new \Exception ( 'Invalid identify response: ' . htmlspecialchars( $data ) ) ;
 		}
 
 		// Validate the header. MWOAuth always returns alg "HS256".
@@ -374,7 +374,7 @@ class OAuth {
 		}
 		if ( !is_object( $header ) || $header->typ !== 'JWT' || $header->alg !== 'HS256' ) {
 			header( "HTTP/1.1 $errorCode Internal Server Error" );
-			throw new Exception ( 'Invalid header in identify response: ' . htmlspecialchars( $data ) ) ;
+			throw new \Exception ( 'Invalid header in identify response: ' . htmlspecialchars( $data ) ) ;
 		}
 
 		// Verify the signature
@@ -384,7 +384,7 @@ class OAuth {
 			header( "HTTP/1.1 $errorCode Internal Server Error" );
 			$out = 'JWT signature validation failed: ' . htmlspecialchars( $data );
 			$out .= '<pre>'; var_dump( base64_encode($sig), base64_encode($check) ); echo '</pre>';
-			throw new Exception ( $out ) ;
+			throw new \Exception ( $out ) ;
 		}
 
 		// Decode the payload
@@ -394,7 +394,7 @@ class OAuth {
 		}
 		if ( !is_object( $payload ) ) {
 			header( "HTTP/1.1 $errorCode Internal Server Error" );
-			throw new Exception ( 'Invalid payload in identify response: ' . htmlspecialchars( $data ) ) ;
+			throw new \Exception ( 'Invalid payload in identify response: ' . htmlspecialchars( $data ) ) ;
 		}
 		
 		$payload->is_authorized = true ;
