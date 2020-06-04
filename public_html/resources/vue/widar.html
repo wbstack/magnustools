@@ -12,11 +12,13 @@
 <script>
 'use strict';
 let widar ;
+var widar_api_url ;
 
 Vue.component ( 'widar' , {
 	data : function () { return { is_logged_in:false , userinfo:{} , widar_api:'/widar/index.php' , loaded:false , toolname:'' } } ,
 	created : function () {
 		widar = this ;
+		if ( typeof widar_api_url != 'undefined' ) this.widar_api = widar_api_url ;
 		this.checkLogin()
 	} ,
 	updated : function () { tt.updateInterface(this.$el) } ,

@@ -1,10 +1,13 @@
 <?PHP
 
+namespace Toolforge ;
+
+require_once dirname(__DIR__) . '/vendor/autoload.php';
+
 $wikidata_api_url = 'https://www.wikidata.org/w/api.php' ;
 
-require_once ( '/data/project/magnustools/public_html/php/WikidataItem.php' ) ;
 
-class WikidataItemList {
+class Wikidata {
 
 	public $testing = false ;
 	protected $items = [] ;
@@ -44,7 +47,7 @@ class WikidataItemList {
 	protected function parseEntities ( $j ) {
 		foreach ( $j->entities AS $q => $v ) {
 			if ( isset ( $this->items[$q] ) ) continue ; // Paranoia
-			$this->items[$q] = new WDI ;
+			$this->items[$q] = new WikidataItem ;
 			$this->items[$q]->q = $q ;
 			$this->items[$q]->j = $v ;
 		}
