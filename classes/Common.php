@@ -2,8 +2,6 @@
 
 namespace Toolforge ;
 
-require_once 'vendor/autoload.php';
-
 # declare(strict_types=1); # PHP7
 
 /*

@@ -2,8 +2,6 @@
 
 namespace Toolforge ;
 
-require_once 'vendor/autoload.php';
-
 $wikidata_api_url = 'https://www.wikidata.org/w/api.php' ;
 
 

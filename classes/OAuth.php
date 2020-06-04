@@ -2,8 +2,6 @@
 
 namespace Toolforge ;
 
-require_once 'vendor/autoload.php';
-
 class OAuth {
 
 	var $use_tag_parameter = true ;

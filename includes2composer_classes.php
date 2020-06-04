@@ -40,7 +40,7 @@ foreach ( $files AS $filename_inc ) {
 	$filename_class = "{$dir_classes}/{$filename_class}" ;
 	print "{$filename_inc} => {$filename_class}\n" ;
 	$php = file_get_contents($filename_inc) ;
-	$php = preg_replace ( "|^<\?PHP\n|i" , "<?PHP\n\nnamespace Toolforge ;\n\nrequire_once 'vendor/autoload.php';\n" , $php ) ;
+	$php = preg_replace ( "|^<\?PHP\n|i" , "<?PHP\n\nnamespace Toolforge ;\n" , $php ) ; # \nrequire_once 'vendor/autoload.php';\n
 	$php = preg_replace ( "|\bclass ToolforgeCommon\b|" , "class Common" , $php ) ;
 	foreach ( $file2class AS $filename => $classname ) {
 		#$php = preg_replace ( '|\bnew '.$classname.'\b|' , "new Toolforge\\{$classname}" , $php ) ;
@@ -66,5 +66,10 @@ $wdi = new Toolforge\WikidataItem ( 'https://www.wikidata.org/w/api.php' ) ;
 # Silence session/header warnings
 error_reporting(E_ERROR|E_CORE_ERROR|E_COMPILE_ERROR);
 $widar = new Toolforge\Widar ( 'magnustools' ) ;
+
+# Quick tests
+$wd->loadItems ( ['Q12345'] ) ;
+$i = $wd->getItem ( 'Q12345' ) ;
+print 'Testing: ' . $i->getLabel() . "\n" ;
 
 ?>

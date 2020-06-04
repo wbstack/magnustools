@@ -2,8 +2,6 @@
 
 namespace Toolforge ;
 
-require_once 'vendor/autoload.php';
-
 $wikidata_preferred_langs = ['en','de','nl','fr','es','it','zh'] ;
 
 class WikidataItem {
