@@ -3,7 +3,7 @@
     "description": "Useful classes for Wikimedia Toolforge",
     "homepage": "https://bitbucket.com/magnusmanske/magnustools",
     "license": "GPL-3.0-or-later",
-    "version": "v1.0.2",
+    "version": "v1.0.3",
     "type": "library",
 	"authors": [
         {

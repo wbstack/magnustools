@@ -23,7 +23,7 @@ class OAuth {
 	var $delay_after_edit_s = 1 ;
 	var $delay_after_upload_s = 1 ;
 	
-	function __construct ( $t , $l = '' , $p = '' ) {
+	function __construct ( $t , $l = '' , $p = '' , $oauth_url = '' ) {
 		if ( is_array($t) ) { // Bespoke override for third-party sites
 			foreach ( $t AS $k => $v ) {
 				$this->$k = $v ;
@@ -43,6 +43,7 @@ class OAuth {
 		if ( !isset( $this->publicMwOAuthUrl )) {
 			$this->publicMwOAuthUrl = $this->mwOAuthUrl;
 		}
+		if ( $oauth_url != '' ) $this->publicMwOAuthUrl = $oauth_url ;
 
 
 		$this->loadIniFile() ;
