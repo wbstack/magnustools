@@ -22,7 +22,11 @@ class Widar {
 
 	public function __construct ( /*string*/ $toolname = '' ) {
 		$this->tfc = new ToolforgeCommon ( $toolname ) ;
-		$this->oa = new MW_OAuth ( $this->toolname() , 'wikidata' , 'wikidata' ) ;
+		try {
+			$this->oa = new MW_OAuth ( $this->toolname() , 'wikidata' , 'wikidata' ) ;
+		} catch ( Exception $e ) { # Error
+			// Ignore error
+		}
 		$this->oa->debugging = true ;
 	}
 
@@ -511,7 +515,7 @@ class Widar {
 	}
 
 	public function get_rights () {
-		$this->ensureAuth() ;
+		//$this->ensureAuth() ;
 		$this->result = $this->oa->getConsumerRights() ;
 	}
 

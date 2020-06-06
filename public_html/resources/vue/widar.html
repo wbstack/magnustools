@@ -30,6 +30,7 @@ Vue.component ( 'widar' , {
 				action:'get_rights',
 				botmode:1
 			} , function ( d ) {
+				console.log(d);
 				me.loaded = true ;
 				if ( typeof d.result.query != 'undefined' && typeof d.result.query.userinfo != 'undefined' ) {
 					me.is_logged_in = true ;

@@ -72,7 +72,7 @@ Vue.component ( 'autodesc' , {
 			} ;
 			if ( typeof me.language != 'undefined' ) params.lang = me.language ;
 			else if ( typeof tt != 'undefined' ) params.lang = tt.language ;
-			$.get ( '/autodesc' , params , function ( d ) {
+			$.getJSON ( 'https://autodesc.toolforge.org/?callback=?' , params , function ( d ) {
 				me.data = d ;
 				autodesc.cache[me.key] = d ;
 	//			console.log ( JSON.parse(JSON.stringify(d)) ) ;
@@ -82,7 +82,7 @@ Vue.component ( 'autodesc' , {
 					console.log("tick");
 				});
 				*/
-			} , 'json' )
+			} )
 			.always ( function () { autodesc.loading[me.key] = false } )
 			.fail ( function () {
 				me.error_message = 'Could not load description for '+me.item ;
