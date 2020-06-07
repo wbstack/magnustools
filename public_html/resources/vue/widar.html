@@ -2,9 +2,9 @@
 <div style='margin-left:5px;margin-right:5px;text-align:center' v-if="loaded">
 <div v-if='is_logged_in' style='line-height:1.4em'><span tt="welcome"></span><br/><a class='wikidata' target='_blank' :href='"https://www.wikidata.org/wiki/User:"+encodeURIComponent(userinfo.name.replace(/ /g,"_"))'>{{userinfo.name}}</a></div>
 <div v-else>
-	<a href='https://tools.wmflabs.org/widar/index.php?action=authorize' target='_blank'>
+	<!--<a href='https://tools.wmflabs.org/widar/index.php?action=authorize' target='_blank'>-->
 		<i tt="log_into_widar"></i>
-	</a>
+	<!--</a>-->
 </div>
 </div>
 </template>
@@ -30,7 +30,6 @@ Vue.component ( 'widar' , {
 				action:'get_rights',
 				botmode:1
 			} , function ( d ) {
-				console.log(d);
 				me.loaded = true ;
 				if ( typeof d.result.query != 'undefined' && typeof d.result.query.userinfo != 'undefined' ) {
 					me.is_logged_in = true ;

@@ -2,15 +2,15 @@
 
 namespace Toolforge ;
 
-$wikidata_preferred_langs = ['en','de','nl','fr','es','it','zh'] ;
-
 class WikidataItem {
 
 	public $q ;
 	public $j ;
+	public $wikidata_preferred_langs ;
 	
-	public function __construct ( $q = '' ) {
+	public function __construct ( $q = '' , $wikidata_preferred_langs = ['en','de','nl','fr','es','it','zh'] ) {
 		global $wikidata_api_url ;
+		$this->wikidata_preferred_langs = $wikidata_preferred_langs ;
 		if ( $q != '' ) {
 			if ( !preg_match('/^[PLM]\d+$/',$q) ) $q = 'Q' . preg_replace ( '/\D/' , '' , "$q" ) ;
 			$this->q = $q ;
@@ -25,7 +25,6 @@ class WikidataItem {
 	}
 	
 	public function getLabel ( $lang = '' , $strict = false ) {
-		global $wikidata_preferred_langs ;
 		if ( !isset ( $this->j->labels ) ) return $this->q ;
 		if ( isset ( $this->j->labels->$lang ) ) return $this->j->labels->$lang->value ; // Shortcut
 		if ( $strict ) return $this->q ;
@@ -33,7 +32,7 @@ class WikidataItem {
 		$score = 9999 ;
 		$best = $this->q ;
 		foreach ( $this->j->labels AS $v ) {
-			$p = array_search ( $v->language , $wikidata_preferred_langs ) ;
+			$p = array_search ( $v->language , $this->wikidata_preferred_langs ) ;
 			if ( $p === false ) $p = 999 ;
 			$p *= 1 ;
 			if ( $p >= $score ) continue ;
@@ -61,7 +60,6 @@ class WikidataItem {
 	}
 	
 	public function getDesc ( $lang = '' , $strict = false ) {
-		global $wikidata_preferred_langs ;
 		if ( !isset ( $this->j->descriptions ) ) return '' ;
 		if ( isset ( $this->j->descriptions->$lang ) ) return $this->j->descriptions->$lang->value ; // Shortcut
 		if ( $strict ) return '' ;
@@ -69,7 +67,7 @@ class WikidataItem {
 		$score = 9999 ;
 		$best = '' ;
 		foreach ( $this->j->descriptions AS $v ) {
-			$p = array_search ( $v->language , $wikidata_preferred_langs ) ;
+			$p = array_search ( $v->language , $this->wikidata_preferred_langs ) ;
 			if ( $p === false ) $p = 999 ;
 			if ( $p*1 >= $score*1 ) continue ;
 			$score = $p ;
