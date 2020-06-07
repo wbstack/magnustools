@@ -71,7 +71,7 @@ class WikidataItem {
 			if ( $p === false ) $p = 999 ;
 			if ( $p*1 >= $score*1 ) continue ;
 			$score = $p ;
-			$best = $v->value ;
+			$best = $v->value ?? 0 ;
 		}
 		return $best ;
 	}
