@@ -19,6 +19,7 @@ class Widar {
 	public $json_last_error = JSON_ERROR_NONE ;
 	public $result = '' ;
 	public $authorization_callback = '' ;
+	public $authorize_parameters = '' ; # Optional parameters to 'authorize' call
 
 	public function __construct ( /*string*/ $toolname = '' ) {
 		$this->tfc = new ToolforgeCommon ( $toolname ) ;
@@ -532,7 +533,11 @@ class Widar {
 	protected function ensureAuth () {
 		$ch = null;
 		$res = $this->oa->doApiQuery( ['format'=>'json','action'=>'query','meta'=>'userinfo'], $ch ); # fetch the username
-		if ( isset( $res->error->code ) && $res->error->code === 'mwoauth-invalid-authorization' ) throw new Exception ( 'You haven\'t authorized this application yet! Go <a target="_blank" href="' . htmlspecialchars( $_SERVER['SCRIPT_NAME'] ) . '?action=authorize">here</a> to do that, then reload this page.' ) ;
+		if ( isset( $res->error->code ) && $res->error->code === 'mwoauth-invalid-authorization' ) {
+			$url = "{$_SERVER['SCRIPT_NAME']}?action=authorize" ;
+			if ( $this->authorize_parameters != '' ) $url .= "&{$this->authorize_parameters} " ;
+			throw new Exception ( 'You haven\'t authorized this application yet! Go <a target="_blank" href="' . htmlspecialchars( $url ) . '">here</a> to do that, then reload this page.' ) ;
+		}
 		if ( !isset( $res->query->userinfo ) ) throw new Exception ( 'Bad API response[1]: <pre>' . htmlspecialchars( var_export( $res, 1 ) ) . '</pre>' ) ;
 		if ( isset( $res->query->userinfo->anon ) ) throw new Exception ( 'Not logged in. (How did that happen?)' ) ;
 	}

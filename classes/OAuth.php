@@ -176,7 +176,7 @@ class OAuth {
 		$_SESSION['tokenKey'] = $this->gTokenKey = $token->key;
 		$_SESSION['tokenSecret'] = $this->gTokenSecret = $token->secret;
 		if ( $this->use_cookies ) {
-			$t = time()+60*60*24*30 ; // expires in one month
+			$t = time()+60*60*24*30*3 ; // expires in three months
 			setcookie ( 'tokenKey' , $_SESSION['tokenKey'] , $t , '/'.$this->tool.'/' ) ;
 			setcookie ( 'tokenSecret' , $_SESSION['tokenSecret'] , $t , '/'.$this->tool.'/' ) ;
 		}
@@ -610,7 +610,7 @@ class OAuth {
 	}
 
 	
-	function setLabel ( $q , $text , $language ) {
+	function setLabel ( $q , $text , $language , $summary = '' ) {
 
 		// Fetch the edit token
 		$ch = null;

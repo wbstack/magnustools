@@ -154,7 +154,7 @@ function clone ( o ) {
 
 
 function loadMenuBarAndContent ( o ) {
-	var mb = '/magnustools/resources/html/menubar.html' ;
+	var mb = '/resources/html/menubar.html' ;
 	if ( typeof o.mb != 'undefined' ) mb = o.mb ;
 	$('#menubar').load ( mb , function () {
 		if ( undefined !== o.toolname ) $('#toolname').html ( o.toolname ) ;
