@@ -2,7 +2,7 @@
 
 $wikidata_api_url = 'https://www.wikidata.org/w/api.php' ;
 
-require_once ( '/data/project/magnustools/public_html/php/WikidataItem.php' ) ;
+require_once ( __DIR__.'/../../classes/WikidataItem.php' ) ;
 
 class WikidataItemList {
 
@@ -29,7 +29,7 @@ class WikidataItemList {
 		if ( !isset($wikidata_api_url) ) return 'https://www.wikidata.org/w/api.php' ;
 		return $wikidata_api_url ;
 	}
-	
+
 	public function updateItems ( $list ) {
 		$last_revs = [] ;
 		foreach ( $list AS $q ) {
@@ -52,7 +52,7 @@ class WikidataItemList {
 	public function updateItem ( $q ) {
 		$this->updateItems ( [$q] ) ;
 	}
-	
+
 	protected function parseEntities ( $j ) {
 		foreach ( $j->entities AS $q => $v ) {
 			if ( isset ( $this->items[$q] ) ) continue ; // Paranoia
@@ -61,7 +61,7 @@ class WikidataItemList {
 			$this->items[$q]->j = $v ;
 		}
 	}
-		
+
     function loadItems ( $list ) {
     	$qs = [ [] ] ;
     	foreach ( $list AS $q ) {
@@ -71,9 +71,9 @@ class WikidataItemList {
 	    	if ( count($qs[count($qs)-1]) == 50 ) $qs[] = [] ;
     		$qs[count($qs)-1][] = $q ;
     	}
-    	
+
     	if ( count($qs) == 1 and count($qs[0]) == 0 ) return ;
-    	
+
     	$urls = [] ;
     	foreach ( $qs AS $k => $sublist ) {
     		if ( count ( $sublist ) == 0 ) continue ;
@@ -82,29 +82,29 @@ class WikidataItemList {
     	}
 #print_r ( $urls ) ;
     	$res = $this->getMultipleURLsInParallel ( $urls ) ;
-    	
+
 		foreach ( $res AS $k => $txt ) {
 			$j = json_decode ( $txt ) ;
 			if ( !isset($j) or !isset($j->entities) ) continue ;
 			$this->parseEntities ( $j ) ;
 		}
     }
-    
+
     function loadItem ( $q ) {
     	return $this->loadItems ( [ $q ] ) ;
     }
-    
+
     function getItem ( $q ) {
     	$this->sanitizeQ($q) ;
     	if ( !isset($this->items[$q]) ) return ;
     	return $this->items[$q] ;
     }
-    
+
     function getItemJSON ( $q ) {
     	$this->sanitizeQ($q) ;
     	return $this->items[$q]->j ;
     }
-    
+
     function hasItem ( $q ) {
     	$this->sanitizeQ($q) ;
     	return isset($this->items[$q]) ;
@@ -136,7 +136,7 @@ class WikidataItemList {
 			$urls[$k] = $url ;
     	}
     	$res = $this->getMultipleURLsInParallel ( $urls ) ;
-    	
+
 		foreach ( $res AS $k => $txt ) {
 			$j = json_decode ( $txt ) ;
 			if ( !isset($j) or !isset($j->wbformatentities) ) continue ;
@@ -146,7 +146,7 @@ class WikidataItemList {
 		}
 		return $ret ;
     }
-	
+
 	public function loadItemByPage ( $page , $wiki ) {
 		$page = urlencode ( ucfirst ( str_replace ( ' ' , '_' , trim($page) ) ) ) ;
 		$url = $this->get_wikidata_api_url() . "?action=wbgetentities&sites=$wiki&titles=$page&format=json" ;
@@ -160,16 +160,16 @@ class WikidataItemList {
 
 	protected function getMultipleURLsInParallel ( $urls ) {
 		$ret = [] ;
-	
+
 		$batch_size = 50 ;
 		$batches = [ [] ] ;
 		foreach ( $urls AS $k => $v ) {
 			if ( count($batches[count($batches)-1]) >= $batch_size ) $batches[] = [] ;
 			$batches[count($batches)-1][$k] = $v ;
 		}
-	
+
 		foreach ( $batches AS $batch_urls ) {
-	
+
 			$mh = curl_multi_init();
 			curl_multi_setopt  ( $mh , CURLMOPT_PIPELINING , 1 ) ;
 			$ch = [] ;
@@ -182,20 +182,20 @@ class WikidataItemList {
 				curl_setopt($ch[$key], CURLOPT_SSL_VERIFYHOST, false);
 				curl_multi_add_handle($mh,$ch[$key]);
 			}
-	
+
 			do {
 				curl_multi_exec($mh, $running);
 				curl_multi_select($mh);
 			} while ($running > 0);
-	
+
 			foreach(array_keys($ch) as $key){
 				$ret[$key] = curl_multi_getcontent($ch[$key]) ;
 				curl_multi_remove_handle($mh, $ch[$key]);
 			}
-	
+
 			curl_multi_close($mh);
 		}
-	
+
 		return $ret ;
 	}
 
