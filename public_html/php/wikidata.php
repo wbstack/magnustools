@@ -2,7 +2,7 @@
 
 $wikidata_api_url = 'https://www.wikidata.org/w/api.php' ;
 
-require_once ( '/data/project/magnustools/public_html/php/WikidataItem.php' ) ;
+require_once ( __DIR__ . '/../../classes/WikidataItem.php' ) ;
 
 class WikidataItemList {
 
@@ -56,7 +56,7 @@ class WikidataItemList {
 	protected function parseEntities ( $j ) {
 		foreach ( $j->entities AS $q => $v ) {
 			if ( isset ( $this->items[$q] ) ) continue ; // Paranoia
-			$this->items[$q] = new WDI ;
+			$this->items[$q] = new Toolforge\WikidataItem ;
 			$this->items[$q]->q = $q ;
 			$this->items[$q]->j = $v ;
 		}
