@@ -1334,7 +1334,7 @@ class MW_OAuth {
 			'filename' => $new_file_name ,
 			'file' => $local_file // '@' . 
 		] ;
-		$this->setToolTag($params,$summary);
+		$this->setToolTag($params,$comment);
 		if ( $ignorewarnings ) $params['ignorewarnings'] = 1 ;
 		
 		$res = $this->doApiQuery( $params , $ch , 'upload' );
