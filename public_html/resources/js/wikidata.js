@@ -12,14 +12,15 @@ function WikiDataItem ( init_wd , init_raw ) {
 	this.isItem = function () { return (this.raw||{ns:-1}).ns == 0 ; }
 	this.isProperty = function () { return (this.raw||{ns:-1}).ns == 120 ; }
 	this.getID = function () { return (this.raw||{}).id ; }
-	
+
 	this.getURL = function () {
 		if ( typeof(this.raw) == 'undefined' ) return '' ;
-		var ret = "https://www.wikidata.org/wiki/" ;
-		ret += this.raw.title ;
+		var ret = "https://www.wikidata.org/wiki/$1" ; // Default, fallback if no wd set
+		if ( typeof this.wd != 'undefined' ) ret = this.wd.page_path ;
+		ret = ret.replace ( /\$1/ , this.raw.title ) ;
 		return ret ;
 	}
-	
+
 	this.getPropertyList = function () {
 		var self = this ;
 		var ret = [] ;
@@ -33,7 +34,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 		var self = this ;
 		return self.raw.datatype ;
 	}
-	
+
 	this.getLink = function ( o ) {
 		var self = this ;
 		if ( undefined === o ) o = {} ;
@@ -52,7 +53,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 		h += "</a>" ;
 		return h ;
 	}
-	
+
 	this.getAliases = function ( include_labels ) {
 		var self = this ;
 		var ret = [] ;
@@ -96,7 +97,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 		if ( strings.length == 0 ) return '' ;
 		return strings[0] ;
 	}
-	
+
 	this.getMultimediaFilesForProperty = function ( p ) {
 		var self = this ;
 		var ret = [] ;
@@ -108,13 +109,13 @@ function WikiDataItem ( init_wd , init_raw ) {
 		} ) ;
 		return ret ;
 	}
-	
+
 	this.getClaimsForProperty = function ( p ) {
 		p = this.wd.convertToStringArray ( p , 'P' ) [0] ;
 		if ( undefined === this.raw || undefined === this.raw.claims ) return [] ;
 		return this.raw.claims[this.wd.getUnifiedID(p)]||[] ;
 	}
-	
+
 	this.hasClaims = function ( p ) {
 		var claims = this.getClaimsForProperty ( p ) ;
 		return claims.length > 0 ;
@@ -145,11 +146,11 @@ function WikiDataItem ( init_wd , init_raw ) {
 		} ) ;
 		return ret ;
 	}
-	
+
 	this.getSnakObject = function ( s ) {
 		var o = {} ;
 		if ( undefined === s ) return o ;
-		
+
 		if ( undefined !== s.datavalue ) {
 			if ( s.datavalue.type == 'wikibase-entityid' ) {
 				o.type = 'item' ;
@@ -210,9 +211,9 @@ function WikiDataItem ( init_wd , init_raw ) {
 				return false ;
 			} ) ;
 		} else {
-			if ( self.raw !== undefined && self.raw.descriptions !== undefined && 
-				self.raw.descriptions[language] !== undefined && self.raw.descriptions[language].value !== undefined ) 
-					desc = self.raw.descriptions[language].value ;
+			if ( self.raw !== undefined && self.raw.descriptions !== undefined &&
+				self.raw.descriptions[language] !== undefined && self.raw.descriptions[language].value !== undefined )
+				desc = self.raw.descriptions[language].value ;
 		}
 		return desc ;
 	}
@@ -229,7 +230,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 		} ) ;
 		return ret ;
 	}
-		
+
 	this.getLabel = function ( language ) {
 		var self = this ;
 		var label = self.getID() ; // Fallback
@@ -243,7 +244,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 		} else {
 			if ( self.raw !== undefined ) {
 				if ( self.raw.labels !== undefined ) {
-					if ( self.raw.labels[language] !== undefined && self.raw.labels[language].value !== undefined ) 
+					if ( self.raw.labels[language] !== undefined && self.raw.labels[language].value !== undefined )
 						label = self.raw.labels[language].value ;
 				} else if ( self.raw.lemmas !== undefined ) {
 					// lexeme lemmas are not expected to exist in the user's language, use the first lemma that exists
@@ -260,29 +261,29 @@ function WikiDataItem ( init_wd , init_raw ) {
 							break ;
 						}
 				} else if ( self.raw.glosses !== undefined ) {
-					if ( self.raw.glosses[language] !== undefined && self.raw.glosses[language].value !== undefined ) 
+					if ( self.raw.glosses[language] !== undefined && self.raw.glosses[language].value !== undefined )
 						label = self.raw.glosses[language].value ;
 				}
 			}
 		}
 		return label ;
 	}
-	
+
 	this.getWikiLinks = function () {
 		if ( typeof(this.raw) == 'undefined' ) return {} ;
 		return (this.raw.sitelinks||{}) ;
 	}
-	
+
 	this.getClaimRank = function ( claim ) {
 		if ( claim === undefined ) return undefined ;
 		return claim.rank || 'normal' ; // default
-/*		if ( claim.rank === undefined ) return undefined ;
-		if ( claim.rank == 'normal' ) return 0 ;
-		if ( claim.rank == 'deptecated' ) return -1 ;
-		if ( claim.rank == 'preferred' ) return 1 ;
-		return undefined ;*/
+		/*		if ( claim.rank === undefined ) return undefined ;
+                if ( claim.rank == 'normal' ) return 0 ;
+                if ( claim.rank == 'deptecated' ) return -1 ;
+                if ( claim.rank == 'preferred' ) return 1 ;
+                return undefined ;*/
 	}
-	
+
 	this.getClaimTargetItemID = function ( claim ) {
 		if ( claim === undefined ) return undefined ;
 		if ( claim.mainsnak === undefined ) return undefined ;
@@ -292,7 +293,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 		if ( claim.mainsnak.datavalue.value['id'] === undefined ) return undefined ;
 		return claim.mainsnak.datavalue.value['id'] ;
 	}
-	
+
 	this.getClaimTargetString = function ( claim ) {
 		if ( claim === undefined ) return undefined ;
 		if ( claim.mainsnak === undefined ) return undefined ;
@@ -301,7 +302,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 		if ( claim.mainsnak.datavalue.type != 'string' ) return undefined ;
 		return claim.mainsnak.datavalue.value ;
 	}
-	
+
 	this.getClaimDate = function ( claim ) {
 		if ( claim === undefined ) return undefined ;
 		if ( claim.mainsnak === undefined ) return undefined ;
@@ -310,7 +311,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 		if ( claim.mainsnak.datavalue.type != 'time' ) return undefined ;
 		return claim.mainsnak.datavalue.value ;
 	}
-	
+
 	this.hasClaimItemLink = function ( p , q ) {
 		var self = this ;
 		var ret = false ;
@@ -324,7 +325,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 		} ) ;
 		return ret ;
 	}
-	
+
 	this.followChain = function ( o ) {
 		var self = this ;
 		var id = self.getID() ;
@@ -342,7 +343,7 @@ function WikiDataItem ( init_wd , init_raw ) {
 		o.hadthat[id] = 1 ;
 		o.current.push ( id ) ;
 		if ( o.current.length > o.longest.length ) o.longest = $.extend(true, [], o.current);
-		
+
 		var tried_item = {} ;
 		$.each ( o.props , function ( dummy , p ) {
 			var items = self.getClaimItemsForProperty ( p ) ;
@@ -352,26 +353,27 @@ function WikiDataItem ( init_wd , init_raw ) {
 				tried_item[q] = true ;
 				self.wd.getItem(q).followChain(o) ;
 			} ) ;
-/*			var claims = self.getClaimsForProperty ( p ) ;
-			$.each ( claims , function ( dummy , c ) {
-				var q = self.getClaimTargetItemID ( c ) ;
-				if ( q === undefined ) return ;
-				var i = self.wd.getItem ( q ) ;
-				if ( i !== undefined ) i.followChain ( o ) ;
-			} ) ;*/
+			/*			var claims = self.getClaimsForProperty ( p ) ;
+                        $.each ( claims , function ( dummy , c ) {
+                            var q = self.getClaimTargetItemID ( c ) ;
+                            if ( q === undefined ) return ;
+                            var i = self.wd.getItem ( q ) ;
+                            if ( i !== undefined ) i.followChain ( o ) ;
+                        } ) ;*/
 		} ) ;
-		
+
 		delete o.hadthat[this.getID()] ;
 		o.current.pop() ;
 		if ( o.current.length == 0 ) return o.longest ;
 	}
-	
+
 }
 
 function WikiData () {
 
 	// Variables
 	this.api = 'https://www.wikidata.org/w/api.php?callback=?' ;
+	this.page_path = 'https://www.wikidata.org/wiki/$1' ;
 	this.sparql_url = 'https://query.wikidata.org/sparql' ;
 	this.max_get_entities = 50 ;
 	this.max_get_entities_smaller = 25 ;
@@ -380,15 +382,33 @@ function WikiData () {
 	this.items = {} ;
 	this.default_props = 'info|aliases|labels|descriptions|claims|sitelinks|datatype' ;
 	this.currently_loading = {} ;
-	
-	// Constructor
-//	this.clear() ;
 
 	// Methods
 	this.clear = function () {
 		this.items = {} ;
 	}
-	
+
+	// `api` is the MediaWiki API path only, eg "https://www.wikidata.org/w/api.php"
+	this.set_custom_api = function ( api , callback ) {
+		let self = this ;
+		api += "?callback=?"
+		if ( self.api == api ) { // No need for a query
+			if ( typeof callback!='undefined' ) callback();
+			return ;
+		}
+		self.api = api ;
+		$.getJSON ( self.api , {
+			action:'query',
+			meta:'siteinfo',
+			format:'json'
+		} ,function ( d ) {
+			if ( typeof d!='undefined' && typeof d.query!='undefined' && typeof d.query.general!='undefined' ) {
+				self.page_path = 'https:' + d.query.general.server + d.query.general.articlepath ;
+			}
+			if ( typeof callback!='undefined' ) callback();
+		} ) ;
+	}
+
 	this.countItemsLoaded = function () {
 		var self = this ;
 		var ret = 0 ;
@@ -401,7 +421,7 @@ function WikiData () {
 		if ( /^\d+$/.test(ret) && undefined !== type ) ret = type.toUpperCase() + ret ;
 		return ret ;
 	}
-	
+
 	this.getItem = function ( q ) {
 		return this.items[this.getUnifiedID(q)] ;
 	}
@@ -419,7 +439,7 @@ function WikiData () {
 		}
 		return ret ;
 	}
-	
+
 	this.getLinksForItems = function ( ql , o , fallback ) {
 		var self = this ;
 		if ( undefined === fallback ) fallback = '' ;
@@ -431,8 +451,8 @@ function WikiData () {
 		if ( a.length == 0 ) return fallback ;
 		return a.join ( '; ' ) ;
 	}
-	
-	
+
+
 	this.getItemBatch = function ( item_list , callback , props ) {
 		var self = this ;
 		if ( props === undefined ) props = self.default_props ;
@@ -455,7 +475,7 @@ function WikiData () {
 			ids[ids.length-1].push ( q ) ;
 			self.loading_count++ ;
 		} ) ;
-		
+
 		if ( ids[0].length == 0 ) { // My work here is done
 			callback ( ids ) ;
 			return ;
@@ -467,7 +487,7 @@ function WikiData () {
 			} , 200 ) ;
 			return ;
 		}
-		
+
 		if ( ids.length > 1 ) {
 			var last = ids.length-1 ;
 			while ( ids[last].length+last <= max_per_batch && ids[last].length+last <= ids[0].length ) {
@@ -509,29 +529,29 @@ function WikiData () {
 				} ) ;
 
 				if ( undefined !== self.loading_status_callback ) self.loading_status_callback ( self.loaded_count , self.loading_count ) ;
-				
+
 				running-- ;
 				if ( running == 0 ) callback ( ids ) ;
 			} ) .fail(function() {
 				if ( typeof self.getjson_error_handler != 'undefined' ) self.getjson_error_handler () ;
 			} ) ;
 		} ) ;
-		
+
 	}
 
 
 	/**
-	Loads a list of items, follows property list if given
-	- item_list : array of strings/integers with item (q/p) IDs
-	- params: Object
-	-- follow : array (property values to follow)
-	-- preload : array (property values to download items for, but not follow)
-	-- preload_all_for_root : download all linked items for properties in the root element
-	-- status : function ( params )
-	-- loaded : function ( q , params )
-	-- finished : function ( params )
-	- max_depth : integer (0=no follow;1=follow 1 depth etc.) or undefined for unlimited
-	*/
+	 Loads a list of items, follows property list if given
+	 - item_list : array of strings/integers with item (q/p) IDs
+	 - params: Object
+	 -- follow : array (property values to follow)
+	 -- preload : array (property values to download items for, but not follow)
+	 -- preload_all_for_root : download all linked items for properties in the root element
+	 -- status : function ( params )
+	 -- loaded : function ( q , params )
+	 -- finished : function ( params )
+	 - max_depth : integer (0=no follow;1=follow 1 depth etc.) or undefined for unlimited
+	 */
 	this.loadItems = function ( item_list , params , max_depth ) {
 		var self = this ;
 
@@ -539,7 +559,7 @@ function WikiData () {
 			if ( max_depth < 0 ) return ;
 			max_depth-- ;
 		}
-		
+
 		// Initialize parameters, and seeds on initial run
 		var first = false ;
 		var download_all_linked_items = false ;
@@ -557,7 +577,7 @@ function WikiData () {
 		} else {
 			ql = item_list ;
 		}
-		
+
 		// Run through list, and self-call where necessary
 		var started = false ;
 		while ( ql.length > 0 ) {
@@ -586,7 +606,7 @@ function WikiData () {
 					var q = self.getUnifiedID ( k ) ;
 					self.items[q] = new WikiDataItem ( self , data.entities[q] ) ;
 					if ( undefined !== params.loaded ) params.loaded ( q , params ) ;
-					
+
 					// Follow properties
 					var si = self.items[q] ;
 					var i = si.raw ;
@@ -604,7 +624,7 @@ function WikiData () {
 							nql.push ( q2 ) ;
 						} )
 					} ) ;
-					
+
 					// Add qualifiers
 					$.each ( (i.claims||{}) , function ( k2 , v2 ) {
 						$.each ( v2 , function ( k2a , v2a ) {
@@ -635,7 +655,7 @@ function WikiData () {
 							params.post_load_items.push ( q2 ) ;
 						} )
 					} ) ;
-					
+
 				} ) ;
 				if ( nql.length > 0 ) {
 					self.loadItems ( nql , params , max_depth ) ;
@@ -644,7 +664,7 @@ function WikiData () {
 				if ( undefined !== params.status ) params.status ( params ) ;
 
 				if ( params.running == 0 ) { // All loaded
-				
+
 					if ( params.post_load_items.length > 0 ) {
 						self.loadItems ( params.post_load_items , {
 							finished : function () {
@@ -657,23 +677,23 @@ function WikiData () {
 				}
 			} ) ;
 		}
-		
+
 		if ( first && !started ) {
 			if ( undefined !== params.finished ) params.finished ( params ) ;
 		}
 	}
-	
+
 	this.loadSPARQL = function ( query , callback , callback_fail ) {
 		var url = this.sparql_url+"?format=json&query=" + encodeURIComponent(query) ;
 		$.get ( url , function ( d ) {
 			callback ( d ) ;
 		} , 'json' ) . fail ( callback_fail  ) ;
 	}
-	
+
 	this.itemFromBinding = function ( x ) {
 		return x.value.replace ( /^.+\/([PQ])/ , '$1' ) ;
 	}
-	
+
 	this.loadSPARQLitems = function ( query , callback , callback_fail ) {
 		var self = this ;
 		if ( typeof callback_fail == 'undefined' ) callback_fail = function () {
@@ -697,7 +717,7 @@ function WikiData () {
 			callback ( tmp ) ;
 		} , callback_fail ) ;
 	}
-	
+
 }
 
 if ( typeof exports != 'undefined' ) exports.wd = new WikiData() ;

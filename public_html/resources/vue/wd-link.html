@@ -1,3 +1,4 @@
+<!--TODO this script is evil :(-->
 <script src="https://tools-static.wmflabs.org/magnustools/resources/js/wikidata.js"></script>
 
 <template id='wd-link-template'>
@@ -17,9 +18,10 @@
 'use strict';
 
 let wd_link_wd = new WikiData() ;
-let wd_link_base = 'https://www.wikidata.org/wiki/' ;
+//let wd_link_base = 'https://www.wikidata.org/wiki/' ;
+let wd_link_base = '/wiki/' ;
 let wd_ns_prefixes = {
-	'Q': '',
+	'Q': 'Item:',
 	'P': 'Property:',
 	'L': 'Lexeme:'
 };
