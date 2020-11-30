@@ -3,13 +3,13 @@
 	<div v-if='typeof i=="undefined"'><i>Can't find publication "{{item}}"</i></div>
 	<div v-else style='display:flex;flex-direction:column'>
 		<div style='font-weight:bold'>
-			<a class='scholia' target='_blank' :href='"https://tools.wmflabs.org/scholia/work/"+item'>{{i.getLabel()}}</a>
+			<a class='scholia' target='_blank' :href='"https://scholia.toolforge.org/work/"+item'>{{i.getLabel()}}</a>
 		</div>
 		<div>
 			<span v-for='(a,pos) in authors'>
 				<span v-if='pos>0'>, </span>
 				<span v-if='typeof a.q!="undefined"'>
-					<a :href='"https://tools.wmflabs.org/scholia/author/"+a.q' target='_blank' class='scholia'>
+					<a :href='"https://scholia.toolforge.org/author/"+a.q' target='_blank' class='scholia'>
 						<wd-link :item='a.q' as_text='1'></wd-link>
 					</a>
 				</span>
@@ -20,7 +20,7 @@
 		<div>
 			<span v-if='journal_q!=""'>
 				<i>
-					<a :href='"https://tools.wmflabs.org/scholia/venue/"+journal_q' class='scholia' target='_blank'>
+					<a :href='"https://scholia.toolforge.org/venue/"+journal_q' class='scholia' target='_blank'>
 						<wd-link :item='journal_q' as_text='1'></wd-link>
 					</a>
 				</i>
