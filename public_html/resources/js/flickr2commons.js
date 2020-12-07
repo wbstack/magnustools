@@ -1,6 +1,6 @@
 
 var flickr2commons = {
-	flinfo: 'https://fist.toolforge.org/fist/flinfo/flinfo.php' , // '/flickr2commons/flinfo_proxy.php'
+	flinfo: 'https://fist.toolforge.org/flinfo/flinfo.php' , // '/flickr2commons/flinfo_proxy.php'
 	oauth_uploader_base : 'https://tools.wmflabs.org/magnustools/oauth_uploader.php' ,
 	oauth_uploader_api : 'https://tools.wmflabs.org/magnustools/oauth_uploader.php?botmode=1&callback=?' ,
 	flickr_api_url : 'https://secure.flickr.com/services/rest' ,
