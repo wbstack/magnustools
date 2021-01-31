@@ -10,8 +10,11 @@ ini_set('memory_limit','500M');
 set_time_limit ( 60 * 10 ) ; // Seconds
 */
 
-require_once ( '/data/project/magnustools/public_html/php/ToolforgeCommon.php' ) ;
-require_once ( '/data/project/magnustools/public_html/php/oauth.php' ) ;
+//require_once ( '/data/project/magnustools/public_html/php/ToolforgeCommon.php' ) ;
+//require_once ( '/data/project/magnustools/public_html/php/oauth.php' ) ;
+
+require_once ( __DIR__ . '/ToolforgeCommon.php' ) ;
+require_once ( __DIR__ . '/oauth.php' ) ;
 
 class Widar {
 	public $tfc ;
