@@ -199,6 +199,7 @@ class WbstackMagnusOauth {
             $wbPageBase = 'https://' . $wbRoot . '/wiki/';
             $toolbase = 'https://' . $toolRoot;
         }
+        $entityBase = 'http://' . $wbRoot . '/entity/';
 
         $site = [
             'oauth' => [
@@ -212,6 +213,7 @@ class WbstackMagnusOauth {
             'server' => $wbPublicHostAndPort,
             'api' => $wbApi,
             'pageBase' => $wbPageBase,
+            'entityBase' => $entityBase,
             'toolBase' => $toolbase,
             'types' => [
                 "P" => [ "type" => 'property', 'ns' => 122, 'ns_prefix' => 'Property:' ],
