@@ -24,7 +24,28 @@ class Widar {
 	public function __construct ( /*string*/ $toolname = '' ) {
 		$this->tfc = new ToolforgeCommon ( $toolname ) ;
 		try {
-			$this->oa = new MW_OAuth ( $this->toolname() , 'wikidata' , 'wikidata' ) ;
+			// $this->oa = new MW_OAuth ( $this->toolname() , 'wikidata' , 'wikidata' ) ;
+
+			// WBStack customization START
+			WbstackMagnusOauth::setOauthDetails(
+				'Widar',
+				'1.0.3',
+				[
+					'highvolume',
+					'editpage',
+					'createeditmovepage',
+					'rollback',
+					'delete',
+				],
+				'/tools/widar/'
+			);
+			$this->oa = new MW_OAuth ( WbstackMagnusOauth::getOauthParams(
+				'widar',
+				'/tools/widar'
+			) ) ;
+			// WBStack customization END
+
+
 		} catch ( Exception $e ) { # Error
 			// Ignore error
 		}
@@ -315,7 +336,10 @@ class Widar {
 		</div>
 		<div><h3>Tools using WiDaR</h3>
 		<ul>
-		<li><a href='https://petscan.wmflabs.org'>PetScan</a></li>
+		<li><a href='/tools/cradle'>Cradle</a></li>
+		<li><a href='/tools/quickstatements'>QuickStatements</a></li>
+		</ul>
+		<!-- <li><a href='https://petscan.wmflabs.org'>PetScan</a></li>
 		<li><a href='/wikidata-todo/autolist.html'>AutoList</a></li>
 		<li><a href='/reasonator'>Reasonator</a></li>
 		<li><a href='/wikidata-todo/creator.html'>Wikidata item creator</a></li>
@@ -327,7 +351,7 @@ class Widar {
 		<li><a href='/topicmatcher/'>TopicMatcher</a></li>
 		</ul>
 		<div style='margin-top:20px;border:1px solid #ddd;padding:5px;'>BREAKING CHANGE: JSONP functionality was deactivated due to security concerns</div>
-		</div>
+		</div> -->
 		<?PHP
 		print $this->tfc->getCommonFooter() ;
 	}
