@@ -6,7 +6,8 @@ ini_set('display_errors', 'On');
 ini_set('memory_limit','1500M');
 set_time_limit ( 60 * 10 ) ; // Seconds
 
-require_once ( '/data/project/magnustools/public_html/php/ToolforgeCommon.php' ) ;
+//require_once ( '/data/project/magnustools/public_html/php/ToolforgeCommon.php' ) ;
+require_once ( __DIR__ . '/php/ToolforgeCommon.php' ) ;
 $tfc = new ToolforgeCommon() ;
 
 function getPagesInCategoryRandom ( $db , $category , $depth = 0 , $namespace = 0 , $no_redirects = false ) {

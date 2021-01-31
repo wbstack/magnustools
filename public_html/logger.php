@@ -22,7 +22,8 @@ set_time_limit ( 60 * 2 ) ; // Seconds
 error_reporting(E_ERROR|E_CORE_ERROR|E_COMPILE_ERROR); // E_ALL|
 ini_set('display_errors', 'On');
 
-require_once ( '/data/project/magnustools/public_html/php/ToolforgeCommon.php' ) ;
+//require_once ( '/data/project/magnustools/public_html/php/ToolforgeCommon.php' ) ;
+require_once ( __DIR__ . '/php/ToolforgeCommon.php' ) ;
 
 function micDrop ( $error = '' ) {
 	global $tfc , $callback , $out ;
