@@ -3,8 +3,11 @@
 <div v-if='is_logged_in' style='line-height:1.4em'><span tt="welcome"></span><br/><a class='wikidata' target='_blank' :href='"/wiki/User:"+encodeURIComponent(userinfo.name.replace(/ /g,"_"))'>{{userinfo.name}}</a></div>
 <div v-else>
 	<!--<a href='https://tools.wmflabs.org/widar/index.php?action=authorize' target='_blank'>-->
-	<i tt="log_into_widar"></i>
+	<!--<i tt="log_into_widar"></i>-->
 	<!--</a>-->
+	<a href='/tools/widar/index.php?action=authorize' target='_blank'>
+		Log in to save!
+	</a>
 </div>
 </div>
 </template>
