@@ -2,7 +2,7 @@
 
 define('CLI', PHP_SAPI === 'cli');
 ini_set('user_agent','Magnus labs tools'); # Fake user agent
-if ( !isset($noheaderwhatsoever) ) header("Connection: close");
+#if ( !isset($noheaderwhatsoever) ) header("Connection: close"); # Obsolete?
 $tools_webproxy = 'tools-webproxy' ;
 $tusc_url = "http://$tools_webproxy/tusc/tusc.php" ; // http://tools-webserver-01/ // tools.wmflabs.org
 $use_db_cache = false ;

@@ -1,10 +1,12 @@
 <?PHP
 
+namespace Toolforge ;
+
 $wikidata_api_url = 'https://www.wikidata.org/w/api.php' ;
 
 require_once ( __DIR__ . '/../../classes/WikidataItem.php' ) ;
 
-class WikidataItemList {
+class Wikidata {
 
 	public $testing = false ;
 	protected $items = [] ;
@@ -171,7 +173,7 @@ class WikidataItemList {
 		foreach ( $batches AS $batch_urls ) {
 	
 			$mh = curl_multi_init();
-			curl_multi_setopt  ( $mh , CURLMOPT_PIPELINING , CURLPIPE_MULTIPLEX ) ;
+			curl_multi_setopt  ( $mh , CURLMOPT_PIPELINING , 1 ) ;
 			$ch = [] ;
 			foreach ( $batch_urls AS $key => $value ) {
 				$ch[$key] = curl_init($value);

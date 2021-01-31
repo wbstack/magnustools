@@ -1,5 +1,7 @@
 <?PHP
 
+namespace Toolforge ;
+
 # declare(strict_types=1); # PHP7
 
 /*
@@ -14,11 +16,10 @@ set_time_limit ( 60 * 10 ) ; // Seconds
 //if ( !isset($noheaderwhatsoever) ) header("Connection: close");
 
 /*
-require_once ( '/data/project/magnustools/public_html/php/ToolforgeCommon.php' ) ;
-$tfc = new ToolforgeCommon('mytoolname') ;
+$tfc = new Common('mytoolname') ;
 */
 
-final class ToolforgeCommon {
+final class Common {
 
 	public /*string*/ $toolname ;
 	public $prefilled_requests = [] ;

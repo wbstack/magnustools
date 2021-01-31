@@ -382,7 +382,6 @@ function WikiData () {
 	this.items = {} ;
 	this.default_props = 'info|aliases|labels|descriptions|claims|sitelinks|datatype' ;
 	this.currently_loading = {} ;
-
 	// Methods
 	this.clear = function () {
 		this.items = {} ;

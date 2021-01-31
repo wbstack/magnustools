@@ -2,7 +2,7 @@
 
 include_once ( 'php/common.php' ) ;
 
-$month_abbrev = array (
+$month_abbrev = [
 	'Jan.' => 'January' ,
 	'Feb.' => 'February' ,
 	'Mar.' => 'March' ,
@@ -15,15 +15,15 @@ $month_abbrev = array (
 	'Oct.' => 'October' ,
 	'Nov.' => 'November' ,
 	'Dec.' => 'December'
-) ;
+] ;
 
-$infoboxes = array () ;
-$infoboxes["person"] = array ( "name", "image", "image_size", "caption", "birth_name", "birth_date", "birth_place", "death_date", "death_place", "death_cause", "residence", "other_names", "known_for", "education", "employer", "occupation", "title", "salary", "networth", "height", "weight", "term", "predecessor", "successor", "party", "boards", "religion", "spouse", "partner", "children", "parents", "relatives", "signature", "website", "footnotes" ) ;
+$infoboxes = [] ;
+$infoboxes["person"] = array ( "name", "image", "image_size", "caption", "birth_name", "birth_date", "birth_place", "death_date", "death_place", "death_cause", "other_names", "known_for", "education", "employer", "occupation", "title", "salary", "networth", "height", "weight", "term", "predecessor", "successor", "party", "boards", "religion", "spouse", "partner", "children", "parents", "relatives", "signature", "website", "footnotes" ) ;
 $infoboxes["writer"] = array ( "name", "image", "imagesize", "caption", "pseudonym", "birth_date", "birth_place", "death_date", "death_place", "occupation", "nationality", "period", "genre", "subject", "movement", "debut_works", "influences", "influenced", "signature", "website", "footnotes" ) ;
 
 
-$wd = array() ;
-$wd_api = array() ;
+$wd = [] ;
+$wd_api = [] ;
 
 function get_form_row ( $title , $note = '' ) {
 	global $wd ;
@@ -43,13 +43,13 @@ function getWdApi ( $url ) {
 	return $wd_api[$url] ;
 }
 
-function setLabel ( $field , $prop , $lang , $j , $all ) {
+function setLabel ( $field , $prop , $lang , $j , $all = false ) {
 	global $wd ;
 	if ( isset ( $wd[$field] ) ) return ;
 	if ( !isset ( $j->claims ) ) return ;
 	if ( !isset ( $j->claims->$prop ) ) return ;
 	$d = $j->claims->$prop ;
-	$labels = array() ;
+	$labels = [] ;
 	foreach ( $d AS $v ) {
 		$d2 = $v->mainsnak->datavalue->value ;
 		$nid = 'numeric-id' ;
@@ -111,7 +111,7 @@ function seed_from_wd () {
 	setFromDate ( 'dayofbirth' , 'yearofbirth' , 'P569' , $j ) ;
 	setFromDate ( 'dayofdeath' , 'yearofdeath' , 'P570' , $j ) ;
 	
-	$ac = array() ;
+	$ac = [] ;
 	addAC ( 'VIAF' , 'P214' , $j , $ac ) ;
 	addAC ( 'LCCN' , 'P244' , $j , $ac ) ;
 	addAC ( 'ISNI' , 'P213' , $j , $ac ) ;
@@ -130,12 +130,12 @@ function seed_from_wd () {
 		$wd['authoritycontrol'] = implode ( '|' , $ac ) ;
 	}
 	
-	$dummy = array() ;
+	$dummy = [] ;
 	$i = addAC ( '' , 'P18' , $j , $dummy ) ;
 	if ( isset ( $i ) ) $wd['image'] = $i ;
 	
 	if ( isset ( $j->claims ) ) {
-		$urls = array() ;
+		$urls = [] ;
 		foreach ( $j->claims AS $p => $cl ) {
 			foreach ( $cl AS $c ) {
 				if ( !isset($c->references) ) continue ;
@@ -167,7 +167,7 @@ function seed_from_wd () {
 			}
 		}
 		if ( !isset($wd['alternativename(s)']) and isset ( $j->aliases->$lang ) ) {
-			$l = array() ;
+			$l = [] ;
 			foreach ( $j->aliases->$lang AS $a ) $l[] = $a->value ;
 			$wd['alternativename(s)'] = implode ( "; " , $l ) ;
 		}
@@ -302,7 +302,7 @@ function get_text () {
 	if ( $deathplace != '' ) $ret .= "{$lastname} died in {$deathplace}.\n\n" ;
 	
 	# External links
-	$exlinks = array() ;
+	$exlinks = [] ;
 	foreach ( $externallinks AS $ex ) {
 		$ex = trim ( $ex ) ;
 		if ( $ex == '' ) continue ;
@@ -354,8 +354,8 @@ function get_text () {
 	if ( $create_infobox ) {
     $ik = trim ( strtolower ( $occupation ) ) ;
     if ( !isset ( $infoboxes[$ik] ) ) $ik = "person" ;
-    $infobox = "{{Infobox " . ucfirst ( $ik ) . "\n" ;
-    $ib = array () ;
+    $infobox = "{{Infobox " . $ik . "\n" ;
+    $ib = [] ;
     $il = 0 ;
     
     foreach ( $infoboxes[$ik] AS $k ) {

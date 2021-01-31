@@ -1,7 +1,7 @@
-function WiDaR ( callback ) {
+function WiDaR ( callback , api = '/widar/index.php' ) {
 	
 	this.is_logged_in = false ;
-	this.api = '/widar/index.php' ;
+	this.api = api ;
 	this.userinfo = {} ;
 	this.tool_hashtag = '' ;
 	
@@ -28,7 +28,7 @@ function WiDaR ( callback ) {
 	}
 	
 	this.getLoginLink = function ( text ) {
-		var h = "<a target='_blank' href='/widar/index.php?action=authorize'>" + text + "</a>" ;
+		var h = "<a target='_blank' href='" + this.api + "?action=authorize'>" + text + "</a>" ;
 		return h ;
 	}
 	

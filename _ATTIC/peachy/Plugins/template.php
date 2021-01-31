@@ -65,7 +65,7 @@ class Template {
      */
     public function __construct($text,$name) {
         if (false === ($from = stripos($text,'{{' . $name))) {
-            unset ($this);
+            unset ($this->name);
             return;
         }
         
@@ -74,7 +74,7 @@ class Template {
         if (isset($match[0])) {
             $from = stripos($text,$match[0]);
         } else {
-            unset ($this);
+            unset ($this->name);
             return;
         }
         
@@ -316,7 +316,7 @@ class Template {
     public static function extract ($text, $name) {
         $template = new Template ($text,$name);
         
-        if (!$template->name) {
+        if (!isset($template->name) or !$template->name) {
             unset($template);
             return false;
         } else {
