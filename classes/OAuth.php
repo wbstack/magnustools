@@ -2,6 +2,8 @@
 
 namespace Toolforge ;
 
+require_once( __DIR__ . '/../public_html/php/WbstackMagnusOauth.php' );
+
 class OAuth {
 
 	var $use_tag_parameter = true ;
@@ -96,7 +98,8 @@ class OAuth {
 	}
 	
 	function loadIniFile () {
-		$this->params = parse_ini_file ( $this->ini_file ) ;
+		//$this->params = parse_ini_file ( $this->ini_file ) ;
+		$this->params = \WbstackMagnusOauth::parse_ini_file( $this->ini_file );
 		$this->gUserAgent = $this->params['agent'];
 		if ( !isset($this->gUserAgent) or $this->gUserAgent == '' ) throw new \Exception ( "Cannot get user agent from ini file '{$this->ini_file}'" ) ;
 		$this->gConsumerKey = $this->params['consumerKey'];
