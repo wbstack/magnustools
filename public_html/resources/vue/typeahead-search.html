@@ -69,7 +69,7 @@ div.typeahead_search_results_query_overlay {
 
 Vue.component ( 'typeahead-search' , {
 	template : '#typeahead-search-template' ,
-	props : [ 'type' , 'fulltext' , 'initial' , 'language' , 'limit' , 'noinitialsearch' , 'initial_q' ] ,
+	props : [ 'type' , 'fulltext' , 'initial' , 'language' , 'limit' , 'noinitialsearch' , 'initial_q' , 'nofocus' ] ,
 	data : function () { return { query:'' , last_query:'' , results:[] , q:'' , is_search_running:false , is_search_done:false , timeout:'' , key_select_position:-1 , last_emit:'' } } ,
 	created : function () {
 		var me = this ;
@@ -88,7 +88,7 @@ Vue.component ( 'typeahead-search' , {
 		}
 	} ,
 	mounted : function () {
-		this.$refs.search.focus();
+		if ( typeof this.nofocus == 'undefined' ) this.$refs.search.focus();
 		if (typeof tt!='undefined') tt.updateInterface(this.$el) ;
 	} ,
     updated : function () { if (typeof tt!='undefined') tt.updateInterface(this.$el) } ,

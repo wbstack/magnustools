@@ -54,7 +54,8 @@ class Widar {
 					explode(',',$this->tfc->getRequest('ids','')),
 					$this->tfc->getRequest('prop',''),
 					$this->tfc->getRequest('target',''),
-					$this->tfc->getRequest('claim','')
+					$this->tfc->getRequest('claim',''),
+					$this->tfc->getRequest('summary','')
 				) ;
 				break ;
 			case 'merge_items':
@@ -390,7 +391,7 @@ class Widar {
 		if ( !$this->oa->mergeItems ( $from , $to ) ) throw new Exception ( "Problem merging item '{$from}' into '{$to}'" ) ;
 	}
 
-	public function set_claims ( $ids , $prop , $target , $qualifier_claim ) {
+	public function set_claims ( $ids , $prop , $target , $qualifier_claim , $summary = '' ) {
 		$this->ensureAuth() ;
 		if ( count($ids) == 0 or $prop == '' or $target == '' ) throw new Exception ( "set_claim parameters incomplete" ) ;
 		foreach ( $ids AS $id ) {
@@ -398,7 +399,7 @@ class Widar {
 			if ( $id == '' && $qualifier_claim == '' ) continue ;
 			$claim = [ "prop" => $prop , "target" => $target , "type" => "item" ] ;
 			$this->set_q_or_claim ( $claim , $id , $qualifier_claim ) ;
-			if ( !$this->oa->setClaim ( $claim ) ) throw new Exception ( "set_claims failed: {$id}/{$prop}/{$target}/{$qualifier_claim}" ) ;
+			if ( !$this->oa->setClaim ( $claim , $summary ) ) throw new Exception ( "set_claims failed: {$id}/{$prop}/{$target}/{$qualifier_claim}" ) ;
 		}
 	}
 
