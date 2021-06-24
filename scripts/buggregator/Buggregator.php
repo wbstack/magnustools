@@ -453,6 +453,7 @@ class Buggregator {
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 			$json = curl_exec($ch);
 			$json = json_decode ( $json ) ;
+			if ( !isset($json->values) ) continue ;
 			foreach ( $json->values AS $git_issue ) {
 				$issue = BitbucketIssue::new_from_json ( $o , $git_issue ) ;
 				$issue->get_or_create_issue_id ( $this ) ;
@@ -461,10 +462,10 @@ class Buggregator {
 	}
 	
 	public function update () {
-		#$this->update_from_wikipages() ;
-		#$this->update_from_github() ;
+		$this->update_from_wikipages() ;
+		$this->update_from_github() ;
 		$this->update_from_bitbucket() ;
-		#$this->maintenance() ;
+		$this->maintenance() ;
 	}
 
 
