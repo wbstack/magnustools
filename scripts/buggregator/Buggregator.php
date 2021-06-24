@@ -129,7 +129,57 @@ class Issue {
 	}
 }
 
-class GitIssue extends issue {
+class WikidataIssue extends Issue {
+	protected $tmp_authors = [] ;
+	protected $tmp_urls = [] ;
+
+	public static function new_from_topic ( $topic ) {
+		$ret = new self ;
+		foreach ( $topic AS $k => $v ) {
+			$ret->$k = $v ;
+		}
+		return $ret ;
+	}
+
+	protected function extract_times () { return [] ; }
+	protected function construct_url ( $buggregator ) {}
+	public function determine_tool ( $buggregator ) {}
+
+	protected function get_associated_urls ( $buggregator ) {
+		return $this->tmp_urls ;
+	}
+
+	protected function get_associated_users ( $buggregator ) {
+		$user_id2role = [] ;
+		foreach ( $this->tmp_authors AS $username ) {
+			$user = new User ( $username , 'WIKI' ) ;
+			$user_id = $user->get_or_create_user_id ( $buggregator ) ;
+			$user_id2role[$user_id] = 'UNKNOWN' ;
+		}
+		return $user_id2role ;
+	}
+
+	public function get_or_create_issue_id ( $buggregator ) {
+		if ( isset($this->issue_id) ) return $this->issue_id ; # Already has an issue ID
+
+		# Paranoia
+		if ( !isset($this->url) ) throw new Exception("{__METHOD__}: No url set");
+
+		# Check if exists
+		$url = $buggregator->escape ( $this->url ) ;
+		$sql = "SELECT * FROM `issue` WHERE `site`='{$this->site}' AND `url`='{$url}'" ;
+		$result = $buggregator->getSQL ( $sql ) ;
+		if($o = $result->fetch_object()) {
+			$this->issue_id = $o->id ;
+			return $this->issue_id ;
+		}
+
+		# Create new issue
+		return $this->create_as_new_issue($buggregator) ;
+	}
+}
+
+class GitIssue extends Issue {
 	protected $git_id ;
 	protected $git_repo_id ;
 	protected $tmp_user_names = [] ;
@@ -210,7 +260,7 @@ class BitbucketIssue extends GitIssue {
 	}
 }
 
-class WikiIssue extends issue {
+class WikiIssue extends Issue {
 	protected $wikitext ;
 	protected $wiki_page_id ;
 	const DE_MONTHS = [ 'Mär' => 'Mar','Mai' => 'May','Okt' => 'Oct','Dez' => 'Dec'] ;
@@ -464,9 +514,14 @@ class Buggregator {
 	protected function update_from_wikidata() {
 		$vtl = 'view-topiclist' ;
 		$top = 'topic-of-post' ;
-		$limit = 10 ; # TODO 100
+		$limit = 100 ;
 		$url = "https://www.wikidata.org/w/api.php?action=flow&submodule=view-topiclist&page=User%20Talk:Magnus%20Manske&vtllimit={$limit}&format=json" ;
-		$json = json_decode ( file_get_contents ( $url ) ) ;
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		$json = curl_exec($ch);
+		$json = json_decode ( $json ) ;
+		if ( !isset($json) or !isset($json->flow) ) throw new Exception("{__METHOD__} failed to get {$url}") ;
 		$json = $json->flow->$vtl->result->topiclist ;
 		$topics = [] ;
 		foreach ( $json->revisions AS $rev ) {
@@ -509,15 +564,34 @@ class Buggregator {
 			$topics[$topic_id]['tmp_urls'] = array_unique ( $topic['tmp_urls'] ) ;
 			$topics[$topic_id]['description'] = trim($topic['description']) ;
 		}
-		print_r ( $topics ) ;
+		foreach ( $topics AS $topic ) {
+			$issue = WikidataIssue::new_from_topic($topic) ;
+			$issue->get_or_create_issue_id($this);
+		}
 	}
 	
 	public function update () {
-		$this->update_from_wikidata() ;
-		#$this->update_from_wikipages() ;
-		#$this->update_from_github() ;
-		#$this->update_from_bitbucket() ;
-		#$this->maintenance() ;
+		try {
+			$this->update_from_wikipages() ;
+		} catch (Exception $e) {
+			print $e->getMessage() . "\n" ;
+		}
+		try {
+			$this->update_from_github() ;
+		} catch (Exception $e) {
+			print $e->getMessage() . "\n" ;
+		}
+		try {
+			$this->update_from_bitbucket() ;
+		} catch (Exception $e) {
+			print $e->getMessage() . "\n" ;
+		}
+		try {
+			$this->update_from_wikidata() ;
+		} catch (Exception $e) {
+			print $e->getMessage() . "\n" ;
+		}
+		$this->maintenance() ;
 	}
 
 
