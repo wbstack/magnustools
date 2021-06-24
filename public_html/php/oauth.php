@@ -149,7 +149,11 @@ class MW_OAuth {
 		curl_setopt( $ch, CURLOPT_URL, $url );
 		//curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
 		curl_setopt( $ch, CURLOPT_USERAGENT, $this->gUserAgent );
-		curl_setopt( $ch, CURLOPT_HEADER, 0 );
+		if($this->publicMwOAuthUrl === 'localhost:8001/w/index.php?title=Special:OAuth') {
+			curl_setopt( $ch, CURLOPT_HTTPHEADER, [
+				'HOST: localhost'
+			] );
+		}
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
 		$data = curl_exec( $ch );
 
@@ -269,7 +273,11 @@ class MW_OAuth {
 		curl_setopt( $ch, CURLOPT_URL, $url );
 		//curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
 		curl_setopt( $ch, CURLOPT_USERAGENT, $this->gUserAgent );
-		curl_setopt( $ch, CURLOPT_HEADER, 0 );
+		if($this->publicMwOAuthUrl === 'localhost:8001/w/index.php?title=Special:OAuth') {
+			curl_setopt( $ch, CURLOPT_HTTPHEADER, [
+				'HOST: localhost'
+			] );
+		}
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
 		$data = curl_exec( $ch );
 		if ( !$data ) {
@@ -345,7 +353,11 @@ class MW_OAuth {
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, [ $header ] );
 		//curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
 		curl_setopt( $ch, CURLOPT_USERAGENT, $this->gUserAgent );
-		curl_setopt( $ch, CURLOPT_HEADER, 0 );
+		if($this->publicMwOAuthUrl === 'localhost:8001/w/index.php?title=Special:OAuth') {
+			curl_setopt( $ch, CURLOPT_HTTPHEADER, [
+				$header, 'HOST: localhost'
+			] );
+		}
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
 		$data = curl_exec( $ch );
 		if ( !$data ) {
@@ -485,7 +497,11 @@ class MW_OAuth {
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, [ $header ] );
 		//curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
 		curl_setopt( $ch, CURLOPT_USERAGENT, $this->gUserAgent );
-		curl_setopt( $ch, CURLOPT_HEADER, 0 );
+		if($this->publicMwOAuthUrl === 'localhost:8001/w/index.php?title=Special:OAuth') {
+			curl_setopt( $ch, CURLOPT_HTTPHEADER, [
+				'HOST: localhost'
+			] );
+		}
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
 
 		$data = curl_exec( $ch );

@@ -186,7 +186,17 @@ class WbstackMagnusOauth {
             $wbPageBase = $wbRoot . '/wiki/';
             $toolbase = $toolRoot;
         } else if ( $domain === 'localhost' ) {
-            die('Should be accessed with a subdomain of localhost..');
+            //die('Should be accessed with a subdomain of localhost..');
+            $wbRoot = $domain . ":8001";
+            $toolRoot = $domain . ":8086";
+
+            // Directly for config
+            $publicMwOAuthUrl = $wbRoot . '/w/index.php?title=Special:OAuth';
+            $mwOAuthUrl = /*$wbRoot . */'mediawiki.svc/w/index.php?title=Special:OAuth';
+            $wbPublicHostAndPort = $wbRoot;
+            $wbApi = $wbRoot . '/w/api.php';
+            $wbPageBase = $wbRoot . '/wiki/';
+            $toolbase = $toolRoot;
         } else {
             $wbRoot = $domain;
             $toolRoot = $domain . $toolUrlTail;
