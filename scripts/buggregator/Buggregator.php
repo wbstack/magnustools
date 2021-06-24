@@ -44,6 +44,7 @@ class Issue {
 	}
 
 	protected function extract_times () {
+		# NEEDS TO RETURN AN ARRAY!
 		throw new Exception("{__METHOD__} should never be called directly!") ;
 	}
 
@@ -56,7 +57,11 @@ class Issue {
 	}
 
 	protected function get_associated_urls ( $buggregator ) {
-		throw new Exception("{__METHOD__} should never be called directly!") ;
+		# DEFAULT: Scrape description for URLs, change as required!
+		if ( preg_match_all('#\bhttps?://[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/))#', $this->description, $m) ) {
+			return $m[0] ;
+		}
+		return [] ;
 	}
 
 	protected function get_associated_users ( $buggregator ) {
@@ -124,6 +129,69 @@ class Issue {
 	}
 }
 
+class GitIssue extends issue {
+	protected $git_id ;
+	protected $git_repo_id ;
+	protected $tmp_user_names = [] ;
+
+	protected function extract_times () { return [] ; }
+	protected function construct_url ( $buggregator ) {}
+	public function determine_tool ( $buggregator ) {}
+
+	protected function get_associated_users ( $buggregator ) {
+		$user_id2role = [] ;
+		foreach ( $this->tmp_user_names AS $username ) {
+			$user = new User ( $username , $this->site ) ;
+			$user_id = $user->get_or_create_user_id ( $buggregator ) ;
+			if ( count($user_id2role) == 0 ) $user_id2role[$user_id] = 'CREATOR' ;
+			else if ( !isset($user_id2role[$user_id]) ) $user_id2role[$user_id] = 'UNKNOWN' ;
+		}
+		return $user_id2role ;
+	}
+
+	public function get_or_create_issue_id ( $buggregator ) {
+		if ( isset($this->issue_id) ) return $this->issue_id ; # Already has an issue ID
+
+		# Paranoia
+		if ( !isset($this->git_id) ) throw new Exception("{__METHOD__}: No git_id set");
+		if ( !isset($this->git_repo_id) ) throw new Exception("{__METHOD__}: No git_repo_id set");
+
+		# Check if exists
+		$sql = "SELECT * FROM vw_git_issue WHERE site='{$this->site}' AND git_id={$this->git_id} AND git_repo_id={$this->git_repo_id}" ;
+		$result = $buggregator->getSQL ( $sql ) ;
+		if($o = $result->fetch_object()) {
+			$this->issue_id = $o->id ;
+			return $this->issue_id ;
+		}
+
+		# Create new issue
+		$this->create_as_new_issue($buggregator) ;
+		
+		# Create new wiki issue
+		$sql = "INSERT IGNORE INTO `git_issue` (`issue_id`,`git_id`,`git_repo_id`) VALUES ({$this->issue_id},{$this->git_id},{$this->git_repo_id})" ;
+		$buggregator->getSQL ( $sql ) ;
+		return $this->issue_id ;
+	}
+}
+
+class GithubIssue extends GitIssue {
+	public static function new_from_json ( $git_repo , $j ) {
+		$ret = new self ;
+		$ret->label = $j->title ;
+		$ret->url = $j->html_url ;
+		$ret->status = strtoupper($j->state) ;
+		$ret->date_created = Buggregator::format_time(strtotime($j->created_at)) ;
+		$ret->date_last = Buggregator::format_time(strtotime($j->updated_at)) ;
+		$ret->description = $j->body ;
+		$ret->tool = $git_repo->tool_id ;
+		$ret->site = 'GITHUB' ;
+		$ret->git_repo_id = $git_repo->id * 1 ;
+		$ret->git_id = $j->number * 1 ;
+		$ret->tmp_user_names = [ $j->user->login ] ;
+		return $ret ;
+	}
+}
+
 class WikiIssue extends issue {
 	protected $wikitext ;
 	protected $wiki_page_id ;
@@ -170,6 +238,7 @@ class WikiIssue extends issue {
 		$wikitext = $buggregator->escape ( $this->wikitext ) ;
 		$sql = "INSERT IGNORE INTO `wiki_issue` (`wiki_page_id`,`issue_id`,`wikitext`) VALUES ({$this->wiki_page_id},{$this->issue_id},'{$wikitext}')" ;
 		$buggregator->getSQL ( $sql ) ;
+		return $this->issue_id ;
 	}
 
 	protected function construct_url ( $buggregator ) {
@@ -303,7 +372,7 @@ class Buggregator {
 		return date('Y-m-d H:i:s',$time);
 	}
 
-	public function update_from_wikipages() {
+	protected function update_from_wikipages() {
 		$sql = "SELECT * FROM `wiki_page`" ;
 		$result = $this->getSQL ( $sql ) ;
 		while($o = $result->fetch_object()){
@@ -340,6 +409,28 @@ class Buggregator {
 		}
 		return $this->toolname2id ;
 	}
+
+	protected function update_from_github () {
+		$sql = "SELECT * FROM `git_repo` WHERE `repo_type`='GITHUB'" ;
+		$result = $this->getSQL ( $sql ) ;
+		while($o = $result->fetch_object()){
+			$opts = [ "http" => ["method" => "GET","header" => "Accept: application/vnd.github.v3+json\r\n" ]];
+			$context = stream_context_create($opts);
+			$json = file_get_contents($o->api_issues_url, false, $context);
+			$json = json_decode ( $json ) ;
+			foreach ( $json AS $git_issue ) {
+				$issue = GithubIssue::new_from_json ( $o , $git_issue ) ;
+				$issue->get_or_create_issue_id ( $this ) ;
+			}
+		}
+	}
+	
+	public function update () {
+		#$this->update_from_wikipages() ;
+		$this->update_from_github() ;
+		#$this->maintenance() ;
+	}
+
 
 	protected function maintenance_wiki_dates () {
 		$sql = "SELECT * FROM `vw_wiki_issue` WHERE `date_created`='".Issue::ZERO_TIME."' AND `status`='OPEN'" ;
@@ -385,7 +476,7 @@ class Buggregator {
 			$issue->update_in_database ( $this , ['status'] ) ;
 		}
 	}
-	
+
 	public function maintenance () {
 		$this->maintenance_wiki_dates() ;
 		$this->maintenance_wiki_tool_guess() ;
