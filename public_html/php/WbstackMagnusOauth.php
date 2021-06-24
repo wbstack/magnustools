@@ -102,6 +102,7 @@ class WbstackMagnusOauth {
             'callbackUrlTail' => self::$callbackUrlTail,
         ];
 
+
         $client = curl_init('http://' . getenv( 'PLATFORM_MW_BACKEND_HOST' ) . '/w/api.php?action=wbstackPlatformOauthGet&format=json');
         curl_setopt($client, CURLOPT_HTTPHEADER, $headers);
         curl_setopt( $client, CURLOPT_USERAGENT, "WBStack - " .  self::$consumerName . " - WbstackMagnusOauth::parse_ini_file" );
@@ -109,6 +110,7 @@ class WbstackMagnusOauth {
         curl_setopt($client, CURLOPT_POST, true);
         curl_setopt($client, CURLOPT_POSTFIELDS, http_build_query($apiParams));
         $response = curl_exec($client);
+
         $response = json_decode( $response, true );
         if(!$response || !$response['wbstackPlatformOauthGet']['success']) {
             return [];
@@ -143,6 +145,7 @@ class WbstackMagnusOauth {
     ): array
     {
         $site = self::getSite( $toolUrlTail );
+
         $params = [
             'tool' => $toolName,
             'language' => $site->oauth->language,
@@ -165,40 +168,41 @@ class WbstackMagnusOauth {
     ) {
         // XXX: this same logic is in quickstatements.php and platform api WikiController backend
         $domain = $_SERVER['SERVER_NAME'];
-        if ( substr($domain,-10, 10) === '.localhost' ){
+
+        $wbRoot = $domain;
+        $toolRoot = $domain . $toolUrlTail;
+
+        $protocol = 'https';
+        if ( $domain === 'localhost' ) {
+            $protocol = 'http';
+            $wbRoot .= ':8001';
             // XXX: this wont actually work on localhost currently as this is talking to mediawiki via
             // the public hostname which doesnt exist.
             // If we wanted this to work we would have to also add a way for the host header to be sent with
             // the requests...
 
-            die('Will not currently work for localhost dev...');
-
             // localhost development, with a full domain prefixing .localhost
             // eg. wiki.addshore.com.localhost
-            $wbRoot = $domain . ":8083";
-            $toolRoot = $domain . ":8086";
+            // $wbRoot = 'mediawiki.svc:80';
+            // $toolRoot = $domain . ":8086";
 
-            // Directly for config
-            $publicMwOAuthUrl = $wbRoot . '/w/index.php?title=Special:OAuth';
-            $mwOAuthUrl = $wbRoot . '/w/index.php?title=Special:OAuth';
-            $wbPublicHostAndPort = $wbRoot;
-            $wbApi = $wbRoot . '/w/api.php';
-            $wbPageBase = $wbRoot . '/wiki/';
-            $toolbase = $toolRoot;
-        } else if ( $domain === 'localhost' ) {
-            die('Should be accessed with a subdomain of localhost..');
-        } else {
-            $wbRoot = $domain;
-            $toolRoot = $domain . $toolUrlTail;
+            // // Directly for config
+            // $publicMwOAuthUrl = $wbRoot . '/w/index.php?title=Special:OAuth';
+            // $mwOAuthUrl = $wbRoot . '/w/index.php?title=Special:OAuth';
+            // $wbPublicHostAndPort = $wbRoot;
+            // $wbApi = $wbRoot . '/w/api.php';
+            // $wbPageBase = $wbRoot . '/wiki/';
+            // $toolbase = $toolRoot;
+       }
 
-            // Directly for config
-            $publicMwOAuthUrl = 'https://' . $wbRoot . '/w/index.php?title=Special:OAuth';
-            $mwOAuthUrl = 'https://' . $wbRoot . '/w/index.php?title=Special:OAuth';
-            $wbPublicHostAndPort = $wbRoot;
-            $wbApi = 'https://' . $wbRoot . '/w/api.php';
-            $wbPageBase = 'https://' . $wbRoot . '/wiki/';
-            $toolbase = 'https://' . $toolRoot;
-        }
+        // Directly for config
+        $publicMwOAuthUrl = "${protocol}://" . $wbRoot . '/w/index.php?title=Special:OAuth';
+        // TODO don't hardcode mediawiki.svc
+        $mwOAuthUrl = "${protocol}://" . 'mediawiki.svc' . '/w/index.php?title=Special:OAuth';
+        $wbPublicHostAndPort = $wbRoot;
+        $wbApi = "${protocol}://" . $wbRoot . '/w/api.php';
+        $wbPageBase = "${protocol}://" . $wbRoot . '/wiki/';
+        $toolbase = "${protocol}://" . $toolRoot;
         $entityBase = 'http://' . $wbRoot . '/entity/';
 
         $site = [
@@ -221,6 +225,7 @@ class WbstackMagnusOauth {
                 // TODO should include lexeme when enabled?
             ],
         ];
+
         $site = json_decode(json_encode($site));
         return $site;
     }

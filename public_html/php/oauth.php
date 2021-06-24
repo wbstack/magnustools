@@ -46,7 +46,6 @@ class MW_OAuth {
 		}
 		if ( $oauth_url != '' ) $this->publicMwOAuthUrl = $oauth_url ;
 
-
 		$this->loadIniFile() ;
 		$this->setupSession() ;
 		$this->loadToken() ;
@@ -201,7 +200,9 @@ class MW_OAuth {
 //		global $gConsumerSecret, $gTokenSecret;
 
 		$parts = parse_url( $url );
-
+		$parts['host'] = 'localhost';
+		//var_dump($parts);
+		//die(1);
 		// We need to normalize the endpoint URL
 		$scheme = isset( $parts['scheme'] ) ? $parts['scheme'] : 'http';
 		$host = isset( $parts['host'] ) ? $parts['host'] : '';
@@ -270,8 +271,10 @@ class MW_OAuth {
 		//curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
 		curl_setopt( $ch, CURLOPT_USERAGENT, $this->gUserAgent );
 		curl_setopt( $ch, CURLOPT_HEADER, 0 );
+		// TODO could add header here for correct server
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
 		$data = curl_exec( $ch );
+
 		if ( !$data ) {
 			header( "HTTP/1.1 500 Internal Server Error" );
 			throw new Exception ( 'Curl error: ' . htmlspecialchars( curl_error( $ch ) ) ) ;
