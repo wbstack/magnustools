@@ -192,6 +192,24 @@ class GithubIssue extends GitIssue {
 	}
 }
 
+class BitbucketIssue extends GitIssue {
+	public static function new_from_json ( $git_repo , $j ) {
+		$ret = new self ;
+		$ret->label = "{$j->title} [{$j->kind}/{$j->priority}]" ;
+		$ret->url = $j->links->html->href ;
+		$ret->status = 'OPEN' ; # default
+		$ret->date_created = Buggregator::format_time(strtotime($j->created_on)) ;
+		$ret->date_last = Buggregator::format_time(strtotime($j->updated_on)) ;
+		$ret->description = $j->content->raw ;
+		$ret->tool = $git_repo->tool_id ;
+		$ret->site = 'BITBUCKET' ;
+		$ret->git_repo_id = $git_repo->id * 1 ;
+		$ret->git_id = $j->id * 1 ;
+		# TODO creating user
+		return $ret ;
+	}
+}
+
 class WikiIssue extends issue {
 	protected $wikitext ;
 	protected $wiki_page_id ;
@@ -425,9 +443,27 @@ class Buggregator {
 		}
 	}
 	
+	protected function update_from_bitbucket () {
+		$sql = "SELECT * FROM `git_repo` WHERE `repo_type`='BITBUCKET'" ;
+		$result = $this->getSQL ( $sql ) ;
+		while($o = $result->fetch_object()){
+			$url = "{$o->api_issues_url}/?pagelen=100" ;
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_URL, $url);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+			$json = curl_exec($ch);
+			$json = json_decode ( $json ) ;
+			foreach ( $json->values AS $git_issue ) {
+				$issue = BitbucketIssue::new_from_json ( $o , $git_issue ) ;
+				$issue->get_or_create_issue_id ( $this ) ;
+			}
+		}
+	}
+	
 	public function update () {
 		#$this->update_from_wikipages() ;
-		$this->update_from_github() ;
+		#$this->update_from_github() ;
+		$this->update_from_bitbucket() ;
 		#$this->maintenance() ;
 	}
 
