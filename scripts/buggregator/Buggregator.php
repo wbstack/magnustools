@@ -7,7 +7,7 @@ require_once('/data/project/magnustools/public_html/php/ToolforgeCommon.php') ;
 
 class Issue {
 	const ZERO_TIME = '0000-00-00 00:00:00' ;
-	const FIELDS = ['label','status','date_created','date_last','site','url','description','tool'] ;
+	const FIELDS = ['label','status','date_created','date_last','site','url','description','tool','priority'] ;
 
 	protected $issue_id ;
 	protected $label ;
@@ -18,6 +18,26 @@ class Issue {
 	protected $url = '' ;
 	protected $description = '' ;
 	protected $tool = 0 ;
+	protected $priority = 'NORMAL' ;
+
+	public function id() { return $this->issue_id * 1 ; }
+	public function label() { return $this->label ; }
+	public function status() { return $this->status ; }
+	public function date_created() { return $this->date_created ; }
+	public function date_last() { return $this->date_last ; }
+	public function site() { return $this->site ; }
+	public function url() { return $this->url ; }
+	public function description() { return $this->description ; }
+	public function tool() { return $this->tool * 1 ; }
+	public function priority() { return $this->priority ; }
+
+	public function set_status ( $new_status ) { $this->status = trim(strtoupper($new_status)) ; }
+
+	public static function new_from_object ( $o ) {
+		$ret = new self ;
+		$ret->fill_from_object($o) ;
+		return $ret ;
+	}
 
 	public function get_or_create_issue_id ( $buggregator ) {
 		throw new Exception("{__METHOD__} should never be called directly!") ;
@@ -31,7 +51,7 @@ class Issue {
 		throw new Exception("{__METHOD__} should never be called directly!") ;
 	}
 
-	protected function determine_tool ( $buggregator ) {
+	public function determine_tool ( $buggregator ) {
 		throw new Exception("{__METHOD__} should never be called directly!") ;
 	}
 
@@ -43,7 +63,16 @@ class Issue {
 		throw new Exception("{__METHOD__} should never be called directly!") ;
 	}
 
-	protected function set_times () {
+	protected function fill_from_object ( $o ) {
+		if ( !isset($o->id) ) throw new Exception("{__METHOD__}: `id` not in given object") ;
+		$this->issue_id = $o->id ;
+		foreach ( self::FIELDS AS $field ) {
+			if ( !isset($o->$field) ) throw new Exception("{__METHOD__}: Field {$field} not in given object") ;
+			$this->$field = $o->$field ;
+		}
+	}
+
+	public function set_times () {
 		$times = $this->extract_times() ;
 		foreach ( $times as $time ) {
 			if ( $this->date_created==self::ZERO_TIME or $this->date_created>$time ) $this->date_created = $time ;
@@ -85,11 +114,26 @@ class Issue {
 		$this->add_associated_users ( $buggregator ) ;
 		return $this->issue_id ;
 	}
+
+	public function update_in_database ( $buggregator , $fields = self::FIELDS ) {
+		if ( $this->issue_id == 0 ) throw new Exception("{__METHOD__}: No issue ID");
+		$values = [] ;
+		foreach ( $fields AS $field ) $values[] = "`{$field}`='".$buggregator->escape($this->$field)."'";
+		$sql = "UPDATE `issue` SET " . implode(',',$values) . " WHERE `id`={$this->issue_id}" ;
+		$buggregator->getSQL ( $sql ) ;
+	}
 }
 
 class WikiIssue extends issue {
 	protected $wikitext ;
 	protected $wiki_page_id ;
+	const DE_MONTHS = [ 'Mär' => 'Mar','Mai' => 'May','Okt' => 'Oct','Dez' => 'Dec'] ;
+
+	public static function new_from_object ( $o ) {
+		$ret = new self ;
+		$ret->fill_from_object($o) ;
+		return $ret ;
+	}
 
 	public static function new ( $wiki_page_id , $label , $wikitext ) {
 		$ret = new WikiIssue ;
@@ -98,6 +142,9 @@ class WikiIssue extends issue {
 		$ret->wiki_page_id = $wiki_page_id * 1 ;
 		return $ret ;
 	}
+
+	public function wikitext() { return $this->wikitext ; }
+	public function wiki_page_id() { return $this->wiki_page_id * 1 ; }
 
 	public function get_or_create_issue_id ( $buggregator ) {
 		if ( isset($this->issue_id) ) return $this->issue_id ; # Already has an issue ID
@@ -132,17 +179,31 @@ class WikiIssue extends issue {
 		if($o = $result->fetch_object()){
 			$server = $buggregator->tfc->getWebserverForWiki($o->wiki) ;
 			if ( $server == '' ) return ;
-			$page = urlencode($o->page) ;
-			$hash = urlencode($this->label) ;
+			$page = $buggregator->tfc->urlEncode($o->page) ;
+			$hash = $buggregator->tfc->urlEncode($this->label) ;
 			$this->url = "https://{$server}/wiki/{$page}#{$hash}" ;
 		}
 	}
 
-	protected function determine_tool ( $buggregator ) {
+	public function determine_tool ( $buggregator ) {
+		# Try wiki page hint
 		$this->tool = 0 ;
 		$sql = "SELECT * FROM `wiki_page` WHERE `id`={$this->wiki_page_id}" ;
 		$result = $buggregator->getSQL ( $sql ) ;
 		if($o = $result->fetch_object()) $this->tool = $o->tool_hint ;
+
+		# Try tool name
+		$toolname2id = $buggregator->get_unique_tool_name_ids() ;
+		$candidate_tools = [] ;
+		foreach ( $toolname2id as $tool_name => $tool_id ) {
+			$pattern = "|\b{$tool_name}\b|i" ;
+			if ( !preg_match($pattern,$this->wikitext,$m) ) continue ;
+			$candidate_tools[] = $tool_id ;
+		}
+		$candidate_tools = array_values ( array_unique($candidate_tools) ) ;
+		if ( count($candidate_tools) == 1 ) {
+			$this->tool = $candidate_tools[0] * 1 ;
+		}
 	}
 
 	protected function get_associated_urls ( $buggregator ) {
@@ -172,12 +233,22 @@ class WikiIssue extends issue {
 
 	protected function extract_times () {
 		$ret = [] ;
-		if ( preg_match_all('|(\d{2}:\d{2}, \d{1,2} \S+? \d{4}) \((UTC|CET|CEST)\)|',$this->wikitext,$m) ) {
+		if ( preg_match_all('|(\d{2}:\d{2}, \d{1,2}\.* \S+ \d{4}) \([A-Z]+\)|',$this->wikitext,$m) ) {
 			foreach ( $m[1] AS $time ) {
-				$ret[] = date('Y-m-d H:i:00',strtotime($time));
+				foreach ( self::DE_MONTHS AS $from => $to ) $time = str_replace($from,$to,$time) ;
+				$time = strtotime($time) ;
+				$ret[] = Buggregator::format_time($time) ;
 			}
 		}
 		return $ret ;
+	}
+
+	protected function fill_from_object ( $o ) {
+		parent::fill_from_object ( $o ) ;
+		foreach ( ['wikitext','wiki_page_id'] AS $field ) {
+			if ( !isset($o->$field) ) throw new Exception("{__METHOD__}: Field {$field} not in given object") ;
+			$this->$field = $o->$field ;
+		}
 	}
 
 }
@@ -219,10 +290,17 @@ class User {
 class Buggregator {
 	public $tfc ;
 	protected $tool_db ;
+	protected $toolname2id = [] ;
+
+	const IGNORE_TOOL_NAMES = ['data'] ;
 
 	public function __construct () {
 		$this->tfc = new ToolforgeCommon ( 'buggregator' ) ;
 		$this->tool_db = $this->tfc->openDBtool('buggregator') ;
+	}
+
+	static public function format_time ( $time ) {
+		return date('Y-m-d H:i:s',$time);
 	}
 
 	public function update_from_wikipages() {
@@ -251,7 +329,69 @@ class Buggregator {
 			}
 		}
 	}
+
+	public function get_unique_tool_name_ids() {
+		if ( count($this->toolname2id) == 0 ) {
+			$sql = "SELECT group_concat(`id`)  AS `id`,lower(regexp_replace(`name`,'_',' ')) AS `name` from `tool` group by lower(regexp_replace(`name`,'_',' ')) having count(*)=1" ;
+			$this->toolname2id = [] ;
+			$result = $this->getSQL ( $sql ) ;
+			while($o = $result->fetch_object()) $this->toolname2id[$o->name] = $o->id ;
+			foreach ( self::IGNORE_TOOL_NAMES AS $bad_name ) unset($this->toolname2id[$bad_name]) ;
+		}
+		return $this->toolname2id ;
+	}
+
+	protected function maintenance_wiki_dates () {
+		$sql = "SELECT * FROM `vw_wiki_issue` WHERE `date_created`='".Issue::ZERO_TIME."' AND `status`='OPEN'" ;
+		$result = $this->getSQL ( $sql ) ;
+		while($o = $result->fetch_object()){
+			$issue = WikiIssue::new_from_object ( $o ) ;
+			if ( $issue->date_created() != WikiIssue::ZERO_TIME ) continue ; # Paranoia
+			$issue->set_times() ;
+			if ( $issue->date_created() == WikiIssue::ZERO_TIME ) continue ; # None found
+			$issue->update_in_database ( $this , ['date_created','date_last'] ) ;
+		}
+	}
+
+	protected function maintenance_wiki_tool_guess () {
+		$sql = "SELECT * FROM `vw_wiki_issue` WHERE `tool`=0 AND `status`='OPEN'" ;
+		$result = $this->getSQL ( $sql ) ;
+		while($o = $result->fetch_object()) {
+			$issue = WikiIssue::new_from_object ( $o ) ;
+			if ( $issue->tool() != 0 ) continue ; # Paranoia
+			$issue->determine_tool ( $this ) ;
+			if ( $issue->tool() == 0 ) continue ; # No avail
+			$issue->update_in_database ( $this , ['tool'] ) ;
+		}
+	}
+
+	protected function maintenance_wiki_close_old_replied () {
+		# Get all open issues where I wrote something...
+		$time = strtotime("-1 month");
+		$cutoff_time = self::format_time($time);
+		$sql = "SELECT `vw_wiki_issue`.* FROM `vw_wiki_issue`,`user_issue`" ;
+		$sql .= " WHERE `date_last`!='".Issue::ZERO_TIME."' AND `date_last`<'{$cutoff_time}' AND `status`='OPEN'" ;
+		$sql .= " AND `user_issue`.`issue_id`=`vw_wiki_issue`.`id` AND `user_issue`.`user_id`=14" ;
+		$result = $this->getSQL ( $sql ) ;
+		while($o = $result->fetch_object()) {
+			$issue = WikiIssue::new_from_object ( $o ) ;
+			if ( $issue->status() != 'OPEN' ) continue ; # Paranoia
+			$rows = explode ( "\n" , trim($issue->wikitext()) ) ;
+			$last_row = array_pop($rows);
+			# Make sure I wrote on the last row
+			if ( !preg_match('|\bMagnus[ _]Manske\b|',$last_row) ) continue ;
+			# Old issue, I wrote the last line => closed
+			$issue->set_status ( 'CLOSED' ) ;
+			$issue->update_in_database ( $this , ['status'] ) ;
+		}
+	}
 	
+	public function maintenance () {
+		$this->maintenance_wiki_dates() ;
+		$this->maintenance_wiki_tool_guess() ;
+		$this->maintenance_wiki_close_old_replied() ;
+	}
+
 	public function getSQL ( $sql ) {
 		return $this->tfc->getSQL ( $this->tool_db , $sql ) ;
 	}
