@@ -5,6 +5,7 @@ require_once ( 'Buggregator.php' ) ;
 
 $buggregator = new Buggregator ;
 
-$buggregator->update() ;
+if ( $argv[1] == 'update' ) $buggregator->update() ;
+else print "Nothing to do!\n" ;
 
 ?>

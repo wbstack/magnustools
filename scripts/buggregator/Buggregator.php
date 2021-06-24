@@ -460,12 +460,64 @@ class Buggregator {
 			}
 		}
 	}
+
+	protected function update_from_wikidata() {
+		$vtl = 'view-topiclist' ;
+		$top = 'topic-of-post' ;
+		$limit = 10 ; # TODO 100
+		$url = "https://www.wikidata.org/w/api.php?action=flow&submodule=view-topiclist&page=User%20Talk:Magnus%20Manske&vtllimit={$limit}&format=json" ;
+		$json = json_decode ( file_get_contents ( $url ) ) ;
+		$json = $json->flow->$vtl->result->topiclist ;
+		$topics = [] ;
+		foreach ( $json->revisions AS $rev ) {
+			$topic_id = $rev->workflowId ;
+			$time = self::format_time(strtotime($rev->timestamp)) ;
+			$description = '' ;
+			$urls = [] ;
+			if ( $rev->content->format == 'fixed-html' ) {
+				$html = html_entity_decode($rev->content->content);
+				$description = trim(html_entity_decode(strip_tags($rev->content->content))) ;
+				if ( preg_match_all('#\bhttps?://[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/))#', $html, $m) ) {
+					foreach ( $m[0] AS $url ) {
+						$url = preg_replace ( '|".*$|' , '' , $url ) ;
+						$urls[] = $url ;
+					}
+				}
+			}
+			if ( !isset($topics[$topic_id]) ) {
+				$topics[$topic_id] = [
+					'label' => $rev->properties->$top->plaintext ,
+					'date_created' => $time ,
+					'date_last' => $time ,
+					'site' => 'WIKIDATA' ,
+					'url' => "https://www.wikidata.org/wiki/Topic:{$topic_id}" ,
+					'status' => ($rev->isLocked?'CLOSED':'OPEN') ,
+					'description' => $description ,
+					'tmp_authors' => [ $rev->author->name ] ,
+					'tmp_urls' => $urls
+				] ;
+			} else {
+				if ( $time > $topics[$topic_id]['date_last'] ) $topics[$topic_id]['date_last'] = $time ;
+				$topics[$topic_id]['tmp_authors'][] = $rev->author->name ;
+				$topics[$topic_id]['description'] .= "\n\n{$description}" ;
+				$topics[$topic_id]['tmp_urls'] = array_merge($topics[$topic_id]['tmp_urls'],$urls) ;
+			}
+		}
+		# Cleanup
+		foreach ( $topics AS $topic_id => $topic ) {
+			$topics[$topic_id]['tmp_authors'] = array_unique ( $topic['tmp_authors'] ) ;
+			$topics[$topic_id]['tmp_urls'] = array_unique ( $topic['tmp_urls'] ) ;
+			$topics[$topic_id]['description'] = trim($topic['description']) ;
+		}
+		print_r ( $topics ) ;
+	}
 	
 	public function update () {
-		$this->update_from_wikipages() ;
-		$this->update_from_github() ;
-		$this->update_from_bitbucket() ;
-		$this->maintenance() ;
+		$this->update_from_wikidata() ;
+		#$this->update_from_wikipages() ;
+		#$this->update_from_github() ;
+		#$this->update_from_bitbucket() ;
+		#$this->maintenance() ;
 	}
 
 
