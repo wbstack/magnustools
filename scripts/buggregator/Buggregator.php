@@ -345,7 +345,11 @@ class WikiIssue extends Issue {
 		$result = $buggregator->getSQL ( $sql ) ;
 		if($o = $result->fetch_object()) $this->tool = $o->tool_hint ;
 
-		# Try tool name
+		# Try issue label
+		$this->tool = Issue::determine_tool_from_text ( $this->label , $buggregator ) ;
+		if ( $this->tool != 0 ) return ;
+
+		# Try issue description
 		$this->tool = self::determine_tool_from_text ( $this->wikitext , $buggregator ) ;
 	}
 
@@ -627,10 +631,11 @@ class Buggregator {
 
 	protected function maintenance_not_wiki_tool_guess () {
 		# WIKI gets special treatment, see above
-		$sql = "SELECT `id`,`description` FROM `issue` WHERE `tool`=0 AND `status`='OPEN' AND `site`!='WIKI'" ;
+		$sql = "SELECT `id`,`label`,`description` FROM `issue` WHERE `tool`=0 AND `status`='OPEN' AND `site`!='WIKI'" ;
 		$result = $this->getSQL ( $sql ) ;
 		while($o = $result->fetch_object()) {
-			$tool_id = Issue::determine_tool_from_text ( $o->description , $this ) ;
+			$tool_id = Issue::determine_tool_from_text ( $o->label , $this ) ;
+			if ( $tool_id == 0 ) $tool_id = Issue::determine_tool_from_text ( $o->description , $this ) ;
 			if ( $tool_id == 0 ) continue ; # No avail
 			$this->setIssueValue ( $o->id , 'tool' , $tool_id ) ;
 		}
