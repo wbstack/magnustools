@@ -479,11 +479,15 @@ class Buggregator {
 
 	public function get_unique_tool_name_ids() {
 		if ( count($this->toolname2id) == 0 ) {
+			$bad_names = self::IGNORE_TOOL_NAMES ;
 			$sql = "SELECT group_concat(`id`)  AS `id`,lower(regexp_replace(`name`,'_',' ')) AS `name` from `tool` group by lower(regexp_replace(`name`,'_',' ')) having count(*)=1" ;
 			$this->toolname2id = [] ;
 			$result = $this->getSQL ( $sql ) ;
-			while($o = $result->fetch_object()) $this->toolname2id[$o->name] = $o->id ;
-			foreach ( self::IGNORE_TOOL_NAMES AS $bad_name ) unset($this->toolname2id[$bad_name]) ;
+			while($o = $result->fetch_object()) {
+				if ( isset($this->toolname2id[$o->name]) ) $bad_names[] = $o->name ; # Name collision
+				$this->toolname2id[$o->name] = $o->id ;
+			}
+			foreach ( $bad_names AS $bad_name ) unset($this->toolname2id[$bad_name]) ;
 		}
 		return $this->toolname2id ;
 	}
