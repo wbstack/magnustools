@@ -104,6 +104,22 @@ class Issue {
 		}
 	}
 
+	static public function determine_tool_from_text ( $text , $buggregator ) {
+		$ret = 0 ;
+		$toolname2id = $buggregator->get_unique_tool_name_ids() ;
+		$candidate_tools = [] ;
+		foreach ( $toolname2id as $tool_name => $tool_id ) {
+			$pattern = "|\b{$tool_name}\b|i" ;
+			if ( !preg_match($pattern,$text,$m) ) continue ;
+			$candidate_tools[] = $tool_id ;
+		}
+		$candidate_tools = array_values ( array_unique($candidate_tools) ) ;
+		if ( count($candidate_tools) == 1 ) {
+			$ret = $candidate_tools[0] * 1 ;
+		}
+		return $ret ;
+	}
+
 	protected function create_as_new_issue ( $buggregator ) {
 		$this->set_times() ;
 		$this->construct_url ( $buggregator ) ;
@@ -330,17 +346,7 @@ class WikiIssue extends Issue {
 		if($o = $result->fetch_object()) $this->tool = $o->tool_hint ;
 
 		# Try tool name
-		$toolname2id = $buggregator->get_unique_tool_name_ids() ;
-		$candidate_tools = [] ;
-		foreach ( $toolname2id as $tool_name => $tool_id ) {
-			$pattern = "|\b{$tool_name}\b|i" ;
-			if ( !preg_match($pattern,$this->wikitext,$m) ) continue ;
-			$candidate_tools[] = $tool_id ;
-		}
-		$candidate_tools = array_values ( array_unique($candidate_tools) ) ;
-		if ( count($candidate_tools) == 1 ) {
-			$this->tool = $candidate_tools[0] * 1 ;
-		}
+		$this->tool = self::determine_tool_from_text ( $this->wikitext , $buggregator ) ;
 	}
 
 	protected function get_associated_urls ( $buggregator ) {
@@ -619,6 +625,25 @@ class Buggregator {
 		}
 	}
 
+	protected function maintenance_not_wiki_tool_guess () {
+		# WIKI gets special treatment, see above
+		$sql = "SELECT `id`,`description` FROM `issue` WHERE `tool`=0 AND `status`='OPEN' AND `site`!='WIKI'" ;
+		$result = $this->getSQL ( $sql ) ;
+		while($o = $result->fetch_object()) {
+			$tool_id = Issue::determine_tool_from_text ( $o->description , $this ) ;
+			if ( $tool_id == 0 ) continue ; # No avail
+			$this->setIssueValue ( $o->id , 'tool' , $tool_id ) ;
+		}
+	}
+
+	protected function setIssueValue ( $issue_id , $field , $value ) {
+		if ( !in_array($field, Issue::FIELDS) ) throw new Exception("{__METHOD__}: '{$field}'' is not a valid field in Issue") ;
+		$issue_id *= 1 ;
+		$value = $this->escape ( $value ) ;
+		$sql = "UPDATE `issue` SET `{$field}`='{$value}' WHERE `id`={$issue_id}" ;
+		$this->getSQL ( $sql ) ;
+	}
+
 	protected function maintenance_wiki_close_old_replied () {
 		# Get all open issues where I wrote something...
 		$time = strtotime("-1 month");
@@ -643,6 +668,7 @@ class Buggregator {
 	public function maintenance () {
 		$this->maintenance_wiki_dates() ;
 		$this->maintenance_wiki_tool_guess() ;
+		$this->maintenance_not_wiki_tool_guess() ;
 		$this->maintenance_wiki_close_old_replied() ;
 	}
 
