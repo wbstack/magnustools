@@ -16,8 +16,15 @@
 	<div class='row mb-1'>
 		<div class="btn-group btn-group-toggle mr-1" data-toggle="buttons" v-for='group in button_groups'>
 			<label v-for='value in config[group]' :class='"btn btn-outline-secondary"+(filters[group][value]?" active":"")'>
-				<input type="checkbox" v-model='filters[group][value]' /> {{capitalize(value)}}
+				<input type="checkbox" v-model='filters[group][value]' @change='load_results' /> {{capitalize(value)}}
   			</label>
+		</div>
+		<div>
+			<select v-model='filters.tool' class='custom-select' @change='load_results'>
+				<option value='' tt='any_tool'></option>
+				<option value='0' tt='tool_not_assigned'></option>
+				<option v-for='tool,tool_id in config.tools' :value='tool_id'>{{tool.nice_name}}</option>
+			</select>
 		</div>
 	</div>
 
@@ -25,19 +32,16 @@
 		<div tt='sort_by' class='mr-1'>
 		</div>
 		<div>
-			<select v-model='filters.sort_by' class="custom-select">
+			<select v-model='filters.sort_by' class="custom-select" @change='load_results'>
 				<option v-for='o in sort_by_options' :tt='o' :value='o'></option>
 			</select>
 		</div>
 		<div>
 			<div class="btn-group btn-group-toggle" data-toggle="buttons">
 				<label v-for='order in sort_orders' :class='"btn btn-outline-secondary"+(filters.sort_order==order?" active":"")'>
-					<input type="radio" v-model='filters.sort_order' :value='order' /> <span :tt='order'></span>
+					<input type="radio" v-model='filters.sort_order' :value='order' @change='load_results' /> <span :tt='order'></span>
 				</label>
 			</div>
-		</div>
-		<div class='ml-4'>
-			<button class='btn btn-outline-primary' @click.prevent='load_results' tt='update'></button>
 		</div>
 	</div>
 
@@ -47,8 +51,8 @@
 	<div class='row' v-else-if='results.len==0'>
 		<i tt='no_results'></i>
 	</div>
-	<div class='row mt-1 mb-1' v-else>
-		<div class='row'>
+	<div class='row mt-1' v-else>
+		<div class='row mb-1'>
 			<div class='mr-2'>
 				<span tt='this_query'></span>
 				{{stats.this_query}}
@@ -80,7 +84,7 @@
 				<td>
 					{{r.label}}
 				</td>
-				<td>
+				<td style='text-align: center;'>
 					{{r.status}}<br/>
 					{{r.priority}}
 				</td>
@@ -89,16 +93,16 @@
 					{{r.date_last}}
 				</td>
 				<td>
-					<pre style='font-size: 6pt; max-width: 300pt;'>
+					<div style='font-size: 7pt; max-width: 300pt;'>
 						{{r.description}}
-					</pre>
+					</div>
 				</td>
 				<td>
 					<span v-if='r.tool==0'>
 						???
 					</span>
 					<span v-else>
-						TOOL {{r.tool}}
+						{{config.tools[r.tool].name}}
 					</span>
 				</td>
 			</tr>
@@ -113,7 +117,7 @@
 
 let IssueList = Vue.extend ( {
 	props : [] ,
-	data : function () { return { filters : { label:'' , status:{} , sort_by:'date_last' , sort_order:'descending' , site:{} , description:'' , tool:'' , priority:{} , limit:25 , offset:0 } ,
+	data : function () { return { filters : { search:'' , status:{} , sort_by:'date_last' , sort_order:'descending' , site:{} , tool:'' , priority:{} , limit:25 , offset:0 } ,
 		results:[] , loading:false , stats:{} ,
 		sort_by_options:['label','status','date_created','date_last','site','tool','priority'] ,
 		button_groups:['site','status','priority'] ,

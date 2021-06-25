@@ -15,17 +15,21 @@ if ( $action == 'get_issues' ) {
 	$offset = $buggregator->tfc->getRequest('offset',0)*1 ;
 	$sort_by = $buggregator->escape($buggregator->tfc->getRequest('sort_by','acsending')) ;
 	$sort_order = $buggregator->escape($buggregator->tfc->getRequest('sort_order','acsending')) ;
+	$tool = $buggregator->escape($buggregator->tfc->getRequest('tool','')) ;
+	$status = explode(',',$buggregator->escape($buggregator->tfc->getRequest('status',''))) ;
+	$site = explode(',',$buggregator->escape($buggregator->tfc->getRequest('site',''))) ;
+	$priority = explode(',',$buggregator->escape($buggregator->tfc->getRequest('priority',''))) ;
 
 	$sql_core = [] ;
-	# TODO 
-	# label
-	# status
-	# site
-	# description
-	# tool
-	# priority
+	# TODO:
+	# search
+	if ( $tool != '' ) $sql_core[] = "`tool`=" . ($tool*1) ;
+	if ( $status!=[''] ) $sql_core[] = "`status` IN ('".implode("','",$status)."')" ;
+	if ( $site!=[''] ) $sql_core[] = "`site` IN ('".implode("','",$site)."')" ;
+	if ( $priority!=[''] ) $sql_core[] = "`priority` IN ('".implode("','",$priority)."')" ;
+
 	if ( count($sql_core) == 0 ) $sql_core = '' ;
-	else $sql_core = ' WHERE (' . implode ( '),(' , $sql_core ) . ')' ;
+	else $sql_core = ' WHERE (' . implode ( ') AND (' , $sql_core ) . ')' ;
 
 	$sql = "SELECT * FROM `issue` {$sql_core}" ;
 	if ( $sort_by != '' ) {
@@ -44,6 +48,23 @@ if ( $action == 'get_issues' ) {
 	$sql = "SELECT count(*) AS `cnt` FROM `issue` WHERE `status`='OPEN'" ;
 	$result = $buggregator->getSQL ( $sql ) ;
 	if($o = $result->fetch_object()) $out['data']['stats']['total_open'] = $o->cnt ;
+
+} else if ( $action == 'get_config' ) {
+	$out['data'] = [
+		'status' => ['OPEN','CLOSED'] ,
+		'site' => ['WIKI','WIKIDATA','GITHUB','BITBUCKET'] ,
+		'priority' => ['HIGH','NORMAL','LOW'] ,
+		'tools' => []
+	] ;
+	$sql = "SELECT * FROM `tool` ORDER BY `name`,`subdomain`" ;
+	$result = $buggregator->getSQL ( $sql ) ;
+	while($o = $result->fetch_object()) {
+		$nice_name = "{$o->subdomain}/{$o->name}" ;
+		if ( strtolower($o->subdomain) == strtolower($o->name) ) $nice_name = $o->name ;
+		if ( $o->subdomain == '' ) $nice_name = $o->name ;
+		$o->nice_name = $nice_name ;
+		$out['data']['tools']["{$o->id}"] = $o ;
+	}
 
 } else {
 	$o->status = "Unknown action '{$action}'" ;

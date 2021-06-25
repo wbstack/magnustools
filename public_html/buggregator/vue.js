@@ -3,11 +3,7 @@
 let router ;
 let app ;
 let wd = new WikiData() ;
-let config = {
-	status:['OPEN','CLOSED'],
-	site:['WIKI','WIKIDATA','GITHUB','BITBUCKET'],
-	priority:['HIGH','NORMAL','LOW'],
-} ;
+let config = {} ;
 
 $(document).ready ( function () {
 	vue_components.toolname = 'buggregator' ;
@@ -15,6 +11,12 @@ $(document).ready ( function () {
 		vue_components.loadComponents ( ['wd-link','tool-translate','tool-navbar','typeahead-search',
 			'vue_components/issue-list.html',
 			] ) ,
+		new Promise(function(resolve, reject) {
+			$.get ( './api.php' , {action:'get_config'} , function(d) {
+				config = d.data ;
+				resolve();
+			} ) ;
+		} )
 	] )	.then ( () => {
 			wd_link_wd = wd ;
 			const routes = [
