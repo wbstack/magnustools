@@ -4,11 +4,13 @@ let router ;
 let app ;
 let wd = new WikiData() ;
 let config = {} ;
+var widar_api_url ;
 
 $(document).ready ( function () {
+	widar_api_url = 'https://magnustools.toolforge.org/buggregator/api.php' ;
 	vue_components.toolname = 'buggregator' ;
 	Promise.all ( [
-		vue_components.loadComponents ( ['wd-link','tool-translate','tool-navbar','typeahead-search',
+		vue_components.loadComponents ( ['wd-link','tool-translate','tool-navbar','typeahead-search','widar',
 			'vue_components/issue-list.html',
 			] ) ,
 		new Promise(function(resolve, reject) {

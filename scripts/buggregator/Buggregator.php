@@ -631,6 +631,13 @@ class Buggregator {
 			if ( $issue->tool() == 0 ) continue ; # No avail
 			$issue->update_in_database ( $this , ['tool'] ) ;
 		}
+
+		$sql = "SELECT `id`,`tool_hint` FROM `vw_wiki_issue` WHERE `tool`=0 AND `tool_hint`!=0" ;
+		$result = $this->getSQL ( $sql ) ;
+		while($o = $result->fetch_object()) {
+			$sql = "UPDATE `issue` SET `tool`={$o->tool_hint} WHERE `tool`=0 AND `id`={$o->id}" ;
+			$this->getSQL ( $sql ) ;
+		}
 	}
 
 	protected function maintenance_not_wiki_tool_guess () {
@@ -691,6 +698,40 @@ class Buggregator {
 
 	public function last_insert_id () {
 		return $this->tool_db->insert_id ;
+	}
+
+	protected function get_user_id ( $username ) {
+		$username = $this->escape ( $username ) ;
+		$sql = "SELECT `id` FROM `user` WHERE `name`='{$username}' AND `site`='WIKI'" ;
+		$result = $this->getSQL ( $sql ) ;
+		if($o = $result->fetch_object()) return $o->id ;
+		throw new Exception("{__METHOD__}: '{$username}' is not known") ;
+	}
+
+	public function log ( $issue_id , $event , $text , $username ) {
+		$issue_id *= 1 ;
+		$event = $this->escape ( $event ) ;
+		$text_id = $this->get_or_create_text_id ( $text ) ;
+		$user_id = (int) $this->get_user_id($username) ;
+		$sql = "INSERT INTO `log` (`issue_id`,`event`,`text_id`,`user_id`) VALUES ({$issue_id},'{$event}',{$text_id},{$user_id})" ;
+		$this->getSQL ( $sql ) ;
+		$this->touch_issue ( $issue_id ) ;
+	}
+
+	public function touch_issue ( $issue_id ) {
+		$issue_id *= 1 ;
+		$sql = "UPDATE `issue` SET `date_last`=CURRENT_TIMESTAMP WHERE `id`={$issue_id}" ;
+		$this->getSQL ( $sql ) ;
+	}
+
+	public function get_or_create_text_id ( $text ) {
+		$text = $this->escape ( $text ) ;
+		$sql = "SELECT `id` FROM `text` WHERE `text`='{$text}'" ;
+		$result = $this->getSQL ( $sql ) ;
+		if($o = $result->fetch_object()) return $o->id ;
+		$sql = "INSERT INTO `text` (`text`) VALUES ('{$text}')" ;
+		$this->getSQL ( $sql ) ;
+		return $this->last_insert_id() ;
 	}
 
 }

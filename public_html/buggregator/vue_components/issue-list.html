@@ -1,12 +1,9 @@
 <template id='issue-list-template'>
 <div class='container'>
 	<tool-navbar>
-		<!--<div slot='right'>
-			<a href='https://github.com/magnusmanske/picturesque' target='_blank' title='GitHub'>
-				<img src='https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Github-desktop-logo-symbol.svg/38px-Github-desktop-logo-symbol.svg.png' />
-			</a>
+		<div slot='right'>
+			<widar></widar>
 		</div>
-	-->
 	</tool-navbar>
 
 	<div class='row'>
@@ -87,6 +84,11 @@
 				<td style='text-align: center;'>
 					{{r.status}}<br/>
 					{{r.priority}}
+					<div v-if='can_edit()'>
+						<div v-if='r.status=="OPEN"'>
+							[<a href='#' @click.prevent='changeIssueStatus(r.id,"CLOSED")' tt='close_issue'></a>]
+						</div>
+					</div>
 				</td>
 				<td nowrap>
 					{{r.date_created}}<br/>
@@ -175,10 +177,33 @@ let IssueList = Vue.extend ( {
 			this.filters.offset = new_offset*1 ;
 			this.load_results();
 		} ,
+		can_edit : function () {
+			let me = this ;
+			if ( typeof widar == 'undefined' ) return ;
+			if ( !widar.is_logged_in ) return false ;
+			if ( config.write_access.indexOf(widar.getUserName()) == -1 ) return false ;
+			return true ;
+		} ,
 		capitalize : function (s) {
 			if (typeof s !== 'string') return ''
 			return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
 		} ,
+		changeIssueStatus : function ( issue_id , new_status ) {
+			let me = this ;
+			$.get ( './api.php' , {
+				action : 'set_issue_status' ,
+				issue_id : issue_id ,
+				new_status : new_status
+			} , function ( d ) {
+				if ( d.status == 'OK' ) {
+					$.each ( me.results , function ( num , r ) {
+						if ( r.id == issue_id ) me.results[num].status = new_status ;
+					} ) ;
+				} else {
+					alert ( d.status ) ;
+				}
+			} , 'JSON' ) ;
+		}
 	} ,
 	template : '#issue-list-template'
 } ) ;
