@@ -11,6 +11,7 @@ $(document).ready ( function () {
 	vue_components.toolname = 'buggregator' ;
 	Promise.all ( [
 		vue_components.loadComponents ( ['wd-link','tool-translate','tool-navbar','typeahead-search','widar',
+			'vue_components/tool-picker.html',
 			'vue_components/issue-list.html',
 			] ) ,
 		new Promise(function(resolve, reject) {

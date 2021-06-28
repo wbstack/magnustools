@@ -91,8 +91,8 @@
 					</div>
 				</td>
 				<td nowrap>
-					{{r.date_created}}<br/>
-					{{r.date_last}}
+					<div>{{r.date_created}}</div>
+					<div v-if='r.date_created!=r.date_last'>{{r.date_last}}</div>
 				</td>
 				<td>
 					<div style='font-size: 7pt; max-width: 300pt;'>
@@ -100,12 +100,7 @@
 					</div>
 				</td>
 				<td>
-					<span v-if='r.tool==0'>
-						???
-					</span>
-					<span v-else>
-						{{config.tools[r.tool].name}}
-					</span>
+					<tool-picker :can_edit='can_edit()' :toolid='r.tool' @tool-id-changed='changeToolId(r.id,$event)'></tool-picker>
 				</td>
 			</tr>
 		</table>
@@ -202,7 +197,23 @@ let IssueList = Vue.extend ( {
 				} else {
 					alert ( d.status ) ;
 				}
-			} , 'JSON' ) ;
+			} , 'json' ) ;
+		} ,
+		changeToolId : function ( issue_id , new_tool_id ) {
+			let me = this ;
+			$.get ( './api.php' , {
+				action : 'set_issue_tool' ,
+				issue_id : issue_id ,
+				new_tool_id : new_tool_id
+			} , function ( d ) {
+				if ( d.status == 'OK' ) {
+					$.each ( me.results , function ( num , r ) {
+						if ( r.id == issue_id ) me.results[num].tool = new_tool_id ;
+					} ) ;
+				} else {
+					alert ( d.status ) ;
+				}
+			} , 'json' ) ;
 		}
 	} ,
 	template : '#issue-list-template'

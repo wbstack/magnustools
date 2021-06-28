@@ -120,6 +120,20 @@ if ( $action == 'authorize' ) {
 		$buggregator->getSQL($sql);
 	}
 
+} else if ( $action == 'set_issue_tool' ) {
+
+	$issue_id = (int) $buggregator->tfc->getRequest('issue_id',0) ;
+	$new_tool_id = (int) $buggregator->tfc->getRequest('new_tool_id',0) ;
+	if ( !user_can_edit() ) {
+		$out['status'] = "User not logged in, or not in whitelist" ;
+	} else if ( $issue_id == 0 ) {
+		$out['status'] = "No issue ID set" ;
+	} else {
+		$buggregator->log ( $issue_id , 'TOOL_ID' , $new_tool_id , $out['user'] ) ;
+		$sql = "UPDATE `issue` SET `tool`={$new_tool_id} WHERE `id`={$issue_id}" ;
+		$buggregator->getSQL($sql);
+	}
+
 } else {
 	$o->status = "Unknown action '{$action}'" ;
 }
