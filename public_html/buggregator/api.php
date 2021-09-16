@@ -73,7 +73,7 @@ if ( $action == 'authorize' ) {
 	if ( count($sql_core) == 0 ) $sql_core = '' ;
 	else $sql_core = ' WHERE (' . implode ( ') AND (' , $sql_core ) . ')' ;
 
-	$sql = "SELECT * FROM `issue` {$sql_core}" ;
+	$sql = "SELECT * FROM `vw_issue` {$sql_core}" ;
 	if ( $sort_by != '' ) {
 		$sql .= " ORDER BY `{$sort_by}`" ;
 		if ( $sort_order == 'descending' ) $sql .= " DESC" ;
@@ -84,11 +84,11 @@ if ( $action == 'authorize' ) {
 	$result = $buggregator->getSQL ( $sql ) ;
 	while($o = $result->fetch_object()) $out['data']['results'][] = $o ;
 	
-	$sql = "SELECT count(*) AS `cnt` FROM `issue` {$sql_core}" ;
+	$sql = "SELECT count(*) AS `cnt` FROM `vw_issue` {$sql_core}" ;
 	$result = $buggregator->getSQL ( $sql ) ;
 	if($o = $result->fetch_object()) $out['data']['stats']['this_query'] = $o->cnt ;
 
-	$sql = "SELECT count(*) AS `cnt` FROM `issue` WHERE `status`='OPEN'" ;
+	$sql = "SELECT count(*) AS `cnt` FROM `vw_issue` WHERE `status`='OPEN'" ;
 	$result = $buggregator->getSQL ( $sql ) ;
 	if($o = $result->fetch_object()) $out['data']['stats']['total_open'] = $o->cnt ;
 
@@ -133,6 +133,13 @@ if ( $action == 'authorize' ) {
 		$sql = "UPDATE `issue` SET `tool`={$new_tool_id} WHERE `id`={$issue_id}" ;
 		$buggregator->getSQL($sql);
 	}
+
+} else if ( $action == 'get_tools' ) {
+
+	$out['data'] = [] ;
+	$sql = "SELECT * FROM `vw_tools_tickets`" ;
+	$result = $buggregator->getSQL ( $sql ) ;
+	while($o = $result->fetch_object()) $out['data'][] = $o ;
 
 } else {
 	$o->status = "Unknown action '{$action}'" ;

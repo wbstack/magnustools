@@ -13,6 +13,25 @@
 	</span>
 </template>
 
+<template id='wd-desc-template'>
+<span>
+	<span v-if='loaded'>
+		<span v-if='show_autodesc'>
+			<autodesc :item='item' mode='long' :key='item'/>
+		</span>
+		<span v-else>
+			{{description}}
+		</span>
+		<span v-if='use_autodesc && description!=""' style='margin-left:0.2rem;'>
+			<a href='#' @click.prevent='show_autodesc=!show_autodesc' :title='"show "+(show_autodesc?"manual":"autodesc")'>↻</a>
+		</span>
+	</span>
+	<span v-else>
+		...
+	</span>
+</span>
+</template>
+
 <script>
 'use strict';
 
@@ -23,6 +42,37 @@ let wd_ns_prefixes = {
 	'P': 'Property:',
 	'L': 'Lexeme:'
 };
+
+Vue.component ( 'wd-desc' , {
+	props : [ 'item' , 'autodesc_fallback' , 'autodesc_first' , 'wd' , 'language' ] ,
+	template : '#wd-desc-template' ,
+	data : function () { return { wikidata:{} , loaded:false , description:'' , use_autodesc:false , show_autodesc:false } } ,
+	created : function () {
+		let me = this ;
+		if ( me.autodesc_first*1>0 ) me.show_autodesc = true ;
+		if ( me.autodesc_first || me.autodesc_fallback ) me.use_autodesc = true ;
+		if ( typeof me.wd == 'undefined' ) me.wikidata = wd_link_wd ;
+		else me.wikidata = me.wd ;
+		if ( me.getItemID() == '' ) return ; // No item
+		me.wikidata.getItemBatch ( [me.getItemID()] , function () {
+			let i = me.wikidata.getItem ( me.getItemID() ) ;
+			if ( typeof i == 'undefined' ) return ;
+			me.description = i.getDesc ( me.language ) ;
+			// Show autodesc if fallback and manual description is empty
+			if ( me.description=='' && me.use_autodesc ) me.show_autodesc = true ;
+			me.loaded = true ;
+		} ) ;
+	} ,
+	methods : {
+		getItemID : function () {
+			let me = this ;
+			if ( typeof me.item == 'undefined' ) return '' ;
+			if ( /^\d+$/.test(''+me.item) ) return 'Q'+me.item ;
+			return me.item.toUpperCase() ;
+		} ,
+	}
+} ) ;
+
 
 Vue.component ( 'wd-link' , {
 	template : '#wd-link-template' ,

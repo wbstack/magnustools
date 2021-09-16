@@ -7,7 +7,7 @@ require_once('/data/project/magnustools/public_html/php/ToolforgeCommon.php') ;
 
 class Issue {
 	const ZERO_TIME = '0000-00-00 00:00:00' ;
-	const FIELDS = ['label','status','date_created','date_last','site','url','description','tool','priority'] ;
+	const FIELDS = ['label','status','date_created','date_last','site','url','description_text_id','tool','priority'] ;
 
 	protected $issue_id ;
 	protected $label ;
@@ -16,6 +16,7 @@ class Issue {
 	protected $date_last = self::ZERO_TIME ;
 	protected $site = 'WIKI' ;
 	protected $url = '' ;
+	protected $description_text_id = 0 ;
 	protected $description = '' ;
 	protected $tool = 0 ;
 	protected $priority = 'NORMAL' ;
@@ -28,6 +29,7 @@ class Issue {
 	public function site() { return $this->site ; }
 	public function url() { return $this->url ; }
 	public function description() { return $this->description ; }
+	public function description_text_id() { return $this->description_text_id * 1 ; }
 	public function tool() { return $this->tool * 1 ; }
 	public function priority() { return $this->priority ; }
 
@@ -124,6 +126,9 @@ class Issue {
 		$this->set_times() ;
 		$this->construct_url ( $buggregator ) ;
 		$this->determine_tool ( $buggregator ) ;
+
+		$this->description_text_id = $buggregator->get_or_create_text_id ( $this->description ) ;
+
 		$values = [] ;
 		foreach ( self::FIELDS AS $field ) $values[] = $buggregator->escape($this->$field);
 		$fields = implode('`,`',self::FIELDS) ;
@@ -450,6 +455,44 @@ class Buggregator {
 		return date('Y-m-d H:i:s',$time);
 	}
 
+	public function toolhub_update() {
+		$sql = "SELECT DISTINCT `toolhub` FROM `tool` WHERE `toolhub`!=''" ;
+		$known_toolhub = [] ;
+		$result = $this->getSQL ( $sql ) ;
+		while($o = $result->fetch_object()) $known_toolhub[$o->toolhub] = $o->toolhub ;
+		$url = 'https://toolhub-demo.wmcloud.org/api/search/tools/?format=json&ordering=-score&page=1&page_size=1000&q=%22Magnus+Manske%22' ;
+		$j = json_decode ( file_get_contents($url) ) ;
+		foreach ( $j->results AS $r ) {
+			if ( isset($known_toolhub[$r->name]) ) continue ; # We have that
+
+			$candidates = [] ;
+
+			$safe_url = $this->escape(str_replace('http:','https:',$r->url)) ;
+			$sql = "SELECT * FROM `tool` WHERE `url`='{$safe_url}' AND `toolhub`=''" ;
+			while($o = $result->fetch_object()) $candidates[$o->id] = $o ;
+
+			$safe_name = $this->escape($r->name) ;
+			$safe_titles = [] ;
+			$safe_titles[] = $this->escape($r->title) ;
+			$safe_titles[] = $this->escape(str_replace(' ','_',$r->title)) ;
+			$safe_titles[] = $this->escape(str_replace(' ','-',$r->title)) ;
+			$safe_titles[] = $this->escape(str_replace(' ','',$r->title)) ;
+			$safe_titles = "'".implode("','",$safe_titles)."'" ;
+			$sql = "SELECT * FROM `tool` WHERE `name` IN ({$safe_titles}) AND `toolhub`=''" ;
+			$result = $this->getSQL ( $sql ) ;
+			while($o = $result->fetch_object()) $candidates[$o->id] = $o ;
+			$candidates = array_values($candidates) ;
+			if ( count($candidates) == 0 ) {
+				print "Not found: {$r->title} / {$r->name} : {$r->url}\n" ;
+			} else if ( count($candidates) == 1 ) {
+				$o = $candidates[0] ;
+				$sql = "UPDATE `tool` SET `toolhub`='{$safe_name}' WHERE `id`={$o->id}" ;
+			} else {
+				print "More than one found: {$r->title} / {$r->name} : {$r->url}\n" ;
+			}
+		}
+	}
+
 	protected function update_from_wikipages() {
 		$sql = "SELECT * FROM `wiki_page`" ;
 		$result = $this->getSQL ( $sql ) ;
@@ -642,7 +685,7 @@ class Buggregator {
 
 	protected function maintenance_not_wiki_tool_guess () {
 		# WIKI gets special treatment, see above
-		$sql = "SELECT `id`,`label`,`description` FROM `issue` WHERE `tool`=0 AND `status`='OPEN' AND `site`!='WIKI'" ;
+		$sql = "SELECT `id`,`label`,`description` FROM `vw_issue` WHERE `tool`=0 AND `status`='OPEN' AND `site`!='WIKI'" ;
 		$result = $this->getSQL ( $sql ) ;
 		while($o = $result->fetch_object()) {
 			$tool_id = Issue::determine_tool_from_text ( $o->label , $this ) ;
@@ -681,7 +724,20 @@ class Buggregator {
 		}
 	}
 
+	/*
+	protected function maintenance_description_text_id() {
+		$sql = "SELECT * FROM `issue` WHERE `description_text_id`=0" ;
+		$result = $this->getSQL ( $sql ) ;
+		while($o = $result->fetch_object()) {
+			$text_id = $this->get_or_create_text_id ( $o->description ) ;
+			$sql = "UPDATE `issue` SET `description_text_id`={$text_id} WHERE `id`={$o->id}" ;
+			$this->getSQL ( $sql ) ;
+		}
+	}
+	*/
+
 	public function maintenance () {
+		#$this->maintenance_description_text_id() ;
 		$this->maintenance_wiki_dates() ;
 		$this->maintenance_wiki_tool_guess() ;
 		$this->maintenance_not_wiki_tool_guess() ;
