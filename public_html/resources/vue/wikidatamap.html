@@ -2,7 +2,8 @@
 
 <style>
 span.wikidatamap_note {   
-  border-right: 1px dotted #ccc;
+  border-right: 1px solid #DDD ;
+  margin-right: 0.2rem;
 }
 span.wikidatamap_note:last-of-type {
   border-right: none;
@@ -11,14 +12,17 @@ span.wikidatamap_note:last-of-type {
 </style>
 
 <template id='wikidatamap-template'>
-<div>
+<div class='mb-1'>
     <div v-if='loaded'>
         <div class='wikidatamap_map' style='width:100%; height:300px'></div>
         <div style="font-size:9pt;">
-            <span v-for="(layer,layer_id) in data.layers" v-if='data.sources[layer.source].status!=""' class="wikidatamap_note">
-                {{layer.name}}:{{data.sources[layer.source].status}}
+            <span v-for="(source,source_id) in data.sources" v-if='(source.status||"")!=""' class="wikidatamap_note">
+                {{source.name}}:{{source.status}}
             </span>
             &nbsp;
+            <span v-for="(layer,layer_id) in data.layers" v-if='(layer.status||"")!=""' class="wikidatamap_note">
+                {{layer.name}}:{{layer.status}}
+            </span>
         </div>
     </div>
     <div v-else>
@@ -73,12 +77,16 @@ function MapSourceMnM(catalog_id) {
     self.api = 'https://mix-n-match.toolforge.org/api.php' ;
     self.catalog_id = catalog_id ;
     self.edit_mixin = $.extend(true, {}, editEntryMixin); // Deep clone
+    self.is_incomplete = false ;
     $.get(self.api,{
         query:'get_catalog_info',
         catalog:self.catalog_id
     } , function ( d ) {
         self.catalog = d.data[0] ;
     } , 'json' ) ;
+}
+MapSourceMnM.prototype.mapHasChanged = function (data,callback) {
+    callback(false); // TODO
 }
 MapSourceMnM.prototype.action_remove_match = function ( data , callback ) {
     let self = this ;
@@ -105,12 +113,20 @@ MapSourceMnM.prototype.action_remove_match = function ( data , callback ) {
         callback(true);
     } , 'json' ) ;
 }
+MapSourceMnM.prototype.action_confirm_match = function (data,callback) {
+    let q = "Q"+data.entry.aux.entry.q ;
+    this.set_match(data,q,callback);
+}
 MapSourceMnM.prototype.action_match_to_item = function (data,callback) {
     let self = this ;
     let q = prompt ( tt.t("enter_q_number") ) ;
     if ( q == null ) return callback(false) ; // Cancel
     q = "Q"+q.replace(/\D/,'') ;
     if ( q == "Q" ) return callback(false) ; // Not a Q
+    self.set_match(data,q,callback);
+}
+MapSourceMnM.prototype.set_match = function (data,q,callback) {
+    let self = this ;
     let entry = data.entry.aux.entry ;
     let value = entry.ext_id ;
     let prop ;
@@ -155,7 +171,7 @@ MapSourceMnM.prototype.action_create_new_item = function (data,callback) {
             'new':'item',
             data:d.data
         } ;
-        let summary = 'New item based on [[:toollabs:mix-n-match/#/entry/' + entry_id + '|' + entry.ext_name + ' (#' + entry_id + ')]]' ;
+        let summary = 'New item based on [[:toollabs:mix-n-match/#/entry/' + entry_id + '|' + entry.aux.entry.ext_name + ' (#' + entry_id + ')]]' ;
         params = {
             action : 'generic' ,
             summary : summary ,
@@ -174,7 +190,7 @@ MapSourceMnM.prototype.action_create_new_item = function (data,callback) {
             }
             // TODO use mnm_entry2map_entry
             entry.aux.status = 'fullmatch' ;
-            entry.desc = entry.aux.entry.ext_desc + "\nMatched to [Q"+q+"]]" ;
+            entry.desc = entry.aux.entry.ext_desc + "\nMatched to [[Q"+q+"]]" ;
             entry.actions = [] ;
             entry.actions.push({label:"Remove match",action:'remove_match',type:'outline-danger'});
             self.edit_mixin.last_created_q = q ;
@@ -406,7 +422,9 @@ Vue.component ( 'wikidata-map' , {
             }
 
             if ( typeof layer.entries=='undefiend' ) return ;
+            let added = 0 ;
             let markers = new L.FeatureGroup();
+            layer.status = '' ;
             layer.markers = markers ;
             layer.map_layer.addLayer(markers);
             $.each ( layer.entries , function ( entry_num , entry ) {
@@ -423,13 +441,13 @@ Vue.component ( 'wikidata-map' , {
                 if ( typeof entry.url!='undefined' && entry.url!='' ) title = "<a target='_blank' href='"+entry.url+"'>"+title+"</a>" ;
                 title += after_title ;
 
-                let desc = entry.desc ;
-                desc = desc.replace(/\[\[(Q\d+)\]\]/,'<a target="_blank" href="https://www.wikidata.org/wiki/$1">$1</a>') ;
+                let desc = self.escapeHTML(entry.desc) ;
+                desc = desc.replace(/\[\[(Q\d+)\]\]/,'<a target="_blank" class="wikidata" href="https://www.wikidata.org/wiki/$1">$1</a>') ;
 
                 let text = '' ;
                 text += "<h6>"+layer.name+"</h6>" ;
                 text += "<div>"+title+"</div>" ;
-                text += "<div>" + self.escapeHTML(desc) + "</div>" ;
+                text += "<div>" + desc + "</div>" ;
                 text += "<div><tt>" + self.escapeHTML(entry.lat) + "/" + self.escapeHTML(entry.lon) + "</tt></div>" ;
 
                 if ( typeof entry.image != "undefined" ) {
@@ -454,6 +472,14 @@ Vue.component ( 'wikidata-map' , {
                 .on("popupopen",function(ev){self.openMarker(ev,layer,entry,entry_num)})
                 .addTo(markers) ;
                 entry.marker = marker ;
+                added += 1 ;
+                /*
+                // TODO filter first for current bounds
+                if ( typeof layer.max!='undefined' && added >= layer.max ) {
+                    layer.status = 'incomplete' ;
+                    return false ;
+                }
+                */
             } ) ;
 
             return markers.getBounds() ;
@@ -466,6 +492,7 @@ Vue.component ( 'wikidata-map' , {
                 let action = button.attr('action') ;
                 button.click(function(){self.handle_action(action,layer,entry,entry_num)});
             });
+            self.$emit('open-marker',{layer,entry}) ;
         } ,
         handle_action : function (action,layer,entry,entry_num) {
             let self = this ;

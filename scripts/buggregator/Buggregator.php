@@ -460,7 +460,7 @@ class Buggregator {
 		$known_toolhub = [] ;
 		$result = $this->getSQL ( $sql ) ;
 		while($o = $result->fetch_object()) $known_toolhub[$o->toolhub] = $o->toolhub ;
-		$url = 'https://toolhub-demo.wmcloud.org/api/search/tools/?format=json&ordering=-score&page=1&page_size=1000&q=%22Magnus+Manske%22' ;
+		$url = 'https://toolhub.wikimedia.org/api/search/tools/?format=json&ordering=-score&page=1&page_size=1000&q=%22Magnus+Manske%22' ;
 		$j = json_decode ( file_get_contents($url) ) ;
 		foreach ( $j->results AS $r ) {
 			if ( isset($known_toolhub[$r->name]) ) continue ; # We have that
@@ -478,15 +478,18 @@ class Buggregator {
 			$safe_titles[] = $this->escape(str_replace(' ','-',$r->title)) ;
 			$safe_titles[] = $this->escape(str_replace(' ','',$r->title)) ;
 			$safe_titles = "'".implode("','",$safe_titles)."'" ;
+			#print "{$safe_name}: {$safe_titles}\n";
 			$sql = "SELECT * FROM `tool` WHERE `name` IN ({$safe_titles}) AND `toolhub`=''" ;
 			$result = $this->getSQL ( $sql ) ;
 			while($o = $result->fetch_object()) $candidates[$o->id] = $o ;
 			$candidates = array_values($candidates) ;
+			#if ( $safe_name == 'mm_autodesc' ) print_r($candidates);
 			if ( count($candidates) == 0 ) {
-				print "Not found: {$r->title} / {$r->name} : {$r->url}\n" ;
+				if ( $safe_name!='mm_item_names' ) print "Not found: {$r->title} / {$r->name} : {$r->url}\n" ;
 			} else if ( count($candidates) == 1 ) {
 				$o = $candidates[0] ;
 				$sql = "UPDATE `tool` SET `toolhub`='{$safe_name}' WHERE `id`={$o->id}" ;
+				$this->getSQL ( $sql ) ;
 			} else {
 				print "More than one found: {$r->title} / {$r->name} : {$r->url}\n" ;
 			}
