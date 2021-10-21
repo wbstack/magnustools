@@ -137,9 +137,21 @@ if ( $action == 'authorize' ) {
 } else if ( $action == 'get_tools' ) {
 
 	$out['data'] = [] ;
+
+	$kv = [] ;
+	$sql = "SELECT * FROM tool_kv" ;
+	$result = $buggregator->getSQL ( $sql ) ;
+	while($o = $result->fetch_object()) {
+		if ( !isset($kv[$o->tool_id]) ) $kv[$o->tool_id] = [] ;
+		$kv[$o->tool_id][$o->key] = $o->value ;
+	}
+
 	$sql = "SELECT * FROM `vw_tools_tickets`" ;
 	$result = $buggregator->getSQL ( $sql ) ;
-	while($o = $result->fetch_object()) $out['data'][] = $o ;
+	while($o = $result->fetch_object()) {
+		if ( isset($kv[$o->id]) ) $o->key_values = $kv[$o->id] ;
+		$out['data'][] = $o ;
+	}
 
 } else {
 	$o->status = "Unknown action '{$action}'" ;
