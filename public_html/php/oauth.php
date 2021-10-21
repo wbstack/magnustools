@@ -249,9 +249,15 @@ class MW_OAuth {
 	 *
 	 */
 	function setCurlHttpHeaders( $curlHandle, $headers = [] ) {
-		$domain = $_SERVER['SERVER_NAME'];
-		$headers[] = 'HOST: ' . $domain;
-		curl_setopt( $curlHandle, CURLOPT_HTTPHEADER, $headers );
+
+		if( WbstackMagnusOauth::isLocalHost() ) {
+			$domain = $_SERVER['SERVER_NAME'];
+			$headers[] = 'HOST: ' . $domain;
+		}
+	
+		if( !empty($headers) ) {
+			curl_setopt( $curlHandle, CURLOPT_HTTPHEADER, $headers );
+		}
 	}
 
 	/**
