@@ -223,4 +223,21 @@ class WbstackMagnusOauth {
         return $site;
     }
 
+	/**
+	 * Set the HTTP Headers for the curl handle
+	 *
+	 * Sets the HOST parameter when internally talking to wbstack platform ingress
+	 *
+	 */
+	public static function setCurlHttpHeaders( $curlHandle, $headers = [] ) {
+
+		if( WbstackMagnusOauth::isLocalHost() ) {
+			$domain = $_SERVER['SERVER_NAME'];
+			$headers[] = 'HOST: ' . $domain;
+		}
+	
+		if( !empty($headers) ) {
+			curl_setopt( $curlHandle, CURLOPT_HTTPHEADER, $headers );
+		}
+	}
 }

@@ -151,7 +151,7 @@ class MW_OAuth {
 		curl_setopt( $ch, CURLOPT_USERAGENT, $this->gUserAgent );
 
 		curl_setopt( $ch, CURLOPT_HEADER, 0 );
-		$this->setCurlHttpHeaders( $ch );
+		WbstackMagnusOauth::setCurlHttpHeaders( $ch );
 
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
 		$data = curl_exec( $ch );
@@ -243,24 +243,6 @@ class MW_OAuth {
 	}
 
 	/**
-	 * Set the HTTP Headers for the curl handle
-	 *
-	 * Sets the HOST parameter when internally talking to wbstack platform ingress
-	 *
-	 */
-	function setCurlHttpHeaders( $curlHandle, $headers = [] ) {
-
-		if( WbstackMagnusOauth::isLocalHost() ) {
-			$domain = $_SERVER['SERVER_NAME'];
-			$headers[] = 'HOST: ' . $domain;
-		}
-	
-		if( !empty($headers) ) {
-			curl_setopt( $curlHandle, CURLOPT_HTTPHEADER, $headers );
-		}
-	}
-
-	/**
 	 * Request authorization
 	 * @return void
 	 */
@@ -292,7 +274,7 @@ class MW_OAuth {
 		//curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
 		curl_setopt( $ch, CURLOPT_USERAGENT, $this->gUserAgent );
 		curl_setopt( $ch, CURLOPT_HEADER, 0 );
-		$this->setCurlHttpHeaders( $ch );
+		WbstackMagnusOauth::setCurlHttpHeaders( $ch );
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
 		$data = curl_exec( $ch );
 		if ( !$data ) {
@@ -509,7 +491,7 @@ class MW_OAuth {
 		curl_setopt( $ch, CURLOPT_USERAGENT, $this->gUserAgent );
 
 		curl_setopt( $ch, CURLOPT_HEADER, 0 );
-		$this->setCurlHttpHeaders( $ch, [ $header ] );
+		WbstackMagnusOauth::setCurlHttpHeaders( $ch, [ $header ] );
 
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
 
