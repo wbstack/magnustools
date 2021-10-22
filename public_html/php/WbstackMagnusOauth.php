@@ -2,6 +2,8 @@
 
 class WbstackMagnusOauth {
 
+    public const platformIngressHostAndPort = "platform-nginx.default.svc.cluster.local:8080";
+
     /**
      * @var bool
      */
@@ -156,6 +158,10 @@ class WbstackMagnusOauth {
         return $params;
     }
 
+    public static function isLocalHost(): bool {
+        return substr($_SERVER['SERVER_NAME'], -10, 10) === '.localhost';
+    }
+
     /**
      * @param string $toolUrlTail Example: "/tools/widar"
      * @return mixed
@@ -165,37 +171,29 @@ class WbstackMagnusOauth {
     ) {
         // XXX: this same logic is in quickstatements.php and platform api WikiController backend
         $domain = $_SERVER['SERVER_NAME'];
-        if ( substr($domain,-10, 10) === '.localhost' ){
-            // XXX: this wont actually work on localhost currently as this is talking to mediawiki via
-            // the public hostname which doesnt exist.
-            // If we wanted this to work we would have to also add a way for the host header to be sent with
-            // the requests...
-
-            die('Will not currently work for localhost dev...');
+        if ( self::isLocalHost() ){
 
             // localhost development, with a full domain prefixing .localhost
             // eg. wiki.addshore.com.localhost
-            $wbRoot = $domain . ":8083";
-            $toolRoot = $domain . ":8086";
+            $wbRoot = $domain;
+            $toolRoot = 'http://' . $domain . $toolUrlTail;
 
             // Directly for config
-            $publicMwOAuthUrl = $wbRoot . '/w/index.php?title=Special:OAuth';
-            $mwOAuthUrl = $wbRoot . '/w/index.php?title=Special:OAuth';
+            $publicMwOAuthUrl = 'http://' . $domain . '/w/index.php?title=Special:OAuth';
+            $mwOAuthUrl = 'http://' . self::platformIngressHostAndPort . '/w/index.php?title=Special:OAuth';
             $wbPublicHostAndPort = $wbRoot;
-            $wbApi = $wbRoot . '/w/api.php';
+            $wbApi = 'http://' . self::platformIngressHostAndPort . '/w/api.php';
             $wbPageBase = $wbRoot . '/wiki/';
             $toolbase = $toolRoot;
-        } else if ( $domain === 'localhost' ) {
-            die('Should be accessed with a subdomain of localhost..');
         } else {
             $wbRoot = $domain;
             $toolRoot = $domain . $toolUrlTail;
 
             // Directly for config
-            $publicMwOAuthUrl = 'https://' . $wbRoot . '/w/index.php?title=Special:OAuth';
+            $publicMwOAuthUrl = 'https://' . $wbRoot . '/w/index.php?title=Special:OAuth'; // TODO this could use the internal network
             $mwOAuthUrl = 'https://' . $wbRoot . '/w/index.php?title=Special:OAuth';
             $wbPublicHostAndPort = $wbRoot;
-            $wbApi = 'https://' . $wbRoot . '/w/api.php';
+            $wbApi = 'https://' . $wbRoot . '/w/api.php'; // TODO this could use the internal network
             $wbPageBase = 'https://' . $wbRoot . '/wiki/';
             $toolbase = 'https://' . $toolRoot;
         }
