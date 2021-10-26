@@ -181,7 +181,6 @@ class WikidataItemList {
 				curl_setopt($ch[$key], CURLOPT_SSL_VERIFYPEER, false);
 				curl_setopt($ch[$key], CURLOPT_SSL_VERIFYHOST, false);
 
-				curl_setopt($ch[$key], CURLOPT_VERBOSE, true);
 				WbstackMagnusOauth::setCurlHttpHeaders( $ch[$key] );
 
 				curl_multi_add_handle($mh,$ch[$key]);
