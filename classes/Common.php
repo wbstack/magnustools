@@ -1,6 +1,7 @@
 <?PHP
 
 namespace Toolforge ;
+use WbstackMagnusOauth;
 
 # declare(strict_types=1); # PHP7
 
@@ -359,7 +360,7 @@ final class Common {
 			if ( count($batches[count($batches)-1]) >= $batch_size ) $batches[] = [] ;
 			$batches[count($batches)-1][$k] = $v ;
 		}
-	
+
 		foreach ( $batches AS $batch_urls ) {
 	
 			$mh = curl_multi_init();
@@ -374,6 +375,9 @@ final class Common {
 				curl_setopt($ch[$key], CURLOPT_RETURNTRANSFER, true);
 				curl_setopt($ch[$key], CURLOPT_SSL_VERIFYPEER, false);
 				curl_setopt($ch[$key], CURLOPT_SSL_VERIFYHOST, false);
+
+				WbstackMagnusOauth::setCurlHttpHeaders( $ch[$key] );
+
 				curl_multi_add_handle($mh,$ch[$key]);
 			}
 	
@@ -389,7 +393,7 @@ final class Common {
 	
 			curl_multi_close($mh);
 		}
-	
+
 		return $ret ;
 	}
 
