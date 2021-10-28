@@ -29,22 +29,32 @@ $sql = "SELECT * FROM `git_repo`" ;
 $result = $buggregator->getSQL ( $sql ) ;
 while($o = $result->fetch_object()) $tool_repo[$o->tool_id] = $o->html_url ;
 
-$names = [] ;
-$tools = [] ;
-$sql = "SELECT * FROM `tool`" ;
+$keywords = [] ;
+$sql = "SELECT * FROM `keywords`" ;
 $result = $buggregator->getSQL ( $sql ) ;
 while($o = $result->fetch_object()) {
-	if ( $o->name == "WHOLE TOOL" ) continue ;
-	if ( $o->name == "index" ) continue ;
-	if ( $o->url == '' ) continue ; # Nothing to point to
-	if ( $o->toolhub!='' ) continue ; # Handled elsewhere
+	if ( !isset($keywords[$o->tool_id]) ) $keywords[$o->tool_id] = [] ;
+	$keywords[$o->tool_id][] = $o->keyword ;
+}
+
+
+$log = [ "whole_tool"=>0 , "index"=>0 , "no_url"=>0 , "has_toolhub"=>0 , "has_bad_tag"=>0 , "no_desc"=>0 , "added2json"=>0 ] ;
+$names = [] ;
+$tools = [] ;
+$sql = "SELECT * FROM `tool` WHERE NOT EXISTS (SELECT * FROM tool_kv WHERE tool_id=tool.id AND `key`='status')" ;
+$result = $buggregator->getSQL ( $sql ) ;
+while($o = $result->fetch_object()) {
+	if ( $o->name == "WHOLE TOOL" ) { $log['whole_tool']++; continue ; }
+	if ( $o->name == "index" ) { $log['index']++; continue ; }
+	if ( $o->url == '' ) { $log['no_url']++; continue ; } # Nothing to point to
+	if ( $o->toolhub!='' ) { $log['has_toolhub']++; continue ; } # Handled elsewhere
 	$skip = false ;
 	foreach ( $bad_tags AS $tag ) {
 		if ( !stristr($o->note, $tag) ) continue ;
 		$skip = true ;
 		break ;
 	}
-	if ( $skip ) continue ;
+	if ( $skip ) { $log['has_bad_tag']++; print "NEEDS tool_kv STATUS: {$o->name}\n" ; continue ; }
 	$name = strtolower("mm_{$o->name}") ;
 	$name = preg_replace("|[^a-zA-Z0-9_-]|","",$name) ;
 	if ( in_array($name, $names) ) $name .= "_{$o->subdomain}" ;
@@ -53,12 +63,17 @@ while($o = $result->fetch_object()) {
 	$tool = (object) [
 		"name"=>$name,
 		"title"=>str_replace('_',' ',$o->name),
-		"description"=>$o->note,
+		"description"=>$o->description,
 		"url"=>$o->url,
 		"keywords"=>[],
 		"author"=>"Magnus Manske",
 		"repository"=>"",
 	] ;
+	if ( $tool->description=='' ) $tool->description = $o->note ;
+	if ( $tool->description=='' ) { $log['no_desc']++; continue ; } ; # Do not add if description is empty
+	if ( isset($keywords[$o->id]) ) {
+		foreach ( $keywords[$o->id] AS $keyword ) $tool->keywords[] = $keyword ;
+	}
 	if ( stristr($o->note, "javascript") ) $tool->keywords[] = "javascript" ;
 	foreach ( ["wikipedia","wikisource","wikibooks","wikidata","commons"] as $key ) {
 		if ( stristr($o->note, $key) ) $tool->keywords[] = $key ;
@@ -70,7 +85,9 @@ while($o = $result->fetch_object()) {
 	if ( isset($tool_repo[$o->id]) ) $tool->repository = $tool_repo[$o->id] ;
 	if ( $o->toolhub!='' ) $tool->name = $o->toolhub ;
 	$tools[] = $tool ;
+	$log['added2json']++;
 }
 
 $j = json_encode($tools,JSON_PRETTY_PRINT);
 file_put_contents($outfile, $j);
+print_r($log);

@@ -41,6 +41,14 @@ class Issue {
 		return $ret ;
 	}
 
+	public static function new_from_id ( $issue_id , $buggregator ) {
+		$issue_id *= 1 ;
+		$sql = "SELECT * FROM `vw_issue` WHERE `id`={$issue_id}" ;
+		$result = $buggregator->getSQL ( $sql ) ;
+		if($o = $result->fetch_object()) return Issue::new_from_object ( $o ) ;
+		throw Exception("No issue with ID '{$issue_id}'!") ;
+	}
+
 	public function get_or_create_issue_id ( $buggregator ) {
 		throw new Exception("{__METHOD__} should never be called directly!") ;
 	}
@@ -455,6 +463,27 @@ class Buggregator {
 		return date('Y-m-d H:i:s',$time);
 	}
 
+	protected function update_tool_description_from_toolhub($toolhub_object) {
+		if ( !isset($toolhub_object->description) ) return ;
+		$safe_name = $this->escape(trim($toolhub_object->name)) ;
+		if ( $safe_name == '' ) return ;
+		$safe_description = $this->escape(trim($toolhub_object->description)) ;
+		if ( $safe_description == '' ) return ;
+		$sql = "UPDATE `tool` SET `description`='{$safe_description}' WHERE `description`='' AND `toolhub`='{$safe_name}'" ;
+		$this->getSQL ( $sql ) ;
+	}
+
+	protected function update_tool_keywords_from_toolhub($toolhub_object) {
+		if ( !isset($toolhub_object->keywords) ) return ;
+		$safe_name = $this->escape(trim($toolhub_object->name)) ;
+		if ( $safe_name == '' ) return ;
+		foreach ( $toolhub_object->keywords AS $keyword ) {
+			$keyword_safe = $this->escape(trim($keyword)) ;
+			$sql = "INSERT IGNORE INTO `keywords` (tool_id,keyword) SELECT id,'{$keyword_safe}' FROM tool WHERE `toolhub`='{$safe_name}'" ;
+			$this->getSQL ( $sql ) ;
+		}
+	}
+
 	public function toolhub_update() {
 		$sql = "SELECT DISTINCT `toolhub` FROM `tool` WHERE `toolhub`!=''" ;
 		$known_toolhub = [] ;
@@ -463,7 +492,11 @@ class Buggregator {
 		$url = 'https://toolhub.wikimedia.org/api/search/tools/?format=json&ordering=-score&page=1&page_size=1000&q=%22Magnus+Manske%22' ;
 		$j = json_decode ( file_get_contents($url) ) ;
 		foreach ( $j->results AS $r ) {
-			if ( isset($known_toolhub[$r->name]) ) continue ; # We have that
+			if ( isset($known_toolhub[$r->name]) ) { # We have that
+				$this->update_tool_description_from_toolhub($r) ;
+				$this->update_tool_keywords_from_toolhub($r) ;
+				continue ;
+			}
 
 			$candidates = [] ;
 
@@ -490,6 +523,8 @@ class Buggregator {
 				$o = $candidates[0] ;
 				$sql = "UPDATE `tool` SET `toolhub`='{$safe_name}' WHERE `id`={$o->id}" ;
 				$this->getSQL ( $sql ) ;
+				$this->update_tool_description_from_toolhub($r) ;
+				$this->update_tool_keywords_from_toolhub($r) ;
 			} else {
 				print "More than one found: {$r->title} / {$r->name} : {$r->url}\n" ;
 			}
@@ -651,7 +686,22 @@ class Buggregator {
 		} catch (Exception $e) {
 			print $e->getMessage() . "\n" ;
 		}
+		$this->check_wikidata_for_tool_items();
 		$this->maintenance() ;
+	}
+
+	public function check_wikidata_for_tool_items() {
+		$existing_items = [] ;
+		$sql = "SELECT * FROM `tool_kv` WHERE `key`='item'" ;
+		$result = $this->getSQL ( $sql ) ;
+		while($o = $result->fetch_object()) $existing_items[$o->value] = $o->tool_id ;
+
+		$sparql = "SELECT ?q { ?q wdt:P31 wd:Q20726407 ; wdt:P178 wd:Q13520818 }" ;
+		$items = $this->tfc->getSPARQLitems($sparql,"q");
+		foreach ( $items AS $q ) {
+			if ( isset($existing_items[$q]) ) continue ;
+			print "No key/value pair for tool https://www.wikidata.org/wiki/{$q}\n" ;
+		}
 	}
 
 

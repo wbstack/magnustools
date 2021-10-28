@@ -449,6 +449,48 @@ final class ToolforgeCommon {
 		return $ret ;
 	}
 
+	public function getSPARQL_TSV ( $query ) {
+		$query = "$query\n#TOOL: {$this->toolname}" ;
+		set_time_limit(0);
+
+		$url = "https://query.wikidata.org/sparql?query=".urlencode($query) ;
+		$headers = ['Accept: text/csv'] ;
+		$agent = 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0';
+
+		$fh = tmpfile();
+		$callback = function ($ch, $data) use ($fh){ return fwrite($fh, $data); } ;
+
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+		curl_setopt($ch, CURLOPT_VERBOSE, false);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_USERAGENT, $agent);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+		curl_setopt($ch, CURLOPT_WRITEFUNCTION, $callback);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+		curl_setopt($ch, CURLOPT_URL,$url);
+		curl_exec($ch);
+		curl_close($ch);
+
+		# Flush and reset file position to start
+		fflush($fh);
+		fseek($fh,0);
+
+		# Read and yield
+		$header = [] ;
+		while (($data = fgetcsv($fh, 10000)) !== FALSE) {
+			if ( count($header)==0 ) {
+				$header = $data ;
+				continue ;
+			}
+			$o = [] ;
+			foreach ( $data AS $col => $s ) $o[$header[$col]] = $s ;
+			yield $o ;
+		}
+		fclose($fh);
+		yield from [];
+	}
+
 // QuickStatements
 // require_once ( '/data/project/quickstatements/public_html/quickstatements.php' ) ;
 
