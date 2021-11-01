@@ -694,7 +694,7 @@ class MW_OAuth {
 	}
 	
 	
-	function setDesc ( $q , $text , $language ) {
+	function setDesc ( $q , $text , $language , $summary = '' ) {
 
 		// Fetch the edit token
 		$ch = null;
