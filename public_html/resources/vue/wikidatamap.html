@@ -249,6 +249,75 @@ MapSourceMnM.prototype.load_all = function (callback) {
     } , "json" ) ;
 }
 
+// ********************************************************************************
+
+MapSourceCommons.prototype = new MapSource ;
+MapSourceCommons.prototype.constructor = MapSourceCommons ;
+function MapSourceCommons(catalog_id) {
+    MapSource.call(this);
+    this.name = 'commons'
+    this.thumb_size = 200 ;
+    this.min_zoom = 10 ;
+    this.max_results = 500 ;
+    this.language = 'en' ;
+    this.last_center = {lat:0,lng:0} ;
+}
+MapSourceCommons.prototype.mapHasChanged = function (data,callback) {
+    let self = this ;
+    self.cache = {} ; // Cleanup
+    let center = data.bounds.getCenter() ;
+    if ( center.lat == self.last_center.lat && center.lng == self.last_center.lng ) return ;
+    self.last_center = center ;
+    if ( data.zoom<self.min_zoom ) {
+        Vue.set(self,'status','zoom in to view');
+        return callback(true);
+    }
+    let url = "https://commons.wikimedia.org/w/api.php?callback=?" ;
+    Vue.set(self,'status','loading');
+    let sw = data.bounds._southWest ;
+    let ne = data.bounds._northEast ;
+    let north = ne.lat ;
+    let south = sw.lat ;
+    let east = ne.lng ;
+    let west = sw.lng ;
+    let params = {
+        action:'query',
+        list:'geosearch',
+        gsbbox:north+'|'+west+'|'+south+'|'+east,
+        gsnamespace:6,
+        gslimit:self.max_results,
+        format:'json'
+    } ;
+    $.getJSON ( url , params , function ( d ) {
+        let entries_returned = 0 ;
+        if ( typeof d.query=='undefined') {
+            Vue.set(self,'status','error');
+            return callback(false);
+        }
+        $.each ( d.query.geosearch , function (num,result) {
+            let filename = result.title.replace(/^File:/,'') ;
+            let e = {
+                id:filename,
+                label:filename.replace(/\.[^.]+$/,''),
+                desc:'',
+                lat:result.lat,
+                lon:result.lon,
+                url:'https://commons.wikimedia.org/wiki/File:'+encodeURIComponent(filename),
+                has_image:true,
+                image:{
+                    thumbnail_url:'https://commons.wikimedia.org/wiki/Special:Redirect/file/'+encodeURIComponent(filename)+'?width='+self.thumb_size+'px&height='+self.thumb_size+'px',
+                    page_url:'https://commons.wikimedia.org/wiki/File:'+encodeURIComponent(filename)
+                } ,
+                aux:{}
+            } ;
+            self.cache[e.id] = e ;
+            entries_returned += 1 ;
+        } ) ;
+        if ( entries_returned>=self.max_results ) Vue.set(self,'status','incomplete');
+        else Vue.set(self,'status','');
+        callback(true);
+    } ) ;
+}
 
 // ********************************************************************************
 
@@ -470,6 +539,7 @@ Vue.component ( 'wikidata-map' , {
                 let marker = L.circleMarker({lat:entry.lat,lon:entry.lon},options)
                 .bindPopup(text)
                 .on("popupopen",function(ev){self.openMarker(ev,layer,entry,entry_num)})
+                //.on("dblclick",function(ev){self.zoomOnMarker(ev,layer,entry,entry_num)})
                 .addTo(markers) ;
                 entry.marker = marker ;
                 added += 1 ;
@@ -483,6 +553,10 @@ Vue.component ( 'wikidata-map' , {
             } ) ;
 
             return markers.getBounds() ;
+        } ,
+        zoomOnMarker : function ( ev , layer , entry , entry_num ) { // DOES NOT WORK??
+            let self = this ;
+            self.$emit('double-click-marker',{layer,entry,entry_num}) ;
         } ,
         openMarker : function ( ev , layer , entry , entry_num ) {
             let self = this ;
