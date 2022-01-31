@@ -32,7 +32,7 @@ class Widar {
 			// WBStack customization START
 			WbstackMagnusOauth::setOauthDetails(
 				'Widar',
-				'1.0.3',
+				'1.0.4',
 				[
 					'highvolume',
 					'editpage',
