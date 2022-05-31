@@ -50,6 +50,7 @@ foreach ( $files AS $filename_inc ) {
 	}
 	$php = preg_replace ( '|\bnew +Exception\b|' , 'new \\Exception' , $php ) ;
 	$php = preg_replace ( '~\b(require|include)(_once){0,1}[ \(]*[\"\']'.$dir_inc.".*?;\s~" , '' , $php ) ;
+	$php = preg_replace ( '~^(require|include)(_once){0,1}.*?WikidataItem\.php.*$~' , '' , $php ) ;
 	file_put_contents($filename_class, $php) ;
 	$check = `php -l '{$filename_class}'` ;
 	if ( !preg_match ( '|^No syntax errors detected in |' , $check ) ) {

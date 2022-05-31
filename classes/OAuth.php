@@ -12,7 +12,8 @@ class OAuth {
 	var $debugging = false ;
 	var $language , $project ;
 	var $ini_file , $params ;
-	var $mwOAuthUrl = 'https://www.mediawiki.org/w/index.php?title=Special:OAuth';
+	#var $mwOAuthUrl = 'https://www.mediawiki.org/w/index.php?title=Special:OAuth'; # See https://phabricator.wikimedia.org/T112730
+	var $mwOAuthUrl = 'https://www.mediawiki.org/wiki/Special:OAuth';
 	var $publicMwOAuthUrl; //if the mediawiki url given to the user is different from how this
 							//script may see it (e.g. if behind a proxy) set the user url here.
 	var $mwOAuthIW = 'mw'; // Set this to the interwiki prefix for the OAuth central wiki.
@@ -125,14 +126,19 @@ class OAuth {
 		session_write_close();
 	}
 
+	function getOAuthURL ( $action , $append_separator = false ) {
+		$url = $this->mwOAuthUrl . '/' . $action ;
+		if ( $append_separator ) $url .= strpos( $url, '?' ) ? '&' : '?';
+		return $url ;
+	}
+
 
 	/**
 	 * Handle a callback to fetch the access token
 	 * @return void
 	 */
 	function fetchAccessToken() {
-		$url = $this->mwOAuthUrl . '/token';
-		$url .= strpos( $url, '?' ) ? '&' : '?';
+		$url = $this->getOAuthURL ( 'token' , true ) ;
 		$url .= http_build_query( [
 			'format' => 'json',
 			'oauth_verifier' => $_GET['oauth_verifier'],
@@ -250,8 +256,7 @@ class OAuth {
 		// First, we need to fetch a request token.
 		// The request is signed with an empty token secret and no token key.
 		$this->gTokenSecret = '';
-		$url = $this->mwOAuthUrl . '/initiate';
-		$url .= strpos( $url, '?' ) ? '&' : '?';
+		$url = $this->getOAuthURL ( 'initiate' , true ) ;
 		$query = [
 			'format' => 'json',
 		
@@ -307,8 +312,7 @@ class OAuth {
 		session_write_close();
 
 		// Then we send the user off to authorize
-		$url = $this->publicMwOAuthUrl . '/authorize';
-		$url .= strpos( $url, '?' ) ? '&' : '?';
+		$url = $this->getOAuthURL ( 'authorize' , true ) ;
 		$arr = [
 			'oauth_token' => $token->key,
 			'oauth_consumer_key' => $this->gConsumerKey,
@@ -322,7 +326,7 @@ class OAuth {
 
 	function doIdentify() {
 
-		$url = $this->mwOAuthUrl . '/identify';
+		$url = $this->getOAuthURL ( 'identify' , false ) ;
 		$headerArr = [
 			// OAuth information
 			'oauth_consumer_key' => $this->gConsumerKey,

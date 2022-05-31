@@ -4,6 +4,9 @@ namespace Toolforge ;
 
 $wikidata_api_url = 'https://www.wikidata.org/w/api.php' ;
 
+if ( __NAMESPACE__ == 'Toolforge' ) {
+} else require_once ( __DIR__ . '/../../classes/WikidataItem.php' ) ;
+
 class Wikidata {
 
 	public $testing = false ;
@@ -56,7 +59,11 @@ class Wikidata {
 	protected function parseEntities ( $j ) {
 		foreach ( $j->entities AS $q => $v ) {
 			if ( isset ( $this->items[$q] ) ) continue ; // Paranoia
-			$this->items[$q] = new Toolforge\WikidataItem ;
+			if ( __NAMESPACE__ == 'Toolforge' ) {
+				$this->items[$q] = new WikidataItem ;
+			} else {
+				$this->items[$q] = new Toolforge\WikidataItem ;
+			}
 			$this->items[$q]->q = $q ;
 			$this->items[$q]->j = $v ;
 		}
