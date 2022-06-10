@@ -10,8 +10,7 @@ class MW_OAuth {
 	var $debugging = false ;
 	var $language , $project ;
 	var $ini_file , $params ;
-	#var $mwOAuthUrl = 'https://www.mediawiki.org/w/index.php?title=Special:OAuth'; # See https://phabricator.wikimedia.org/T112730
-	var $mwOAuthUrl = 'https://www.mediawiki.org/wiki/Special:OAuth';
+	var $mwOAuthUrl = 'https://www.mediawiki.org/wiki/Special:OAuth'; # See https://phabricator.wikimedia.org/T112730
 	var $publicMwOAuthUrl; //if the mediawiki url given to the user is different from how this
 							//script may see it (e.g. if behind a proxy) set the user url here.
 	var $mwOAuthIW = 'mw'; // Set this to the interwiki prefix for the OAuth central wiki.
