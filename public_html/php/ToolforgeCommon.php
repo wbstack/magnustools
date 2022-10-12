@@ -353,7 +353,7 @@ final class ToolforgeCommon {
 		foreach ( $batches AS $batch_urls ) {
 	
 			$mh = curl_multi_init();
-			curl_multi_setopt  ( $mh , CURLMOPT_PIPELINING , 1 ) ;
+			//curl_multi_setopt  ( $mh , CURLMOPT_PIPELINING , 2 ) ; // CURLPIPE_MULTIPLEX, requires HTTP2
 		//	curl_multi_setopt  ( $mh , CURLMOPT_MAX_TOTAL_CONNECTIONS , 5 ) ;
 			$ch = [] ;
 			foreach ( $batch_urls AS $key => $value ) {
@@ -451,10 +451,13 @@ final class ToolforgeCommon {
 
 	public function getSPARQL_TSV ( $query ) {
 		$query = "$query\n#TOOL: {$this->toolname}" ;
+		$url = "https://query.wikidata.org/sparql?query=".urlencode($query) ;
+		return $this->csvUrlGenerator($url);
+	}
+
+	public function csvUrlGenerator ( $url , $headers = ['Accept: text/csv'] ) {
 		set_time_limit(0);
 
-		$url = "https://query.wikidata.org/sparql?query=".urlencode($query) ;
-		$headers = ['Accept: text/csv'] ;
 		$agent = 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0';
 
 		$fh = tmpfile();
@@ -543,6 +546,21 @@ final class ToolforgeCommon {
 		if ( trim($method) != '' ) $url .= '&method=' . urlencode(trim($method)) ;
 		$j = json_decode ( file_get_contents ( $url ) ) ;
 		return $j ;
+	}
+
+	public function showProcInfo() {
+		$status = file_get_contents('/proc/' . getmypid() . '/status');
+		
+		$matchArr = array();
+		preg_match_all('~^(VmRSS|VmSwap):\s*([0-9]+).*$~im', $status, $matchArr);
+		
+		if(!isset($matchArr[2][0]) || !isset($matchArr[2][1])) {
+			print "No memory info available\n" ;
+		} else {
+			$mem = intval($matchArr[2][0]) + intval($matchArr[2][1]);
+			$mem = round($mem / 1024,1) ;
+			print "Memory used: {$mem} MB\n" ;
+		}
 	}
 
 } ;

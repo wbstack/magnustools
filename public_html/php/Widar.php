@@ -519,11 +519,21 @@ class Widar {
 	public function get_rights () {
 		//$this->ensureAuth() ;
 		$this->result = $this->oa->getConsumerRights() ;
+		return $this->result ;
 	}
 
 	public function logout () {
 		$this->ensureAuth() ;
 		$this->oa->logout() ;
+	}
+
+	public function get_username () {
+		$rights = $this->get_rights() ;
+		if ( !isset($rights) ) throw new Exception ( "Not logged in" ) ;
+		if ( !isset($rights->query) ) throw new Exception ( "Not logged in" ) ;
+		if ( !isset($rights->query->userinfo) ) throw new Exception ( "Not logged in" ) ;
+		if ( !isset($rights->query->userinfo->name) ) throw new Exception ( "Not logged in" ) ;
+		return $rights->query->userinfo->name ;
 	}
 
 	protected function set_q_or_claim ( &$claim , $id , $qualifier_claim ) {

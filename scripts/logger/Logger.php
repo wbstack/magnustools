@@ -5,20 +5,20 @@ require_once ( '/data/project/magnustools/public_html/php/ToolforgeCommon.php' )
 class Logger {
 	public $tfc ;
 	public $db ;
-	private $tools_table_name = 'tools' ;
-	private $logs_table_name = 'logs' ;
+	private $database_name = 'buggregator' ;
+	private $tools_table_name = 'logging_tools' ;
+	private $logs_table_name = 'logging_uses' ;
 
 	public function __construct () {
-		$this->tfc = new ToolforgeCommon('logger') ;
-		$this->db = $this->tfc->openDBtool ( 'tool_logging' ) ;
+		$this->tfc = new ToolforgeCommon ( 'logger' ) ;
+		$this->db = $this->tfc->openDBtool ( $this->database_name ) ;
 	}
 
-	public function getToolByNameAndMethod ( $toolname , $method ) {
-		$this->sanitizeToolAndMethodName ( $toolname , $method ) ;
+	public function getToolByNameAndMethod ( $toolname , $method , $sanitize = true ) {
+		if ( $sanitize ) $this->sanitizeToolAndMethodName ( $toolname , $method ) ;
 		$sql = "SELECT id FROM `{$this->tools_table_name}` WHERE `name`='" . $this->db->real_escape_string($toolname) . "' AND `method`='" . $this->db->real_escape_string($method) . "'" ;
 		$result = $this->tfc->getSQL ( $this->db , $sql ) ;
-		while($o = $result->fetch_object()) $tool_id = $o->id ;
-		return $tool_id ;
+		while($o = $result->fetch_object()) return $o->id ;
 	}
 
 	protected function createNewToolAndMethod ( $toolname , $method ) {
@@ -45,10 +45,10 @@ class Logger {
 		$this->tfc->getSQL ( $this->db , $sql ) ;
 	}
 
-	public function addToLog ( $tool_id , $increase = 1 ) {
+	public function addToLog ( $tool_id , $date = 0 , $increase = 1 ) {
 		# Create tool/date entry if necessary, increase usage count
-		$date = $this->today() ;
-		$sql = "INSERT INTO `{$this->logs_table_name}` (`tool_id`,`date`,`used`) VALUES ({$tool_id},{$date},1) ON DUPLICATE KEY UPDATE `used`=`used`+{$increase}" ;
+		if ( $date == 0 ) $date = $this->today() ;
+		$sql = "INSERT INTO `{$this->logs_table_name}` (`tool_id`,`date`,`used`) VALUES ({$tool_id},{$date},{$increase}) ON DUPLICATE KEY UPDATE `used`=`used`+{$increase}" ;
 		$this->tfc->getSQL ( $this->db , $sql ) ;
 	}
 
@@ -73,11 +73,36 @@ class Logger {
 		exit(0) ;
 	}
 
-	protected function sanitizeToolAndMethodName ( &$toolname , &$method ) {
-		$method = preg_replace ( '|\s*[\(\)].*$|' , '' , $method ) ;
+	public function sanitizeToolAndMethodName ( &$toolname , &$method ) {
+		$method = preg_replace ( '|\s*[\(\)\"\'\=\;\,].*$|' , '' , $method ) ;
+		if ( $toolname == 'mix-n-match' ) {
+			$method = preg_replace ( '/\s+(and|union)\b.*/i' , '' , $method ) ;
+			$method = preg_replace ( '|\..*|i' , '' , $method ) ;
+		}
+		if ( $toolname == 'icommons' ) {
+			if ( preg_match('|^category\b|',$method) ) $method = 'category' ;
+		}
 		$toolname = trim ( strtolower ( $toolname ) ) ;
 		$method = trim ( strtolower ( $method ) ) ;
 		if ( $toolname == '' ) $logger->micDrop ( "No tool name supplied" ) ;
+	}
+
+	public function mergeMethods ( $toolname , $method_from , $method_to ) {
+		$tool_id_from = $this->getToolByNameAndMethod ( $toolname , $method_from , false ) ;
+		if ( !isset($tool_id_from) ) return $this->micDrop ( "No tool {$toolname}:{$method_from}" ) ;
+		$tool_id_to = $this->getOrCreateToolByNameAndMethod ( $toolname , $method_to ) ;
+		$sql = "SELECT * FROM `{$this->logs_table_name}` WHERE `tool_id`={$tool_id_from}" ;
+		$result = $this->tfc->getSQL ( $this->db , $sql ) ;
+		#print "{$toolname}: {$method_from}={$tool_id_from} => {$method_to}={$tool_id_to}\n" ;
+		# Merge and delete logs
+		while($o = $result->fetch_object()) {
+			$this->addToLog ( $tool_id_to , $o->date , $o->used ) ;
+			$sql = "DELETE FROM `{$this->logs_table_name}` WHERE `id`={$o->id}" ;
+			$this->tfc->getSQL ( $this->db , $sql ) ;
+		}
+		# Delete tool entry
+		$sql = "DELETE FROM `{$this->tools_table_name}` WHERE `id`={$tool_id_from}" ;
+		$this->tfc->getSQL ( $this->db , $sql ) ;
 	}
 
 	protected function today() {
