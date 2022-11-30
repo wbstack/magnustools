@@ -75,6 +75,7 @@ class CircularRedirects {
 		if ( count($redirects) == 0 ) return ;
 		$page_nice = ucfirst(preg_replace('/_/',' ',$page));
 		$wt = $this->tfc->getWikiPageText($wiki,$page);
+		if ( preg_match('/\{\{\s*[Bb]ots\s*\}\}/',$wt) ) return false ; # {{bots}}
 		$wt_orig = $wt ;
 		foreach ( $redirects AS $rtitle ) {
 			if ( preg_match("/^[A-Za-z][a-z]+:/",$rtitle) ) continue ; # TODO skipping redirects with namespaces
