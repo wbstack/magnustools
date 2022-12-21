@@ -108,11 +108,13 @@
 {
     "name" : "mm_baglama",
     "title" : "BaGLAMa",
-    "description" : "Monthly view counts for pages containing images from selected Commons categories. Supersedec by BaGLAMa2.",
+    "description" : "Monthly view counts for pages containing images from selected Commons categories. Superseded by BaGLAMa2.",
     "url" : "https://glamtools.toolforge.org/baglama.php",
     "keywords" : "glam, files, images, views, commons",
     "author" : "Magnus Manske",
-	"repository" : "https://bitbucket.org/magnusmanske/glamtools"
+	"repository" : "https://bitbucket.org/magnusmanske/glamtools",
+    "deprecated" : true,
+    "replaced_by" : "https://glamtools.toolforge.org/baglama2/"
 } ,
 {
     "name" : "mm_baglama2",
