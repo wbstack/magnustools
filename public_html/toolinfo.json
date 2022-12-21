@@ -701,7 +701,7 @@
 	"url" : "https://widar.toolforge.org/" ,
 	"keywords" : "wikidata, oauth, login" ,
 	"author" : "Magnus Manske" ,
-	"repository" : ""
+    "deprecated" : true
 } ,
 {
 	"name" : "mm_listeria" ,
