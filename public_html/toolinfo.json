@@ -6,7 +6,9 @@
     "url" : "https://wdq.wmflabs.org",
     "keywords" : "wikidata, query, wdq, pagepile",
     "author" : "Magnus Manske",
-    "repository" : "https://bitbucket.org/magnusmanske/wikidataquery"
+    "repository" : "https://bitbucket.org/magnusmanske/wikidataquery",
+    "deprecated" : true,
+    "replaced_by" : "https://query.wikidata.org/"
 },
 {
 	"name" : "mm_wikidata_game" ,
