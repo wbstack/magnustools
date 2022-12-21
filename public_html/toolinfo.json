@@ -674,12 +674,12 @@
 } ,
 {
 	"name" : "mm_wikishootme" ,
-	"title" : "Wiki ShootMe!" ,
-	"description" : "Shows Wikidata items in your area that do not have an image" ,
+	"title" : "WikiShootMe" ,
+	"description" : "WikiShootMe V3 (WSM) is a tool to show Wikidata items, Wikipedia articles, and Commons images with coordinates, all on the same map." ,
 	"url" : "https://wikishootme.toolforge.org/" ,
 	"keywords" : "wikidata, commons, image, around, coordinate, coordinates" ,
 	"author" : "Magnus Manske" ,
-	"repository" : ""
+	"repository" : "https://bitbucket.org/magnusmanske/wikishootme"
 } ,
 {
 	"name" : "mm_wikisoba" ,
