@@ -509,7 +509,9 @@
     "url" : "https://catscan2.toolforge.org/catscan2.php",
     "keywords" : "category, categories, templates, wikipedia, trees, query, pagepile",
     "author" : "Magnus Manske",
-    "repository" : "https://bitbucket.org/magnusmanske/catscan2"
+    "repository" : "https://bitbucket.org/magnusmanske/catscan2",
+    "deprecated" : true,
+    "replaced_by" : "https://petscan.wmflabs.org/"
 } ,
 {
     "name" : "mm_reverse_category_tree",
@@ -518,7 +520,9 @@
     "url" : "https://catscan2.toolforge.org/reverse_tree.php",
     "keywords" : "category, categories, wikipedia, commons, query, trees",
     "author" : "Magnus Manske",
-    "repository" : "https://bitbucket.org/magnusmanske/catscan2"
+    "repository" : "https://bitbucket.org/magnusmanske/catscan2",
+    "deprecated" : true,
+    "replaced_by" : "https://petscan.wmflabs.org/"
 } ,
 {
     "name" : "mm_pages_in_categories",
@@ -527,7 +531,9 @@
     "url" : "https://catscan2.toolforge.org/pages_in_cats.php",
     "keywords" : "wikipedia, category, categories",
     "author" : "Magnus Manske",
-    "repository" : "https://bitbucket.org/magnusmanske/catscan2"
+    "repository" : "https://bitbucket.org/magnusmanske/catscan2",
+    "deprecated" : true,
+    "replaced_by" : "https://petscan.wmflabs.org/"
 } ,
 {
     "name" : "mm_catfood",
@@ -560,7 +566,9 @@
     "url" : "https://catscan2.toolforge.org/cross_cats.php",
     "keywords" : "category, categories, wikipedia, interlanguage, tree, query",
     "author" : "Magnus Manske",
-    "repository" : "https://bitbucket.org/magnusmanske/catscan2"
+    "repository" : "https://bitbucket.org/magnusmanske/catscan2",
+    "deprecated" : true,
+    "replaced_by" : "https://petscan.wmflabs.org/"
 } ,
 {
     "name" : "mm_random_page_in_cat",
@@ -733,11 +741,11 @@
 {
 	"name" : "mm_petscan" ,
 	"title" : "PetScan" ,
-	"description" : "Replacement for CatScan2, QuickIntersection, Creator, Autolist etc." ,
+	"description" : "PetScan can generate lists of Wikipedia (and related projects) pages or Wikidata items that match certain criteria, such as all pages in a certain category, or all items with a certain property. PetScan can also combine some temporary lists (here called 'sources') in various ways, to create a new one." ,
 	"url" : "https://petscan.wmflabs.org" ,
 	"keywords" : "categories, intersection, WDQS, SPARQL, pagepile, wikidata" ,
 	"author" : "Magnus Manske" ,
-	"repository" : "https://bitbucket.org/magnusmanske/petscan"
+	"repository" : "https://github.com/magnusmanske/petscan_rs"
 } ,
 {
 	"name" : "mm_tooltranslate" ,
