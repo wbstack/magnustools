@@ -93,8 +93,12 @@ class CircularRedirects {
 			}
 		}
 		if ( $wt!=$wt_orig ) {
-			$this->setPageText($wiki,$page,$wt,"Replacing circular redirect link (redirect links back to this page) with plain text");
 			$ret = true ;
+			try {
+				$this->setPageText($wiki,$page,$wt,"Replacing circular redirect link (redirect links back to this page) with plain text");
+			} catch (Exception $ex) {
+				$ret = false ; # Some error
+			}
 		} else {
 			$ret = false ;
 		}
@@ -176,6 +180,7 @@ class CircularRedirects {
 			try {
 				$this->fix_next_page($wiki);
 			} catch (Exception $ex) {
+				print_r($ex);
 				return ;
 			}
 		}		

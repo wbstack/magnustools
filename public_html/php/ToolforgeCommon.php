@@ -167,6 +167,20 @@ final class ToolforgeCommon {
 		}
 	}
 
+	# Requires a replica.trove.my.cnf file with user, password, and server
+	public function openDBtrove ( $dbname = '' ) {
+		if ( isset ( $this->tool_user_name ) and $this->tool_user_name != '' ) $user = $this->tool_user_name ;
+		else $user = str_replace ( 'tools.' , '' , get_current_user() ) ;
+		$passwordfile = "/data/project/${user}/replica.trove.my.cnf" ;
+		$config = parse_ini_file( $passwordfile );
+		$user = $config['user'];
+		$password = $config['password'];
+		$server = $config['host'];
+		$db = @new mysqli($server, $user, $password , $dbname);
+		assert ( $db->connect_errno == 0 , 'Unable to connect to database [' . $db->connect_error . ']' ) ;
+		return $db ;
+	}
+
 	public function openDBtool ( $dbname = '' , $server = '' , $force_user = '' , $persistent = false ) {
 		$this->getDBpassword() ;
 		if ( $dbname == '' ) $dbname = '_main' ;
