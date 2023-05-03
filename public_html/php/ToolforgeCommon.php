@@ -89,6 +89,7 @@ final class ToolforgeCommon {
 		if ( $wiki == 'wikidatawiki' ) return "www.wikidata.org" ;
 		if ( $wiki == 'specieswiki' ) return "species.wikimedia.org" ;
 		if ( $wiki == 'metawiki' ) return "meta.wikimedia.org" ;
+		if ( preg_match ( '/^(.+)wikisourcewiki$/' , $wiki , $m ) ) return $m[1].".wikisource.org" ;
 		$wiki = preg_replace ( '/_/' , '-' , $wiki ) ;
 		if ( preg_match ( '/^(.+)wiki$/' , $wiki , $m ) ) return $m[1].".wikipedia.org" ;
 		if ( preg_match ( '/^(.+)(wik.+)$/' , $wiki , $m ) ) return $m[1].".".$m[2].".org" ;

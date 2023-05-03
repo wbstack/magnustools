@@ -13,9 +13,14 @@
                 Your browser doesn't support the HTML audio tag. Be sad.
             </video>
         </span>
-    	<a v-else-if='img.imageinfo[0].mediatype=="BITMAP" || img.imageinfo[0].mediatype=="DRAWING"' target='_blank' :href='img.imageinfo[0].descriptionurl' :title='img.title.replace(/^.+?:/,"")'>
-    		<img :src='img.imageinfo[0].thumburl' border=0 :width='img.imageinfo[0].thumbwidth' :height='img.imageinfo[0].thumbheight' class="wiki_thumbnail" />
-    	</a>
+        <span v-else-if='img.imageinfo[0].mediatype=="BITMAP" || img.imageinfo[0].mediatype=="DRAWING"'>
+            <span v-if='nolink'>
+                <img :src='img.imageinfo[0].thumburl' border=0 :width='img.imageinfo[0].thumbwidth' :height='img.imageinfo[0].thumbheight' class="wiki_thumbnail" />
+            </span>
+        	<a v-else target='_blank' :href='img.imageinfo[0].descriptionurl' :title='img.title.replace(/^.+?:/,"")'>
+        		<img :src='img.imageinfo[0].thumburl' border=0 :width='img.imageinfo[0].thumbwidth' :height='img.imageinfo[0].thumbheight' class="wiki_thumbnail" />
+        	</a>
+        </span>
         <span v-else>
             <i>Don't know how to show a {{img.imageinfo[0].mediatype}}</i>
         </span>
@@ -27,7 +32,7 @@
 'use strict';
 
 Vue.component ( 'commons-thumbnail' , {
-	props : [ 'filename' , 'width' , 'height' , 'api' ] ,
+	props : [ 'filename' , 'width' , 'height' , 'api' , 'nolink' ] ,
 	data : function () { return { loading:true , loaded:false , img:{} , api_url:'https://commons.wikimedia.org/w/api.php' } } ,
     created : function () {
         this.checkAndLoadFilename() ;

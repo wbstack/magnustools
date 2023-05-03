@@ -45,7 +45,7 @@ class ToolMonitor {
 	}
 
 	function message2html_page() {
-		$message = "<html><body><h1>Tool status</h1><table>" ;
+		$message = "<html><head><meta http-equiv='refresh' content='1800' ></head><body><h1>Tool status</h1><table>" ;
 		foreach ( $this->alerts AS $tool => $tool_alerts ) {
 			$message .= "<tr><th>{$tool}</th>" ;
 
@@ -75,7 +75,10 @@ class ToolMonitor {
 
 		if ( $this->testing) print "{$message}\n";
 		else {
-			if ( mail("magnusmanske@googlemail.com","Tool monitor alert",$message,implode("\r\n", $headers),"") ) {
+			$ts = "Updated: ".date("Y-m-d H:i:s");
+			$message2 = str_replace("<body>", "<body><p>{$ts}</p>", $message);
+			$message2 = str_replace("</body>", "<p>{$ts}</p></body>", $message2);
+			if ( mail("magnusmanske@googlemail.com","Tool monitor alert",$message2,implode("\r\n", $headers),"") ) {
 				file_put_contents($this->last_message_file, $message);
 			}
 		}
@@ -92,7 +95,9 @@ class ToolMonitor {
 
 			if ( $this->testing ) $last_message='hni7gsib7BGUCU'; # Unique
 			else $last_message = file_get_contents($this->last_message_file);
-			if ($message!=$last_message) $this->send_message($message);
+			if ($message!=$last_message) {
+				$this->send_message($message);
+			}
 		} else {
 			if ( !$this->testing ) file_put_contents($this->last_message_file, $message);
 		}
@@ -103,7 +108,6 @@ class ToolMonitor {
 		$cnt = 3;
 		while ( $cnt>0 ) {
 			try {
-				#$ret = file_get_contents($url);
 				curl_setopt($ch, CURLOPT_URL, $url);
 				curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 				curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 60);
@@ -127,7 +131,7 @@ class ToolMonitor {
 
 	function check_quickstatements() {
 		$tool = $this->prep_tool("QuickStatements");
-		$minutes_ago = 10 ;
+		$minutes_ago = 60 ;
 		$url = "https://quickstatements.toolforge.org/api.php?action=get_batches_info";
 		if ( $this->url_exists($url) ) {
 			try {
@@ -186,7 +190,7 @@ class ToolMonitor {
 
 	function check_listeriabot() {
 		$tool = $this->prep_tool("ListeriaBot");
-		$minutes_ago = 60 ;
+		$minutes_ago = 60*8 ; # 8h
 		$url = "https://en.wikipedia.org/w/api.php?action=query&list=usercontribs&ucuser=ListeriaBot&uclimit=1&format=json" ;
 		try {
 			$j = json_decode($this->load_url($url));
