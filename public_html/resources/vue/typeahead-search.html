@@ -112,10 +112,12 @@ Vue.component ( 'typeahead-search' , {
 			me.results = [] ;
 
 			let language = me.getLanguage() ;
+			
+			let wd_api_base = 'https://www.wikidata.org/w/' ;
 
 			if ( me.fulltext ) {
 
-				$.getJSON ( 'https://www.wikidata.org/w/api.php?callback=?' , {
+				$.getJSON ( wd_api_base + 'api.php?callback=?' , {
 					action:'query',
 					list:'search',
 					srnamespace:(me.type=='property'?120:0), // TODO lexemes'n'stuff
@@ -132,7 +134,7 @@ Vue.component ( 'typeahead-search' , {
 
 			} else {
 
-				$.getJSON ( 'https://www.wikidata.org/w/api.php?callback=?' , {
+				$.getJSON ( wd_api_base + 'api.php?callback=?' , {
 					action:'wbsearchentities',
 					language:language,
 					type:(me.type||'item'),
