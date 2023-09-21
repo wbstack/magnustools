@@ -9,8 +9,8 @@ function WikiDataItem ( init_wd , init_raw ) {
 
 	// Methods
 	this.isPlaceholder = function () { return this.placeholder ; }
-	this.isItem = function () { return (this.raw||{ns:-1}).ns == 0 ; }
-	this.isProperty = function () { return (this.raw||{ns:-1}).ns == 120 ; }
+	this.isItem = function () { return (this.raw||{ns:-1}).ns == 120 ; }
+	this.isProperty = function () { return (this.raw||{ns:-1}).ns == 122 ; }
 	this.getID = function () { return (this.raw||{}).id ; }
 
 	this.getURL = function () {
