@@ -166,8 +166,9 @@ final class ToolforgeCommon {
 	private function getDBpassword () /*:string*/ {
 		if ( isset ( $this->tool_user_name ) and $this->tool_user_name != '' ) $user = $this->tool_user_name ;
 		else $user = str_replace ( 'tools.' , '' , get_current_user() ) ;
-		$passwordfile = getenv("HOME").'/replica.my.cnf' ;
-		// if ( $user == 'magnus' ) $passwordfile = '/home/' . $user . '/replica.my.cnf' ; // Command-line usage
+		// $passwordfile = getenv("HOME").'/replica.my.cnf' ;
+		$passwordfile = "/data/project/{$user}/replica.trove.my.cnf" ;
+		if ( $user == 'magnus' ) $passwordfile = '/home/' . $user . '/replica.my.cnf' ; // Command-line usage
 		$config = parse_ini_file( $passwordfile );
 		if ( isset( $config['user'] ) ) {
 			$this->mysqlUser = $config['user'];
@@ -188,7 +189,7 @@ final class ToolforgeCommon {
 		$password = $config['password'];
 		$server = $config['host'];
 		$this->isLocal = $config['local']=='true';
-		$db = @new mysqli($server, $user, $password , $dbname, $port);
+		$db = @new mysqli($server, $user, $password , $dbname);
 		assert ( $db->connect_errno == 0 , 'Unable to connect to database [' . $db->connect_error . ']' ) ;
 		return $db ;
 	}
