@@ -167,7 +167,7 @@ final class ToolforgeCommon {
 		if ( isset ( $this->tool_user_name ) and $this->tool_user_name != '' ) $user = $this->tool_user_name ;
 		else $user = str_replace ( 'tools.' , '' , get_current_user() ) ;
 		// $passwordfile = getenv("HOME").'/replica.my.cnf' ;
-		$passwordfile = "/data/project/{$user}/replica.trove.my.cnf" ;
+		$passwordfile = "/data/project/{$user}/replica.my.cnf" ;
 		if ( $user == 'magnus' ) $passwordfile = '/home/' . $user . '/replica.my.cnf' ; // Command-line usage
 		$config = parse_ini_file( $passwordfile );
 		if ( isset( $config['user'] ) ) {
