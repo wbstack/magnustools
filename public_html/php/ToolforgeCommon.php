@@ -176,7 +176,7 @@ final class ToolforgeCommon {
 		if ( isset( $config['password'] ) ) {
 			$this->mysqlPassword = $config['password'];
 		}
-		$this->isLocal = $config['local']=='true';
+		$this->isLocal = isset($config['local'])&&($config['local']=='true');
 	}
 
 	# Requires a replica.trove.my.cnf file with user, password, and server
