@@ -14,6 +14,13 @@ set_time_limit ( 60 * 10 ) ; // Seconds
 //if ( !isset($noheaderwhatsoever) ) header("Connection: close");
 
 /*
+Local testing:
+ssh magnus@tools-login.wmflabs.org -L 3309:wikidatawiki.web.db.svc.eqiad.wmflabs:3306 -N &
+ssh magnus@tools-login.wmflabs.org -L 3308:tools-db:3306 -N &
+*/
+
+/*
+USAGE:
 require_once ( '/data/project/magnustools/public_html/php/ToolforgeCommon.php' ) ;
 $tfc = new ToolforgeCommon('mytoolname') ;
 */
@@ -25,17 +32,18 @@ final class ToolforgeCommon {
 	public /*string*/ $tool_user_name ; # force different DB user name
 	public $use_db_cache = true ;
 
-	private $is_local = false;
+	private $isLocal = false;
 
-	private $browser_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:57.0) Gecko/20100101 Firefox/57.0" ;
-	private	$db_servers = [
+	private $browserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:57.0) Gecko/20100101 Firefox/57.0" ;
+	private	$dbServers = [
 			'fast' => '.web.db.svc.eqiad.wmflabs' ,
 			'slow' => '.analytics.db.svc.eqiad.wmflabs'
 		] ;
 	
 	private $cookiejar ; # For doPostRequest
-	private/*string*/  $mysql_user , $mysql_password;
-	private $db_cache = [] ;
+	private/*string*/  $mysqlUser;
+	private/*string*/  $mysqlPassword;
+	private $dbCache = [] ;
 	
 	public function __construct ( /*string*/ $toolname = '' ) {
 		if ( $toolname != '' ) $this->toolname = $toolname ;
@@ -55,37 +63,37 @@ final class ToolforgeCommon {
 
 // CONVENIENCE
 
-	function getRequest ( $key , $default = "" ) /*:string*/ {
+	public function getRequest ( $key , $default = "" ) /*:string*/ {
 		if ( isset ( $this->prefilled_requests[$key] ) ) return $this->prefilled_requests[$key] ;
 		if ( isset ( $_REQUEST[$key] ) ) return str_replace ( "\'" , "'" , $_REQUEST[$key] ) ;
 		return $default ;
 	}
 	
-	function urlEncode ( $t ) /*:string*/ {
+	public function urlEncode ( $t ) /*:string*/ {
 		$t = str_replace ( " " , "_" , $t ) ;
 		$t = urlencode ( $t ) ;
 		return $t ;
 	}
 	
-	function escapeAttribute ( $s ) /*:string*/ {
-		$ret = preg_replace ( "/\"/" , '&quot;' , $s ) ;
-		$ret = preg_replace ( "/'/" , '&apos;' , $ret ) ;
+	public function escapeAttribute ( $s ) /*:string*/ {
+		$ret = str_replace ( "\"" , '&quot;' , $s ) ;
+		$ret = str_replace ( "'" , '&apos;' , $ret ) ;
 		return $ret ;
 	}
 
-	function flush () /*:void*/ {
+	public function flush () /*:void*/ {
 		@ob_flush();
 		flush();
 	}
 
-	function getCurrentTimestamp () /*:string*/ {
+	public function getCurrentTimestamp () /*:string*/ {
 		return date ( 'YmdHis' ) ;
 	}
 
 
 // Toolforge/Wikimedia name conversions
 
-	function getWebserverForWiki ( $wiki ) /*:string*/ {
+	public function getWebserverForWiki ( $wiki ) /*:string*/ {
 		$wiki = preg_replace ( '/_p$/' , '' , $wiki ) ; // Paranoia
 		if ( $wiki == 'commonswiki' ) return "commons.wikimedia.org" ;
 		if ( $wiki == 'wikidatawiki' ) return "www.wikidata.org" ;
@@ -98,7 +106,7 @@ final class ToolforgeCommon {
 		return '' ;
 	}
 
-	function trimWikitextMarkup ( $wikitext ) /*:string*/ {
+	public function trimWikitextMarkup ( $wikitext ) /*:string*/ {
 		$wikitext = preg_replace ( '/\[\[(.+?)[\#\|].*?\]\]/' , '$1' , $wikitext ) ;
 		$wikitext = preg_replace ( '/\[\[(.+?)\]\]/' , '$1' , $wikitext ) ;
 		$wikitext = preg_replace ( '/\{\{(.+?)\}\}/' , '' , $wikitext ) ;
@@ -106,7 +114,7 @@ final class ToolforgeCommon {
 		return $wikitext ;
 	}
 
-	function getWikiPageText ( $wiki , $page ) /*:string*/ {
+	public function getWikiPageText ( $wiki , $page ) /*:string*/ {
 		$server = $this->getWebserverForWiki ( $wiki ) ;
 		$url = "https://{$server}/w/api.php?action=parse&prop=wikitext&format=json&page=" . $this->urlEncode ( $page ) ;
 		$json = json_decode ( @file_get_contents ( $url ) ) ;
@@ -118,11 +126,10 @@ final class ToolforgeCommon {
 
 		$ret = $json->parse->wikitext->$star ;
 		$ret = @iconv('UTF-8', 'UTF-8//IGNORE', $ret) ;
-//		print "$ret\n" ; exit(0) ;
 		return $ret ;
 	}
 
-	function getWikiForLanguageProject ( $language , $project ) /*:string*/ {
+	public function getWikiForLanguageProject ( $language , $project ) /*:string*/ {
 		$language = trim ( strtolower ( $language ) ) ;
 		if ( $language == 'commons' ) return 'commonswiki' ;
 		if ( $language == 'wikidata' ) return 'wikidatawiki' ;
@@ -134,7 +141,7 @@ final class ToolforgeCommon {
 // DATABASE
 
 
-	function getDBname ( $language , $project ) /*:string*/ {
+	public function getDBname ( $language , $project ) /*:string*/ {
 		$ret = $language ;
 		if ( $language == 'commons' ) $ret = 'commonswiki_p' ;
 		elseif ( $language == 'wikidata' || $project == 'wikidata' ) $ret = 'wikidatawiki_p' ;
@@ -163,12 +170,12 @@ final class ToolforgeCommon {
 		// if ( $user == 'magnus' ) $passwordfile = '/home/' . $user . '/replica.my.cnf' ; // Command-line usage
 		$config = parse_ini_file( $passwordfile );
 		if ( isset( $config['user'] ) ) {
-			$this->mysql_user = $config['user'];
+			$this->mysqlUser = $config['user'];
 		}
 		if ( isset( $config['password'] ) ) {
-			$this->mysql_password = $config['password'];
+			$this->mysqlPassword = $config['password'];
 		}
-		$this->is_local = $config['local']=='true';
+		$this->isLocal = $config['local']=='true';
 	}
 
 	# Requires a replica.trove.my.cnf file with user, password, and server
@@ -180,9 +187,7 @@ final class ToolforgeCommon {
 		$user = $config['user'];
 		$password = $config['password'];
 		$server = $config['host'];
-		$this->is_local = $config['local']=='true';
-		if ( $this->is_local ) $port = 3308 ;
-		else $port = null;
+		$this->isLocal = $config['local']=='true';
 		$db = @new mysqli($server, $user, $password , $dbname, $port);
 		assert ( $db->connect_errno == 0 , 'Unable to connect to database [' . $db->connect_error . ']' ) ;
 		return $db ;
@@ -192,11 +197,15 @@ final class ToolforgeCommon {
 		$this->getDBpassword() ;
 		if ( $dbname == '' ) $dbname = '_main' ;
 		else $dbname = "__$dbname" ;
-		if ( $force_user == '' ) $dbname = $this->mysql_user.$dbname;
+		if ( $force_user == '' ) $dbname = $this->mysqlUser.$dbname;
 		else $dbname = $force_user.$dbname;
-		if ( $server == '' ) $server = "tools.labsdb" ; //"tools-db" ;
+		if ( $server == '' ) $server = "tools.labsdb" ;
 		if ( $persistent ) $server = "p:$server" ;
-		$db = @new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname);
+		if ( $this->isLocal ) {
+			$port = 3308 ;
+			$server = "127.0.0.1";
+		} else $port = null;
+		$db = @new mysqli($server, $this->mysqlUser, $this->mysqlPassword , $dbname, $port);
 		assert ( $db->connect_errno == 0 , 'Unable to connect to database [' . $db->connect_error . ']' ) ;
 		return $db ;
 	}
@@ -210,21 +219,22 @@ final class ToolforgeCommon {
 
 	public function openDB ( $language , $project , $slow_queries = false , $persistent = false ) {
 		$db_key = "$language.$project" ;
-		if ( !$persistent and isset ( $this->db_cache[$db_key] ) ) return $this->db_cache[$db_key] ;
+		if ( !$persistent and isset ( $this->dbCache[$db_key] ) ) return $this->dbCache[$db_key] ;
 	
 		$this->getDBpassword() ;
 		$dbname = $this->getDBname ( $language , $project ) ;
 
-		if ( $this->is_local ) $port = 3309 ;
+		if ( $this->isLocal ) $port = 3309 ;
 		else $port = null;
 
 		# Try optimal server
-		$server = substr( $dbname, 0, -2 ) . ( $slow_queries ? $this->db_servers['slow'] : $this->db_servers['fast'] ) ;
+		$server = substr( $dbname, 0, -2 ) . ( $slow_queries ? $this->dbServers['slow'] : $this->dbServers['fast'] ) ;
 		if ( $persistent ) $server = "p:$server" ;
-		if ( $this->is_local ) $server = "127.0.0.1";
-		$db = @new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname, $port);
+		if ( $this->isLocal ) $server = "127.0.0.1";
+		$db = @new mysqli($server, $this->mysqlUser, $this->mysqlPassword , $dbname, $port);
 
-		if ( $db->connect_errno > 0 and preg_match ( '/max_user_connections/' , $db->connect_error ) ) { // Bloody Toolforge DB connection limit
+		// Coding around low Toolforge DB connection limit
+		if ( $db->connect_errno > 0 and preg_match ( '/max_user_connections/' , $db->connect_error ) ) {
 			$seconds = rand ( 10 , 60*10 ) ; // Random delay
 			sleep ( $seconds ) ;
 			return $this->openDB ( $language , $project , $slow_queries , $persistent ) ;
@@ -232,13 +242,13 @@ final class ToolforgeCommon {
 	
 		# Try the other server
 		if($db->connect_errno > 0 ) {
-			$server = substr( $dbname, 0, -2 ) . ( $slow_queries ? $this->db_servers['fast'] : $this->db_servers['slow'] ) ;
+			$server = substr( $dbname, 0, -2 ) . ( $slow_queries ? $this->dbServers['fast'] : $this->dbServers['slow'] ) ;
 			if ( $persistent ) $server = "p:$server" ;
-			$db = @new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname);
+			$db = @new mysqli($server, $this->mysqlUser, $this->mysqlPassword , $dbname);
 		}
 
 		assert ( $db->connect_errno == 0 , 'Unable to connect to database [' . $db->connect_error . ']' ) ;
-		if ( !$persistent and $this->use_db_cache ) $this->db_cache[$db_key] = $db ;
+		if ( !$persistent and $this->use_db_cache ) $this->dbCache[$db_key] = $db ;
 		return $db ;
 	}
 
@@ -247,7 +257,6 @@ final class ToolforgeCommon {
 			$pinging = 10 ;
 			while ( !@$db->ping() ) {
 				if ( $pinging < 0 ) break ;
-	//			print "RECONNECTING..." ;
 				sleep ( 5/$max_tries ) ;
 				@$db->connect() ;
 				$pinging-- ;
@@ -269,7 +278,7 @@ final class ToolforgeCommon {
 			$subcats[$r] = $db->real_escape_string ( $r ) ;
 			$c[] = $db->real_escape_string ( $r ) ;
 		}
-		if ( count ( $c ) == 0 ) return ;
+		if ( empty($c) ) return ;
 		if ( $depth == 0 ) return ;
 		$sql = "SELECT DISTINCT page_title FROM page,categorylinks WHERE page_id=cl_from AND cl_to IN ('" . implode ( "','" , $c ) . "') AND cl_type='subcat'" ;
 		$result = $this->getSQL ( $db , $sql , 2 ) ;
@@ -277,7 +286,7 @@ final class ToolforgeCommon {
 			if ( isset ( $subcats[$row['page_title']] ) ) continue ;
 			$check[] = $row['page_title'] ;
 		}
-		if ( count ( $check ) == 0 ) return ;
+		if ( empty($check) ) return ;
 		$this->findSubcats ( $db , $check , $subcats , $depth - 1 ) ;
 	}
 
@@ -348,7 +357,7 @@ final class ToolforgeCommon {
 // CURL
 
 	// Takes a URL and an array with POST parameters
-	function doPostRequest ( $url , $params = [] , $optional_headers = null ) {
+	public function doPostRequest ( $url , $params = [] , $optional_headers = null ) {
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookiejar);
 		curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookiejar);
@@ -356,7 +365,7 @@ final class ToolforgeCommon {
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_POST, true);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
-		curl_setopt($ch, CURLOPT_USERAGENT, $this->browser_agent);
+		curl_setopt($ch, CURLOPT_USERAGENT, $this->browserAgent);
 		if ($optional_headers !== null) curl_setopt($ch, CURLOPT_HTTPHEADER, $optional_headers);
 		$output = curl_exec($ch);
 		$info = curl_getinfo($ch);
@@ -385,7 +394,7 @@ final class ToolforgeCommon {
 				$ch[$key] = curl_init($value);
 		//		curl_setopt($ch[$key], CURLOPT_NOBODY, true);
 		//		curl_setopt($ch[$key], CURLOPT_HEADER, true);
-				curl_setopt($ch[$key], CURLOPT_USERAGENT, $this->browser_agent);
+				curl_setopt($ch[$key], CURLOPT_USERAGENT, $this->browserAgent);
 				curl_setopt($ch[$key], CURLOPT_RETURNTRANSFER, true);
 				curl_setopt($ch[$key], CURLOPT_SSL_VERIFYPEER, false);
 				curl_setopt($ch[$key], CURLOPT_SSL_VERIFYHOST, false);
@@ -547,8 +556,7 @@ final class ToolforgeCommon {
 		$tmp['data']['commands'] = $qs->compressCommands ( $tmp_uncompressed['data']['commands'] ) ;
 		$qs->runCommandArray ( $tmp['data']['commands'] ) ;
 		if ( !isset($qs->last_item) ) return ;
-		$last_item = 'Q' . preg_replace ( '/\D/' , '' , "{$qs->last_item}" ) ;
-		return $last_item ;
+		return 'Q' . preg_replace ( '/\D/' , '' , "{$qs->last_item}" ) ;
 	}
 
 	private function guessConfigFile () /*:string*/ {
@@ -569,8 +577,7 @@ final class ToolforgeCommon {
 		}
 		$url = 'https://tools.wmflabs.org/magnustools/logger.php?tool=' . urlencode($toolname) ;
 		if ( trim($method) != '' ) $url .= '&method=' . urlencode(trim($method)) ;
-		$j = json_decode ( file_get_contents ( $url ) ) ;
-		return $j ;
+		return json_decode ( file_get_contents ( $url ) ) ;
 	}
 
 	public function showProcInfo() {
