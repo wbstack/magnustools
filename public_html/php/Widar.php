@@ -231,7 +231,7 @@ class Widar {
 	# Returns true if output was written, false otherwise
 	public function render_reponse ( $botmode = true , $parameter_name = 'action' ) {
 		# Bot output
-		$out = [ 'error' => 'OK' , 'data' => [] ] ;
+		$out = [ 'error' => 'OK' , 'status' => 'OK' , 'data' => [] ] ;
 		$ret = false ;
 		$callback = $this->tfc->getRequest('callback2','') ; # For botmode
 
@@ -517,7 +517,7 @@ class Widar {
 	}
 
 	public function get_rights () {
-		//$this->ensureAuth() ;
+		// $this->ensureAuth() ;
 		$this->result = $this->oa->getConsumerRights() ;
 		return $this->result ;
 	}
@@ -529,11 +529,20 @@ class Widar {
 
 	public function get_username () {
 		$rights = $this->get_rights() ;
-		if ( !isset($rights) ) throw new Exception ( "Not logged in" ) ;
-		if ( !isset($rights->query) ) throw new Exception ( "Not logged in" ) ;
-		if ( !isset($rights->query->userinfo) ) throw new Exception ( "Not logged in" ) ;
-		if ( !isset($rights->query->userinfo->name) ) throw new Exception ( "Not logged in" ) ;
+		if ( !isset($rights) ) throw new Exception ( "Not logged in [1]" ) ;
+		if ( !isset($rights->query) ) throw new Exception ( "Not logged in [2]: ".$rights->error->info ) ;
+		if ( !isset($rights->query->userinfo) ) throw new Exception ( "Not logged in [3]" ) ;
+		if ( !isset($rights->query->userinfo->name) ) throw new Exception ( "Not logged in [4]" ) ;
 		return $rights->query->userinfo->name ;
+	}
+
+	public function get_user_id () {
+		$rights = $this->get_rights() ;
+		if ( !isset($rights) ) throw new Exception ( "Not logged in [1]" ) ;
+		if ( !isset($rights->query) ) throw new Exception ( "Not logged in [2]: ".$rights->error->info ) ;
+		if ( !isset($rights->query->userinfo) ) throw new Exception ( "Not logged in [3]" ) ;
+		if ( !isset($rights->query->userinfo->id) ) throw new Exception ( "Not logged in [4]" ) ;
+		return $rights->query->userinfo->id ;
 	}
 
 	protected function set_q_or_claim ( &$claim , $id , $qualifier_claim ) {

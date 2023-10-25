@@ -49,16 +49,14 @@ let wd_ns_prefixes = {
 Vue.component ( 'wd-desc' , {
 	props : [ 'item' , 'autodesc_fallback' , 'autodesc_first' , 'wd' , 'language' ] ,
 	template : '#wd-desc-template' ,
-	data : function () { return { wikidata:{} , loaded:false , description:'' , use_autodesc:false , show_autodesc:false } } ,
+	data : function () { return { loaded:false , description:'' , use_autodesc:false , show_autodesc:false } } ,
 	created : function () {
 		let me = this ;
 		if ( me.autodesc_first*1>0 ) me.show_autodesc = true ;
 		if ( me.autodesc_first || me.autodesc_fallback ) me.use_autodesc = true ;
-		if ( typeof me.wd == 'undefined' ) me.wikidata = wd_link_wd ;
-		else me.wikidata = me.wd ;
 		if ( me.getItemID() == '' ) return ; // No item
-		me.wikidata.getItemBatch ( [me.getItemID()] , function () {
-			let i = me.wikidata.getItem ( me.getItemID() ) ;
+		me.wikidata().getItemBatch ( [me.getItemID()] , function () {
+			let i = me.wikidata().getItem ( me.getItemID() ) ;
 			if ( typeof i == 'undefined' ) return ;
 			me.description = i.getDesc ( me.language ) ;
 			// Show autodesc if fallback and manual description is empty
@@ -67,6 +65,9 @@ Vue.component ( 'wd-desc' , {
 		} ) ;
 	} ,
 	methods : {
+		wikidata : function () {
+			return this.wd ?? wd_link_wd;
+		} ,
 		getItemID : function () {
 			let me = this ;
 			if ( typeof me.item == 'undefined' ) return '' ;
@@ -80,12 +81,9 @@ Vue.component ( 'wd-desc' , {
 Vue.component ( 'wd-link' , {
 	template : '#wd-link-template' ,
 	props : [ 'item' , 'wd' , 'label' , 'as_text' , 'smallq' , 'language' , 'string_prop' ] ,
-	data : function () { return { use_label:'' , wikidata:{} , url:'' , string_prop_value:'' } } ,
+	data : function () { return { use_label:'' , url:'' , string_prop_value:'' } } ,
 	created : function () {
 		let me = this ;
-		if ( typeof me.wd == 'undefined' ) me.wikidata = wd_link_wd ;
-		else me.wikidata = me.wd ;
-
 		if ( typeof me.item == 'undefined' || me.item == '' ) return ;
 		me.use_label = me.getItemID() ;
 		me.url = wd_link_base + me.getItemTitle() ;
@@ -93,9 +91,9 @@ Vue.component ( 'wd-link' , {
 			me.use_label = me.label ;
 			return ;
 		}
-//if ( typeof me.wikidata.getItem ( me.getItemID() ) == 'undefined' ) console.log ( "LOADING " + me.getItemID() ) ;
-		me.wikidata.getItemBatch ( [me.getItemID()] , function () {
-			let i = me.wikidata.getItem ( me.getItemID() ) ;
+
+		me.wikidata().getItemBatch ( [me.getItemID()] , function () {
+			let i = me.wikidata().getItem ( me.getItemID() ) ;
 			if ( typeof i == 'undefined' ) return ;
 			if ( typeof me.language == 'undefined' ) me.use_label = i.getLabel () ;
 			else me.use_label = i.getLabel ( me.language ) ;
@@ -105,6 +103,9 @@ Vue.component ( 'wd-link' , {
 		} ) ;
 	} ,
 	methods : {
+		wikidata : function () {
+			return this.wd ?? wd_link_wd;
+		} ,
 		getItemID : function () {
 			let me = this ;
 			if ( typeof me.item == 'undefined' ) return '' ;

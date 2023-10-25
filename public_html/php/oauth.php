@@ -952,6 +952,7 @@ class MW_OAuth {
 			'token' => $token,
 			'bot' => 1
 		] ;
+		if ( !isset($summary) ) $summary='';
 		$this->setToolTag($params,$summary);
 
 		if ( isset ( $_REQUEST['test'] ) ) {
