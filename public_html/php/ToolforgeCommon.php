@@ -25,6 +25,8 @@ final class ToolforgeCommon {
 	public /*string*/ $tool_user_name ; # force different DB user name
 	public $use_db_cache = true ;
 
+	private $is_local = false;
+
 	private $browser_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:57.0) Gecko/20100101 Firefox/57.0" ;
 	private	$db_servers = [
 			'fast' => '.web.db.svc.eqiad.wmflabs' ,
@@ -32,7 +34,7 @@ final class ToolforgeCommon {
 		] ;
 	
 	private $cookiejar ; # For doPostRequest
-	private/*string*/  $mysql_user , $mysql_password ;
+	private/*string*/  $mysql_user , $mysql_password;
 	private $db_cache = [] ;
 	
 	public function __construct ( /*string*/ $toolname = '' ) {
@@ -157,8 +159,8 @@ final class ToolforgeCommon {
 	private function getDBpassword () /*:string*/ {
 		if ( isset ( $this->tool_user_name ) and $this->tool_user_name != '' ) $user = $this->tool_user_name ;
 		else $user = str_replace ( 'tools.' , '' , get_current_user() ) ;
-		$passwordfile = '/data/project/' . $user . '/replica.my.cnf' ;
-		if ( $user == 'magnus' ) $passwordfile = '/home/' . $user . '/replica.my.cnf' ; // Command-line usage
+		$passwordfile = getenv("HOME").'/replica.my.cnf' ;
+		// if ( $user == 'magnus' ) $passwordfile = '/home/' . $user . '/replica.my.cnf' ; // Command-line usage
 		$config = parse_ini_file( $passwordfile );
 		if ( isset( $config['user'] ) ) {
 			$this->mysql_user = $config['user'];
@@ -166,18 +168,22 @@ final class ToolforgeCommon {
 		if ( isset( $config['password'] ) ) {
 			$this->mysql_password = $config['password'];
 		}
+		$this->is_local = $config['local']=='true';
 	}
 
 	# Requires a replica.trove.my.cnf file with user, password, and server
 	public function openDBtrove ( $dbname = '' ) {
 		if ( isset ( $this->tool_user_name ) and $this->tool_user_name != '' ) $user = $this->tool_user_name ;
 		else $user = str_replace ( 'tools.' , '' , get_current_user() ) ;
-		$passwordfile = "/data/project/${user}/replica.trove.my.cnf" ;
+		$passwordfile = "/data/project/{$user}/replica.trove.my.cnf" ;
 		$config = parse_ini_file( $passwordfile );
 		$user = $config['user'];
 		$password = $config['password'];
 		$server = $config['host'];
-		$db = @new mysqli($server, $user, $password , $dbname);
+		$this->is_local = $config['local']=='true';
+		if ( $this->is_local ) $port = 3308 ;
+		else $port = null;
+		$db = @new mysqli($server, $user, $password , $dbname, $port);
 		assert ( $db->connect_errno == 0 , 'Unable to connect to database [' . $db->connect_error . ']' ) ;
 		return $db ;
 	}
@@ -209,10 +215,14 @@ final class ToolforgeCommon {
 		$this->getDBpassword() ;
 		$dbname = $this->getDBname ( $language , $project ) ;
 
+		if ( $this->is_local ) $port = 3309 ;
+		else $port = null;
+
 		# Try optimal server
 		$server = substr( $dbname, 0, -2 ) . ( $slow_queries ? $this->db_servers['slow'] : $this->db_servers['fast'] ) ;
 		if ( $persistent ) $server = "p:$server" ;
-		$db = @new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname);
+		if ( $this->is_local ) $server = "127.0.0.1";
+		$db = @new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname, $port);
 
 		if ( $db->connect_errno > 0 and preg_match ( '/max_user_connections/' , $db->connect_error ) ) { // Bloody Toolforge DB connection limit
 			$seconds = rand ( 10 , 60*10 ) ; // Random delay
