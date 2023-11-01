@@ -843,6 +843,36 @@ class Buggregator {
 		return $this->last_insert_id() ;
 	}
 
+	public function update_http_status() {
+		// Reset status to unknown
+		$sql = "UPDATE `tool` SET `http_status`=null WHERE `subdomain`=''" ;
+		$this->getSQL ( $sql ) ;
+
+		// Get current http status
+		$sql = "SELECT DISTINCT `subdomain` FROM `tool` WHERE `subdomain`!=''" ;
+		$result = $this->getSQL ( $sql ) ;
+		while($o = $result->fetch_object()) {
+			$url = "https://{$o->subdomain}.toolforge.org" ;
+			$output = trim(shell_exec("curl -sI \"{$url}\" | grep HTTP | head -1"));
+			if ( preg_match('|^HTTP/2\s*(\d+)$|',$output,$m) ) {
+				$status = $m[1]*1;
+				$sql = "UPDATE `tool` SET `http_status`={$status} WHERE `subdomain`='{$o->subdomain}'" ;
+			} else {
+				// print "Could not run curl for {$url}\n";
+				$sql = "UPDATE `tool` SET `http_status`=null WHERE `subdomain`='{$o->subdomain}'" ;
+			}
+			$this->getSQL ( $sql );
+		}
+	}
+
+	public function get_broken_subdomains() {
+		$ret = [];
+		$sql = "SELECT DISTINCT `subdomain` FROM `tool` WHERE `has_webservice`=1 AND (`http_status`!=200 OR `http_status` IS NULL)";
+		$result = $this->getSQL ( $sql ) ;
+		while($o = $result->fetch_object()) $ret[] = $o->subdomain;
+		return $ret;
+	}
+
 }
 
 ?>

@@ -4,7 +4,8 @@
 error_reporting(E_ERROR|E_CORE_ERROR|E_ALL|E_COMPILE_ERROR);
 ini_set('display_errors', 'On');
 
-require_once('/data/project/magnustools/public_html/php/ToolforgeCommon.php') ;
+// require_once('/data/project/magnustools/public_html/php/ToolforgeCommon.php') ;
+require_once('/data/project/magnustools/scripts/buggregator/Buggregator.php') ;
 
 class ToolMonitor {
 	public $tfc ;
@@ -24,7 +25,18 @@ class ToolMonitor {
 		$this->check_mixnmatch();
 		$this->check_reinheitsgebot();
 		$this->check_listeriabot();
+		$this->check_buggregator();
 		$this->wrap_up();
+	}
+
+	function check_buggregator() {
+		$buggregator = new Buggregator ;
+		$subdomains = $buggregator->get_broken_subdomains();
+		foreach ($subdomains as $subdomain) {
+			if ( in_array($subdomain, ['quickstatements','petscan','mix-n-match','listeriabot']) ) continue;
+			if ( isset($this->alerts[$subdomain]) ) continue;
+			$this->alerts[$subdomain][] = ["msg"=>"Buggregator reports non-200 status"];
+		}
 	}
 
 	function url_exists($url) {

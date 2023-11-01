@@ -14,6 +14,7 @@ else if ( $argv[1] == 'issue_status' ) {
 	$issue->update_in_database ( $buggregator , ['status'] ) ;
 	$buggregator->touch_issue($issue->id());
 }
+else if ( $argv[1] == 'webstatus' ) $buggregator->update_http_status();
 #else if ( $argv[1] == 'test' ) $buggregator->check_wikidata_for_tool_items() ;
 else print "Nothing to do!\n" ;
 
