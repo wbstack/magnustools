@@ -14,6 +14,7 @@ class OAuth {
 	var $debugging = false ;
 	var $language , $project ;
 	var $ini_file , $params ;
+	var $cookie_lifetime;
 	var $mwOAuthUrl = 'https://www.mediawiki.org/w/index.php?title=Special:OAuth';
 	var $publicMwOAuthUrl; //if the mediawiki url given to the user is different from how this
 							//script may see it (e.g. if behind a proxy) set the user url here.
@@ -24,8 +25,8 @@ class OAuth {
 	var $delay_after_create_s = 2 ;
 	var $delay_after_edit_s = 1 ;
 	var $delay_after_upload_s = 1 ;
-	
-	function __construct ( $t , $l = '' , $p = '' , $oauth_url = '' ) {
+
+	function __construct ( $t , $l = '' , $p = '' , $oauth_url = '', $cookie_lifetime = null ) {
 		if ( is_array($t) ) { // Bespoke override for third-party sites
 			foreach ( $t AS $k => $v ) {
 				$this->$k = $v ;
@@ -35,7 +36,8 @@ class OAuth {
 			$this->language = $l ;
 			$this->project = $p ;
 			$this->ini_file = "/data/project/$t/oauth.ini" ;
-			
+
+			if ( $cookie_lifetime !== null ) $this->cookie_lifetime = $cookie_lifetime;
 			if ( $l == 'wikidata' ) $this->apiUrl = 'https://www.wikidata.org/w/api.php' ;
 			elseif ( $l == 'commons' ) $this->apiUrl = 'https://commons.wikimedia.org/w/api.php' ;
 			elseif ( $p == 'mediawiki' ) $this->apiUrl = 'https://www.mediawiki.org/w/api.php' ;
@@ -76,7 +78,7 @@ class OAuth {
 		if ( $type == 'edit' ) sleep ( $this->delay_after_edit_s ) ;
 		if ( $type == 'upload' ) sleep ( $this->delay_after_upload_s ) ;
 	}
-	
+
 	function logout () {
 		$this->setupSession() ;
 		session_start();
@@ -86,17 +88,21 @@ class OAuth {
 		$_SESSION['tokenSecret'] = '' ;
 		session_write_close();
 	}
-	
+
 	function setupSession() {
 		// Setup the session cookie
 		session_name( $this->tool );
 		$params = session_get_cookie_params();
+		$lifetime = $params['lifetime'];
+		if ( $this->cookie_lifetime !== null ) {
+			$lifetime = $this->cookie_lifetime();
+		}
 		session_set_cookie_params(
-			$params['lifetime'],
+			$lifetime,
 			dirname( $_SERVER['SCRIPT_NAME'] )
 		);
 	}
-	
+
 	function loadIniFile () {
 		//$this->params = parse_ini_file ( $this->ini_file ) ;
 		$this->params = \WbstackMagnusOauth::parse_ini_file( $this->ini_file );
@@ -107,7 +113,7 @@ class OAuth {
 		$this->gConsumerSecret = $this->params['consumerSecret'];
 		if ( !isset($this->gConsumerSecret) or $this->gConsumerSecret == '' ) throw new \Exception ( "Cannot get consumer secret from ini file '{$this->ini_file}'" ) ;
 	}
-	
+
 	// Load the user token (request or access) from the session
 	function loadToken() {
 		$this->gTokenKey = '';
@@ -180,6 +186,9 @@ class OAuth {
 		$_SESSION['tokenSecret'] = $this->gTokenSecret = $token->secret;
 		if ( $this->use_cookies ) {
 			$t = time()+60*60*24*30*3 ; // expires in three months
+			if ( $this->cookie_lifetime !== null ) {
+				$t = $this->cookie_lifetime();
+			}
 			setcookie ( 'tokenKey' , $_SESSION['tokenKey'] , $t , '/'.$this->tool.'/' ) ;
 			setcookie ( 'tokenSecret' , $_SESSION['tokenSecret'] , $t , '/'.$this->tool.'/' ) ;
 		}
@@ -190,12 +199,12 @@ class OAuth {
 	/**
 	 * Utility function to sign a request
 	 *
-	 * Note this doesn't properly handle the case where a parameter is set both in 
+	 * Note this doesn't properly handle the case where a parameter is set both in
 	 * the query string in $url and in $params, or non-scalar values in $params.
 	 *
 	 * @param string $method Generally "GET" or "POST"
 	 * @param string $url URL string
-	 * @param array $params Extra parameters for the Authorization header or post 
+	 * @param array $params Extra parameters for the Authorization header or post
 	 * 	data (if application/x-www-form-urlencoded).
 	 * @return string Signature
 	 */
@@ -210,7 +219,7 @@ class OAuth {
 		$port = isset( $parts['port'] ) ? $parts['port'] : ( $scheme == 'https' ? '443' : '80' );
 		$path = isset( $parts['path'] ) ? $parts['path'] : '';
 		if ( ( $scheme == 'https' && $port != '443' ) ||
-			( $scheme == 'http' && $port != '80' ) 
+			( $scheme == 'http' && $port != '80' )
 		) {
 			// Only include the port if it's not the default
 			$host = "$host:$port";
@@ -252,7 +261,7 @@ class OAuth {
 		$url .= strpos( $url, '?' ) ? '&' : '?';
 		$query = [
 			'format' => 'json',
-		
+
 			// OAuth information
 			'oauth_callback' => 'oob', // Must be "oob" for MWOAuth
 			'oauth_consumer_key' => $this->gConsumerKey,
@@ -299,6 +308,9 @@ class OAuth {
 		$_SESSION['tokenSecret'] = $token->secret;
 		if ( $this->use_cookies ) {
 			$t = time()+60*60*24*30 ; // expires in one month
+			if ( $this->cookie_lifetime !== null ) {
+				$t = $this->cookie_lifetime();
+			}
 			setcookie ( 'tokenKey' , $_SESSION['tokenKey'] , $t , '/'.$this->tool.'/' ) ;
 			setcookie ( 'tokenSecret' , $_SESSION['tokenSecret'] , $t , '/'.$this->tool.'/' ) ;
 		}
