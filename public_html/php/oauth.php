@@ -1,5 +1,8 @@
 <?PHP
 
+error_reporting(E_ERROR|E_CORE_ERROR|E_COMPILE_ERROR);
+// ini_set('display_errors', 'On');
+
 class MW_OAuth {
 
 	var $use_tag_parameter = true ;

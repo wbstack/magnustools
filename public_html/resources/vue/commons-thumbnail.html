@@ -1,5 +1,5 @@
 <template id='commons-thumbnail-template'>
-	<span v-if='loading'><i>...</i></span>
+	<span v-if='is_loading'><i>...</i></span>
     <span v-else-if='loaded'>
         <span v-if='img.imageinfo[0].mediatype=="AUDIO"'>
             <audio preload="metadata" controls :style='getElementStyle()'>
@@ -7,18 +7,18 @@
                 Your browser doesn't support the HTML audio tag. Be sad.
             </audio>
         </span>
-        <span v-else-if='img.imageinfo[0].mediatype=="VIDEO"'>
+        <span v-else-if='img.imageinfo[0].mediatype=="VIDEO" && !videothumbnail'>
             <video preload="metadata" controls :style='getElementStyle()'>
                 <source :src='img.imageinfo[0].url' :type="img.imageinfo[0].mime" />
                 Your browser doesn't support the HTML audio tag. Be sad.
             </video>
         </span>
-        <span v-else-if='img.imageinfo[0].mediatype=="BITMAP" || img.imageinfo[0].mediatype=="DRAWING"'>
+        <span v-else-if='videothumbnail || img.imageinfo[0].mediatype=="BITMAP" || img.imageinfo[0].mediatype=="DRAWING"'>
             <span v-if='nolink'>
-                <img :src='img.imageinfo[0].thumburl' border=0 :width='img.imageinfo[0].thumbwidth' :height='img.imageinfo[0].thumbheight' class="wiki_thumbnail" />
+                <img :src='img.imageinfo[0].thumburl' :loading='loading' border=0 :width='img.imageinfo[0].thumbwidth' :height='img.imageinfo[0].thumbheight' class="wiki_thumbnail" />
             </span>
         	<a v-else target='_blank' :href='img.imageinfo[0].descriptionurl' :title='img.title.replace(/^.+?:/,"")'>
-        		<img :src='img.imageinfo[0].thumburl' border=0 :width='img.imageinfo[0].thumbwidth' :height='img.imageinfo[0].thumbheight' class="wiki_thumbnail" />
+        		<img :src='img.imageinfo[0].thumburl' :loading='loading' border=0 :width='img.imageinfo[0].thumbwidth' :height='img.imageinfo[0].thumbheight' class="wiki_thumbnail" />
         	</a>
         </span>
         <span v-else>
@@ -32,8 +32,8 @@
 'use strict';
 
 Vue.component ( 'commons-thumbnail' , {
-	props : [ 'filename' , 'width' , 'height' , 'api' , 'nolink' ] ,
-	data : function () { return { loading:true , loaded:false , img:{} , api_url:'https://commons.wikimedia.org/w/api.php' } } ,
+	props : [ 'filename' , 'width' , 'height' , 'api' , 'nolink' , 'videothumbnail' , 'loading' ] ,
+	data : function () { return { is_loading:true , loaded:false , img:{} , api_url:'https://commons.wikimedia.org/w/api.php' } } ,
     created : function () {
         this.checkAndLoadFilename() ;
     } ,
@@ -41,7 +41,7 @@ Vue.component ( 'commons-thumbnail' , {
         checkAndLoadFilename : function () {
             let me = this ;
             if ( typeof me.filename == 'undefined' ) {
-                me.loading = false ;
+                me.is_loading = false ;
                 me.loaded = false ;
                 return ;
             }
@@ -60,8 +60,8 @@ Vue.component ( 'commons-thumbnail' , {
                     me.img = v ;
                     me.loaded = true ;
                 } ) ;
-    //          console.log ( JSON.parse(JSON.stringify(me.img)) ) ;
-                me.loading = false ;
+                // console.log ( JSON.parse(JSON.stringify(me.img)) ) ;
+                me.is_loading = false ;
             } ) ;
         } ,
         getElementStyle : function () {

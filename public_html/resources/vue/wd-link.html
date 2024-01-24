@@ -5,7 +5,7 @@
 		LAST
 	</span>
 	<span v-else-if='typeof item!="undefined"'>
-		<span v-if='as_text'>{{use_label}}</span>
+		<span v-if='as_text' class="wd-link-as-text">{{use_label}}</span>
 		<a v-else :href='url' target='_blank' class='wikidata'>
 			{{use_label}}
 		</a>
