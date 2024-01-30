@@ -21,10 +21,10 @@ class Widar {
 	public $authorization_callback = '' ;
 	public $authorize_parameters = '' ; # Optional parameters to 'authorize' call
 
-	public function __construct ( /*string*/ $toolname = '' ) {
+	public function __construct ( /*string*/ $toolname = '', $cookie_lifetime = null ) {
 		$this->tfc = new Common ( $toolname ) ;
 		try {
-			$this->oa = new OAuth ( $this->toolname() , 'wikidata' , 'wikidata' ) ;
+			$this->oa = new OAuth ( $this->toolname() , 'wikidata' , 'wikidata', $cookie_lifetime ) ;
 		} catch ( Exception $e ) { # Error
 			// Ignore error
 		}
