@@ -24,7 +24,7 @@ class Widar {
 	public $authorization_callback = '' ;
 	public $authorize_parameters = '' ; # Optional parameters to 'authorize' call
 
-	public function __construct ( /*string*/ $toolname = '' ) {
+	public function __construct ( /*string*/ $toolname = '', $cookie_lifetime = null ) {
 		$this->tfc = new ToolforgeCommon ( $toolname ) ;
 		try {
 			// $this->oa = new MW_OAuth ( $this->toolname() , 'wikidata' , 'wikidata' ) ;
@@ -44,7 +44,8 @@ class Widar {
 			);
 			$this->oa = new MW_OAuth ( WbstackMagnusOauth::getOauthParams(
 				'widar',
-				'/tools/widar'
+				'/tools/widar',
+				$cookie_lifetime
 			) ) ;
 			// WBStack customization END
 
