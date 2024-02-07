@@ -44,7 +44,7 @@ class Widar {
 			);
 			$this->oa = new MW_OAuth ( WbstackMagnusOauth::getOauthParams(
 				'widar',
-				'/tools/widar',
+				'/tools/widar'
 			), $cookie_lifetime ) ;
 			// WBStack customization END
 
