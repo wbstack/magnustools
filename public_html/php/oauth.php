@@ -94,7 +94,7 @@ class MW_OAuth {
 		$params = session_get_cookie_params();
 		$lifetime = $params['lifetime'];
 		if ( $this->cookie_lifetime !== null ) {
-			$lifetime = call_user_func($this->cookie_lifetime);
+			$lifetime = $this->cookie_lifetime;
 		}
 		session_set_cookie_params(
 			$lifetime,
@@ -188,9 +188,9 @@ class MW_OAuth {
 		if ( $this->use_cookies ) {
 			$t = time();
 			if ( $this->cookie_lifetime !== null ) {
-				$t += call_user_func($this->cookie_lifetime);
+				$t += $this->cookie_lifetime;
 			} else {
-				$t += +60*60*24*30*3 ; // expires in three months
+				$t += 60*60*24*30*3 ; // expires in three months
 			}
 			setcookie ( 'tokenKey' , $_SESSION['tokenKey'] , $t , '/'.$this->tool.'/' ) ;
 			setcookie ( 'tokenSecret' , $_SESSION['tokenSecret'] , $t , '/'.$this->tool.'/' ) ;
@@ -314,9 +314,9 @@ class MW_OAuth {
 		if ( $this->use_cookies ) {
 			$t = time();
 			if ( $this->cookie_lifetime !== null ) {
-				$t += call_user_func($this->cookie_lifetime);
+				$t += $this->cookie_lifetime;
 			} else {
-				$t += +60*60*24*30*3 ; // expires in three months
+				$t += 60*60*24*30*3 ; // expires in three months
 			}
 			setcookie ( 'tokenKey' , $_SESSION['tokenKey'] , $t , '/'.$this->tool.'/' ) ;
 			setcookie ( 'tokenSecret' , $_SESSION['tokenSecret'] , $t , '/'.$this->tool.'/' ) ;
