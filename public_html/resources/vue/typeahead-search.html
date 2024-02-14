@@ -118,7 +118,7 @@ Vue.component ( 'typeahead-search' , {
 				$.getJSON ( 'https://www.wikidata.org/w/api.php?callback=?' , {
 					action:'query',
 					list:'search',
-					srnamespace:(me.type=='property'?120:0), // TODO lexemes'n'stuff
+					srnamespace:(me.type=='property'?122:120), // TODO lexemes'n'stuff
 					srlimit:(me.limit||10),
 					srsearch:query,
 					format:'json'
