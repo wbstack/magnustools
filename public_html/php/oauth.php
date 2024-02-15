@@ -25,7 +25,7 @@ class MW_OAuth {
 	var $delay_after_edit_s = 1 ;
 	var $delay_after_upload_s = 1 ;
 
-	function __construct ( $t , $l = '' , $p = '' , $oauth_url = '', $cookie_lifetime = null ) {
+	function __construct ( $t , $l = '' , $p = '' , $oauth_url = '', $c = null ) {
 		if ( is_array($t) ) { // Bespoke override for third-party sites
 			foreach ( $t AS $k => $v ) {
 				$this->$k = $v ;
@@ -36,13 +36,13 @@ class MW_OAuth {
 			$this->project = $p ;
 			$this->ini_file = "/data/project/$t/oauth.ini" ;
 
-			if ( $cookie_lifetime !== null ) $this->cookie_lifetime = $cookie_lifetime;
 			if ( $l == 'wikidata' ) $this->apiUrl = 'https://www.wikidata.org/w/api.php' ;
 			elseif ( $l == 'commons' ) $this->apiUrl = 'https://commons.wikimedia.org/w/api.php' ;
 			elseif ( $p == 'mediawiki' ) $this->apiUrl = 'https://www.mediawiki.org/w/api.php' ;
 			else $this->apiUrl = "https://$l.$p.org/w/api.php" ;
 		}
 
+		$this->cookie_lifetime = $c;
 		if ( !isset( $this->publicMwOAuthUrl )) {
 			$this->publicMwOAuthUrl = $this->mwOAuthUrl;
 		}
@@ -94,7 +94,7 @@ class MW_OAuth {
 		$params = session_get_cookie_params();
 		$lifetime = $params['lifetime'];
 		if ( $this->cookie_lifetime !== null ) {
-			$lifetime = $this->cookie_lifetime();
+			$lifetime = $this->cookie_lifetime;
 		}
 		session_set_cookie_params(
 			$lifetime,
@@ -186,9 +186,11 @@ class MW_OAuth {
 		$_SESSION['tokenKey'] = $this->gTokenKey = $token->key;
 		$_SESSION['tokenSecret'] = $this->gTokenSecret = $token->secret;
 		if ( $this->use_cookies ) {
-			$t = time()+60*60*24*30*3 ; // expires in three months
+			$t = time();
 			if ( $this->cookie_lifetime !== null ) {
-				$t = $this->cookie_lifetime();
+				$t += $this->cookie_lifetime;
+			} else {
+				$t += 60*60*24*30*3 ; // expires in three months
 			}
 			setcookie ( 'tokenKey' , $_SESSION['tokenKey'] , $t , '/'.$this->tool.'/' ) ;
 			setcookie ( 'tokenSecret' , $_SESSION['tokenSecret'] , $t , '/'.$this->tool.'/' ) ;
@@ -310,9 +312,11 @@ class MW_OAuth {
 		$_SESSION['tokenKey'] = $token->key;
 		$_SESSION['tokenSecret'] = $token->secret;
 		if ( $this->use_cookies ) {
-			$t = time()+60*60*24*30 ; // expires in one month
+			$t = time();
 			if ( $this->cookie_lifetime !== null ) {
-				$t = $this->cookie_lifetime();
+				$t += $this->cookie_lifetime;
+			} else {
+				$t += 60*60*24*30*3 ; // expires in three months
 			}
 			setcookie ( 'tokenKey' , $_SESSION['tokenKey'] , $t , '/'.$this->tool.'/' ) ;
 			setcookie ( 'tokenSecret' , $_SESSION['tokenSecret'] , $t , '/'.$this->tool.'/' ) ;
