@@ -185,6 +185,7 @@ class WbstackMagnusOauth {
             $wbApi = 'http://' . self::platformIngressHostAndPort . '/w/api.php';
             $wbPageBase = $wbRoot . '/wiki/';
             $toolbase = $toolRoot;
+            $entityBase = 'http://' . $wbRoot . '/entity/';
         } else {
             $wbRoot = $domain;
             $toolRoot = $domain . $toolUrlTail;
@@ -196,8 +197,8 @@ class WbstackMagnusOauth {
             $wbApi = 'https://' . $wbRoot . '/w/api.php'; // TODO this could use the internal network
             $wbPageBase = 'https://' . $wbRoot . '/wiki/';
             $toolbase = 'https://' . $toolRoot;
+            $entityBase = 'https://' . $wbRoot . '/entity/';
         }
-        $entityBase = 'http://' . $wbRoot . '/entity/';
 
         $site = [
             'oauth' => [
