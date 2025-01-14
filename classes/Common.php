@@ -30,8 +30,7 @@ final class Common {
 	private $browser_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:57.0) Gecko/20100101 Firefox/57.0" ;
 	private	$db_servers = [
 			'fast' => '.web.db.svc.eqiad.wmflabs' ,
-			'slow' => '.analytics.db.svc.eqiad.wmflabs' ,
-			'old' => '.labsdb'
+			'slow' => '.analytics.db.svc.eqiad.wmflabs'
 		] ;
 	
 	private $cookiejar ; # For doPostRequest
@@ -152,7 +151,7 @@ final class Common {
 		elseif ( $project == 'wikispecies' ) $ret = 'specieswiki_p' ;
 		elseif ( $language == 'meta' ) $ret .= 'metawiki_p' ;
 		else if ( $project == 'wikimedia' ) $ret .= $language.$project."_p" ;
-		else die ( "Cannot construct database name for $language.$project - aborting." ) ;
+		else throw new \Exception ( "Cannot construct database name for $language.$project - aborting." ) ;
 		return $ret ;
 	}
 
@@ -215,13 +214,6 @@ final class Common {
 			$db = @new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname);
 		}
 
-		# Try the old server as fallback
-		if($db->connect_errno > 0) {
-			$server = substr( $dbname, 0, -2 ) . $this->db_servers['old'];
-			if ( $persistent ) $server = "p:$server" ;
-			$db = @new mysqli($server, $this->mysql_user, $this->mysql_password , $dbname);
-		}
-	
 		assert ( $db->connect_errno == 0 , 'Unable to connect to database [' . $db->connect_error . ']' ) ;
 		if ( !$persistent and $this->use_db_cache ) $this->db_cache[$db_key] = $db ;
 		return $db ;
@@ -244,7 +236,6 @@ final class Common {
 		var_dump($sql);
 		var_dump($e->getTraceAsString());
 		throw $e;
-#		die ( 'There was an error running the query [' . $db->error . '/' . $db->errno . ']'."\n$sql\n$message\n" ) ;
 	}
 
 	public function findSubcats ( &$db , $root , &$subcats , $depth = -1 ) {
@@ -427,7 +418,7 @@ final class Common {
 			$again = preg_match ( '/429/' , $http_response_header[0] ) ;
 			if ( $again ) {
 				$cnt++ ;
-				if ( $cnt > $max ) die ( "SPARQL wait too long ({$cnt}x):\n{$sparql}\n") ;
+				if ( $cnt > $max ) throw new \Exception ( "SPARQL wait too long ({$cnt}x):\n{$sparql}\n") ;
 				sleep ( 5 ) ;
 			}
 		} while ( $again ) ;
@@ -463,13 +454,55 @@ final class Common {
 		return $ret ;
 	}
 
+	public function getSPARQL_TSV ( $query ) {
+		$query = "$query\n#TOOL: {$this->toolname}" ;
+		set_time_limit(0);
+
+		$url = "https://query.wikidata.org/sparql?query=".urlencode($query) ;
+		$headers = ['Accept: text/csv'] ;
+		$agent = 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0';
+
+		$fh = tmpfile();
+		$callback = function ($ch, $data) use ($fh){ return fwrite($fh, $data); } ;
+
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+		curl_setopt($ch, CURLOPT_VERBOSE, false);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($ch, CURLOPT_USERAGENT, $agent);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+		curl_setopt($ch, CURLOPT_WRITEFUNCTION, $callback);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+		curl_setopt($ch, CURLOPT_URL,$url);
+		curl_exec($ch);
+		curl_close($ch);
+
+		# Flush and reset file position to start
+		fflush($fh);
+		fseek($fh,0);
+
+		# Read and yield
+		$header = [] ;
+		while (($data = fgetcsv($fh, 10000)) !== FALSE) {
+			if ( count($header)==0 ) {
+				$header = $data ;
+				continue ;
+			}
+			$o = [] ;
+			foreach ( $data AS $col => $s ) $o[$header[$col]] = $s ;
+			yield $o ;
+		}
+		fclose($fh);
+		yield from [];
+	}
+
 // QuickStatements
 // require_once ( '/data/project/quickstatements/public_html/quickstatements.php' ) ;
 
 	// Will use the first *.conf config file in tools directory, unless specified
 	public function getQS ( $toolname , $config_file = '' , $useTemporaryBatchID = false ) {
 		if ( $config_file == '' ) $config_file = $this->guessConfigFile() ;
-		if ( $config_file == '' ) die ( "Can't determine QS config file location" ) ;
+		if ( $config_file == '' ) throw new \Exception ( "Can't determine QS config file location" ) ;
 		$qs = new QuickStatements() ;
 		$qs->use_oauth = false ;
 		$qs->bot_config_file = $config_file ;

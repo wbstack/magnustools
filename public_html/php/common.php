@@ -48,7 +48,10 @@ function getSPARQLitems ( $cmd , $varname = 'q' ) {
 }
 
 # Misc
-function get_server_for_lp ( $lang , $project ) { 	global $wrapper_tfc ; return $wrapper_tfc->getWebserverForWiki ( $wrapper_tfc->getWikiForLanguageProject ( $lang , $project ) ) ; }
+function get_server_for_lp ( $lang , $project ) { 	global $wrapper_tfc ; 
+	$wiki = $wrapper_tfc->getWikiForLanguageProject ( $lang , $project ) ;
+	return $wrapper_tfc->getWebserverForWiki ( $wiki ) ;
+}
 function fix_language_code ( $s ) { return strtolower ( preg_replace ( '/[^a-z-]/' , '' , $s ) ) ; }
 function check_project_name ( $s ) { return strtolower ( preg_replace ( '/[^a-z]/' , '' , $s ) ) ; }
 function pre ( $d ) { print "<pre>" ; print_r ( $d ) ; 	print "</pre>" ; }

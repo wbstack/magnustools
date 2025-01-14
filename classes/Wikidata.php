@@ -4,7 +4,8 @@ namespace Toolforge ;
 
 $wikidata_api_url = 'https://www.wikidata.org/w/api.php' ;
 
-require_once ( __DIR__ . '/../../classes/WikidataItem.php' ) ;
+if ( __NAMESPACE__ == 'Toolforge' ) {
+} else require_once ( __DIR__ . '/../../classes/WikidataItem.php' ) ;
 
 class Wikidata {
 
@@ -58,7 +59,11 @@ class Wikidata {
 	protected function parseEntities ( $j ) {
 		foreach ( $j->entities AS $q => $v ) {
 			if ( isset ( $this->items[$q] ) ) continue ; // Paranoia
-			$this->items[$q] = new Toolforge\WikidataItem ;
+			if ( __NAMESPACE__ == 'Toolforge' ) {
+				$this->items[$q] = new WikidataItem ;
+			} else {
+				$this->items[$q] = new Toolforge\WikidataItem ;
+			}
 			$this->items[$q]->q = $q ;
 			$this->items[$q]->j = $v ;
 		}
@@ -173,7 +178,7 @@ class Wikidata {
 		foreach ( $batches AS $batch_urls ) {
 	
 			$mh = curl_multi_init();
-			curl_multi_setopt  ( $mh , CURLMOPT_PIPELINING , 1 ) ;
+			curl_multi_setopt  ( $mh , CURLMOPT_PIPELINING , CURLPIPE_MULTIPLEX ) ;
 			$ch = [] ;
 			foreach ( $batch_urls AS $key => $value ) {
 				$ch[$key] = curl_init($value);
