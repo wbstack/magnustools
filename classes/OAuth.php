@@ -15,7 +15,8 @@ class OAuth {
 	var $language , $project ;
 	var $ini_file , $params ;
 	var $cookie_lifetime;
-	var $mwOAuthUrl = 'https://www.mediawiki.org/w/index.php?title=Special:OAuth';
+	#var $mwOAuthUrl = 'https://www.mediawiki.org/w/index.php?title=Special:OAuth'; # See https://phabricator.wikimedia.org/T112730
+	var $mwOAuthUrl = 'https://www.mediawiki.org/wiki/Special:OAuth';
 	var $publicMwOAuthUrl; //if the mediawiki url given to the user is different from how this
 							//script may see it (e.g. if behind a proxy) set the user url here.
 	var $mwOAuthIW = 'mw'; // Set this to the interwiki prefix for the OAuth central wiki.
@@ -25,6 +26,7 @@ class OAuth {
 	var $delay_after_create_s = 2 ;
 	var $delay_after_edit_s = 1 ;
 	var $delay_after_upload_s = 1 ;
+	var $cookie_best_before = 60*60*24*30*3 ;# expires in three months
 
 	function __construct ( $t , $l = '' , $p = '' , $oauth_url = '', $c = null ) {
 		if ( is_array($t) ) { // Bespoke override for third-party sites
@@ -78,11 +80,15 @@ class OAuth {
 		if ( $type == 'upload' ) sleep ( $this->delay_after_upload_s ) ;
 	}
 
+	function getCookiePath() {
+		return '/'.$this->tool.'/'; // needed for wbstack
+	}
+	
 	function logout () {
 		$this->setupSession() ;
 		session_start();
-		setcookie ( 'tokenKey' , '' , 1 , '/'.$this->tool.'/' ) ;
-		setcookie ( 'tokenSecret' , '' , 1 , '/'.$this->tool.'/' ) ;
+		setcookie ( 'tokenKey' , '' , 1 , $this->getCookiePath() ) ;
+		setcookie ( 'tokenSecret' , '' , 1 , $this->getCookiePath() ) ;
 		$_SESSION['tokenKey'] = '' ;
 		$_SESSION['tokenSecret'] = '' ;
 		session_write_close();
@@ -128,14 +134,19 @@ class OAuth {
 		session_write_close();
 	}
 
+	function getOAuthURL ( $action , $append_separator = false ) {
+		$url = $this->mwOAuthUrl . '/' . $action ;
+		if ( $append_separator ) $url .= strpos( $url, '?' ) ? '&' : '?';
+		return $url ;
+	}
+
 
 	/**
 	 * Handle a callback to fetch the access token
 	 * @return void
 	 */
 	function fetchAccessToken() {
-		$url = $this->mwOAuthUrl . '/token';
-		$url .= strpos( $url, '?' ) ? '&' : '?';
+		$url = $this->getOAuthURL ( 'token' , true ) ;
 		$url .= http_build_query( [
 			'format' => 'json',
 			'oauth_verifier' => $_GET['oauth_verifier'],
@@ -188,10 +199,11 @@ class OAuth {
 			if ( $this->cookie_lifetime !== null ) {
                 $t += $this->cookie_lifetime;
 			} else {
-                $t += 60*60*24*30*3 ; // expires in three months
+				$t += $this->cookie_best_before ;
             }
-			setcookie ( 'tokenKey' , $_SESSION['tokenKey'] , $t , '/'.$this->tool.'/' ) ;
-			setcookie ( 'tokenSecret' , $_SESSION['tokenSecret'] , $t , '/'.$this->tool.'/' ) ;
+
+			setcookie ( 'tokenKey' , $_SESSION['tokenKey'] , $t , $this->getCookiePath() ) ;
+			setcookie ( 'tokenSecret' , $_SESSION['tokenSecret'] , $t , $this->getCookiePath() ) ;
 		}
 		session_write_close();
 	}
@@ -258,8 +270,7 @@ class OAuth {
 		// First, we need to fetch a request token.
 		// The request is signed with an empty token secret and no token key.
 		$this->gTokenSecret = '';
-		$url = $this->mwOAuthUrl . '/initiate';
-		$url .= strpos( $url, '?' ) ? '&' : '?';
+		$url = $this->getOAuthURL ( 'initiate' , true ) ;
 		$query = [
 			'format' => 'json',
 
@@ -315,14 +326,13 @@ class OAuth {
                 $t += 60*60*24*30; // expires in one month
             }
 
-			setcookie ( 'tokenKey' , $_SESSION['tokenKey'] , $t , '/'.$this->tool.'/' ) ;
-			setcookie ( 'tokenSecret' , $_SESSION['tokenSecret'] , $t , '/'.$this->tool.'/' ) ;
+			setcookie ( 'tokenKey' , $_SESSION['tokenKey'] , $t , $this->getCookiePath() ) ;
+			setcookie ( 'tokenSecret' , $_SESSION['tokenSecret'] , $t , $this->getCookiePath() ) ;
 		}
 		session_write_close();
 
 		// Then we send the user off to authorize
-		$url = $this->publicMwOAuthUrl . '/authorize';
-		$url .= strpos( $url, '?' ) ? '&' : '?';
+		$url = $this->getOAuthURL ( 'authorize' , true ) ;
 		$arr = [
 			'oauth_token' => $token->key,
 			'oauth_consumer_key' => $this->gConsumerKey,
@@ -336,7 +346,7 @@ class OAuth {
 
 	function doIdentify() {
 
-		$url = $this->mwOAuthUrl . '/identify';
+		$url = $this->getOAuthURL ( 'identify' , false ) ;
 		$headerArr = [
 			// OAuth information
 			'oauth_consumer_key' => $this->gConsumerKey,
@@ -708,9 +718,9 @@ class OAuth {
 
 		return true ;
 	}
-
-
-	function setDesc ( $q , $text , $language ) {
+	
+	
+	function setDesc ( $q , $text , $language , $summary = '' ) {
 
 		// Fetch the edit token
 		$ch = null;

@@ -2,6 +2,7 @@
 
 error_reporting(E_ERROR|E_CORE_ERROR|E_ALL|E_COMPILE_ERROR);
 ini_set('display_errors', 'On');
+ini_set('memory_limit','1500M');
 
 include_once ( 'php/common.php' ) ;
 
@@ -12,19 +13,21 @@ function get_image_row_div ( $file , $w , $h , $num ) {
 	if ( $w < $h ) {
 		$tw = round ( $thumbsize * $w / $h ) ;
 	}
-	$thumb_url = get_thumbnail_url ( 'commons' , $file , $tw , 'wikimedia' ) ;
+	if ( preg_match('|\.ogg$|i',$file) ) $thumb_url = 'https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png' ;
+	else $thumb_url = get_thumbnail_url ( 'commons' , $file , $tw , 'wikimedia' ) ;
 
 	$h = "<div style='margin-bottom:1px;padding:2px;background-color:" . ($num?'white':'#DDD') . "'>" ;
-	$h .= "<div style='display:inline-block;width:" . $thumbsize . "px;padding-left:" . round(($thumbsize-$tw)/2) . "px;vertical-align:top'>" ;
+	$h .= "<div style='display:inline-block;width:" . htmlspecialchars($thumbsize) . "px;padding-left:" . round(($thumbsize-$tw)/2) . "px;vertical-align:top'>" ;
 	$h .= "<a href='//commons.wikimedia.org/wiki/File:" . myurlencode($file) . "' target='_blank'>" ;
 	$h .= "<img src='$thumb_url' border=0 /></a>" ;
 	$h .= "</div>" ;
 	$h .= "<div style='margin-left:5px;display:inline-block;vertical-align:top'>" ;
-	$h .= "<b>$file</b>" ;
+	$h .= "<b>".htmlspecialchars($file)."</b>" ;
 	$fn = preg_replace('/\.[^.]+$/','',$file) ;
-	$h .= "<br/><a href='https://www.google.com/?#q=" . urlencode($fn) . "+site%3Awikipedia.org+-site%3Acommons.wikimedia.org' target='_blank'>Search Wikipedias for this title</a> to find potential articles to insert it." ;
+	if ( preg_match('|^[a-z]{2,3}-(.+?)\.ogg|i',$file,$m) ) $fn = $m[1] ; # Strip language code from ogg files
+	$h .= "<br/><a href='https://www.google.com/search?q=" . urlencode($fn) . "+site%3Awikipedia.org+-site%3Acommons.wikimedia.org' target='_blank'>Search Wikipedias for this title</a> to find potential articles to insert it." ;
 	$fn = implode ( ' OR ' , explode ( ' ' , $fn ) ) ;
-	$h .= " (<a href='https://www.google.com/?#q=" . urlencode($fn) . "+site%3Awikipedia.org+-site%3Acommons.wikimedia.org' target='_blank'>OR version</a>)" ;
+	$h .= " (<a href='https://www.google.com/search?q=" . urlencode($fn) . "+site%3Awikipedia.org+-site%3Acommons.wikimedia.org' target='_blank'>OR version</a>)" ;
 	$h .= "</div>" ;
 	$h .= "</div>" ;
 	return $h ;
@@ -39,7 +42,7 @@ print get_common_header ( '' , 'Unused images' ) ;
 if ( $category == '' ) {
 	print "<h2>Find files in a Commons category tree <i>not</i> used on Wikipedia</h2>" ;
 	print "<form method='get' action='?'>" ;
-	print "<input type='text' name='category' placeholder='Commons category' />, depth <input type='number' name='depth' value='$depth' /> " ;
+	print "<input type='text' name='category' placeholder='Commons category' />, depth <input type='number' name='depth' value='".htmlspecialchars($depth)."' /> " ;
 	print "<br/><i>Optional:</i> Not used in projects <input type='text' name='projects' placeholder='enwiki,dewikisource,...' /> " ;
 	print "<br/><input type='submit' class='btn btn-primary' value='Do it!' />" ;
 	print "</form>" ;
@@ -70,7 +73,7 @@ while($o = $result->fetch_object()){
 }
 
 
-print "<h1>Unused images for \"$category\"</h1>" ;
+print "<h1>Unused images for \"".htmlspecialchars($category)."\"</h1>" ;
 print "<div>" . count($unused_files) . " unused files (out of $total_num).</div>" ;
 //print "<pre>" ; print_r ( $unused_files ) ; print "</pre>" ;
 

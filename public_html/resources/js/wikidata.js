@@ -311,6 +311,18 @@ function WikiDataItem ( init_wd , init_raw ) {
 		if ( claim.mainsnak.datavalue.type != 'time' ) return undefined ;
 		return claim.mainsnak.datavalue.value ;
 	}
+	
+	this.getTargets = function ( p ) {
+		let self = this;
+		let ret = [];
+		let claims = self.getClaimsForProperty ( p ) ;
+		$.each ( claims , function ( dummy , c ) {
+			let id = self.getClaimTargetItemID ( c ) ;
+			if ( id === undefined ) return ;
+			ret.push(id);
+		} ) ;
+		return ret;
+	}
 
 	this.hasClaimItemLink = function ( p , q ) {
 		var self = this ;

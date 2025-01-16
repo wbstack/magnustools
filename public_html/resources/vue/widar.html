@@ -18,7 +18,7 @@ let widar ;
 var widar_api_url ;
 
 Vue.component ( 'widar' , {
-	data : function () { return { is_logged_in:false , userinfo:{} , widar_api:'/tools/widar/index.php' , loaded:false , toolname:'' } } ,
+	data : function () { return { is_logged_in:false , userinfo:{} , widar_api:'/tools/widar/index.php' , loaded:false , toolname:'' , maximum_number_of_tries:-1 , last_error:'' } } ,
 	created : function () {
 		widar = this ;
 		if ( typeof widar_api_url != 'undefined' ) this.widar_api = widar_api_url ;
@@ -57,16 +57,22 @@ Vue.component ( 'widar' , {
 				} )
 */
 		} ,
-		run : function ( params , callback ) {
+		run : function ( params , callback , number_of_tries = 0 ) {
 			let me = this ;
+			if ( me.maximum_number_of_tries>0 && number_of_tries>me.maximum_number_of_tries ) {
+				console.log ( "Aborting after "+number_of_tries+" attempts") ;
+				console.log ( me.last_error ) ;
+				return callback() ;
+			}
 			if ( me.tool != '' && typeof params.tool_hashtag == 'undefined' ) params.tool_hashtag = me.toolname ;
 			params.botmode = 1 ;
 			$.post ( me.widar_api , params , function ( d ) {
 				if ( d.error != 'OK' ) {
 					//console.log ( 'WIDAR' , params ) ;
 					if ( null != d.error.match(/Invalid token/) || null != d.error.match(/happen/) || null != d.error.match(/Problem creating item/) || ( params.action!='create_redirect' && null != d.error.match(/failed/) ) ) {
+						me.last_error = d.error ;
 						console.log ( "ERROR (re-trying)" , params , d ) ;
-						setTimeout ( function () { me.run ( params , callback ) } , 500 ) ; // Again
+						setTimeout ( function () { me.run ( params , callback , number_of_tries+1 ) } , 500 ) ; // Again
 					} else {
 						console.log ( "ERROR (aborting)" , params , d ) ;
 //						let h = "<li style='color:red'>ERROR (" + params.action + ") : " + d.error + "</li>" ;
@@ -78,7 +84,8 @@ Vue.component ( 'widar' , {
 				}
 			} , 'json' ) . fail(function() {
 				console.log ( "Again" , params ) ;
-				me.run ( params , callback ) ;
+				me.last_error = "POST fail" ;
+				me.run ( params , callback , number_of_tries+1 ) ;
 			}) ;
 		} ,
 		newClaimDate : function ( prop , d ) {

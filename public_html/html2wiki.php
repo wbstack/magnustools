@@ -50,11 +50,11 @@ function html2wiki_tables($str, $row_delim = 1, $oneline = false, $escape = fals
         '/<\/th>/i',       # headers end
         '/<\/td>/i',       # cells end
         # e - replacement string gets evaluated before the replacement
-        '/<table([^>]*)>/ie', # table start
+        '/<table([^>]*)>/i', # table start
         '/<caption>/i',    # caption start
-        '/<tr(.*)>/Uie', # row start
-        '/<th(.*)>/Uie', # header start
-        '/<td(.*)>/Uie', # cell start
+        '/<tr(.*)>/Ui', # row start
+        '/<th(.*)>/Ui', # header start
+        '/<td(.*)>/Ui', # cell start
         "/\n$my_nl/",
         "/$my_nl/",
         "/\n */",          # spaces at beginning of a line

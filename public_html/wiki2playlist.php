@@ -84,12 +84,12 @@ if ( isset ( $_REQUEST['doit'] ) ) {
 	print "<div>Generates a .M3U playlist for audio/video files hosted on Commons, from a Wiki list or category.</div>
 	<form method='get' action='./wiki2playlist.php' class='form-inline'><table class='table table-condensed'>
 	<tr><th>Project</th><td>
-	<input type='text' name='language' value='$language' class='span2' /> .
-	<input type='text' name='project' value='$project' class='span4' />
+	<input type='text' name='language' value='".htmlspecialchars($language)."' class='span2' /> .
+	<input type='text' name='project' value='".htmlspecialchars($project)."' class='span4' />
 	</td></tr>
-	<tr><th>Page with playlist</th><td><input type='text' name='page' value='$page' class='span4' />, <i>or</i></td></tr>
-	<tr><th>Category</th><td><input type='text' name='category' value='$category' class='span4' /></td></tr>
-	<tr><th>Category depth</th><td><input type='text' name='depth' value='$depth' class='span1' /></td></tr>
+	<tr><th>Page with playlist</th><td><input type='text' name='page' value='".htmlspecialchars($page)."' class='span4' />, <i>or</i></td></tr>
+	<tr><th>Category</th><td><input type='text' name='category' value='".htmlspecialchars($category)."' class='span4' /></td></tr>
+	<tr><th>Category depth</th><td><input type='text' name='depth' value='".htmlspecialchars($depth)."' class='span1' /></td></tr>
 	<tr><th>Format</th><td>
 	<label><input type='radio' name='format' value='m3u' id='m3u' $m3u_checked /> Extended M3U</label>
 	</td></tr>
