@@ -181,7 +181,7 @@ class WbstackMagnusOauth {
             $publicMwOAuthUrl = 'http://' . $domain . '/w/index.php?title=Special:OAuth';
             $mwOAuthUrl = 'http://' . self::platformIngressHostAndPort . '/w/index.php?title=Special:OAuth';
             $wbPublicHostAndPort = $wbRoot;
-            $wbApi = 'http://' . self::platformIngressHostAndPort . '/w/api.php';
+            $wbApi = 'TEST http://' . self::platformIngressHostAndPort . '/w/api.php';
             $wbPageBase = $wbRoot . '/wiki/';
             $toolbase = $toolRoot;
             $entityBase = 'http://' . $wbRoot . '/entity/';
