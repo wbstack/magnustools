@@ -172,7 +172,6 @@ class WbstackMagnusOauth {
         // XXX: this same logic is in quickstatements.php and platform api WikiController backend
         $domain = $_SERVER['SERVER_NAME'];
         if ( self::isLocalHost() ){
-
             // localhost development, with a full domain prefixing .localhost
             // eg. wiki.addshore.com.localhost
             $wbRoot = $domain;
