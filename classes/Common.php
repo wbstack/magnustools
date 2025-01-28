@@ -375,9 +375,6 @@ final class Common {
 				curl_setopt($ch[$key], CURLOPT_RETURNTRANSFER, true);
 				curl_setopt($ch[$key], CURLOPT_SSL_VERIFYPEER, false);
 				curl_setopt($ch[$key], CURLOPT_SSL_VERIFYHOST, false);
-
-				WbstackMagnusOauth::setCurlHttpHeaders( $ch[$key] );
-
 				curl_multi_add_handle($mh,$ch[$key]);
 			}
 	
