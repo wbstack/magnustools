@@ -78,7 +78,8 @@ class Widar {
 					explode(',',$this->tfc->getRequest('ids','')),
 					$this->tfc->getRequest('prop',''),
 					$this->tfc->getRequest('target',''),
-					$this->tfc->getRequest('claim','')
+					$this->tfc->getRequest('claim',''),
+					$this->tfc->getRequest('summary','')
 				) ;
 				break ;
 			case 'merge_items':
@@ -254,7 +255,7 @@ class Widar {
 	# Returns true if output was written, false otherwise
 	public function render_reponse ( $botmode = true , $parameter_name = 'action' ) {
 		# Bot output
-		$out = [ 'error' => 'OK' , 'data' => [] ] ;
+		$out = [ 'error' => 'OK' , 'status' => 'OK' , 'data' => [] ] ;
 		$ret = false ;
 		$callback = $this->tfc->getRequest('callback2','') ; # For botmode
 
@@ -417,7 +418,7 @@ class Widar {
 		if ( !$this->oa->mergeItems ( $from , $to ) ) throw new Exception ( "Problem merging item '{$from}' into '{$to}'" ) ;
 	}
 
-	public function set_claims ( $ids , $prop , $target , $qualifier_claim ) {
+	public function set_claims ( $ids , $prop , $target , $qualifier_claim , $summary = '' ) {
 		$this->ensureAuth() ;
 		if ( count($ids) == 0 or $prop == '' or $target == '' ) throw new Exception ( "set_claim parameters incomplete" ) ;
 		foreach ( $ids AS $id ) {
@@ -425,7 +426,7 @@ class Widar {
 			if ( $id == '' && $qualifier_claim == '' ) continue ;
 			$claim = [ "prop" => $prop , "target" => $target , "type" => "item" ] ;
 			$this->set_q_or_claim ( $claim , $id , $qualifier_claim ) ;
-			if ( !$this->oa->setClaim ( $claim ) ) throw new Exception ( "set_claims failed: {$id}/{$prop}/{$target}/{$qualifier_claim}" ) ;
+			if ( !$this->oa->setClaim ( $claim , $summary ) ) throw new Exception ( "set_claims failed: {$id}/{$prop}/{$target}/{$qualifier_claim}" ) ;
 		}
 	}
 
@@ -543,13 +544,32 @@ class Widar {
 	}
 
 	public function get_rights () {
-		//$this->ensureAuth() ;
+		// $this->ensureAuth() ;
 		$this->result = $this->oa->getConsumerRights() ;
+		return $this->result ;
 	}
 
 	public function logout () {
 		$this->ensureAuth() ;
 		$this->oa->logout() ;
+	}
+
+	public function get_username () {
+		$rights = $this->get_rights() ;
+		if ( !isset($rights) ) throw new Exception ( "Not logged in [1]" ) ;
+		if ( !isset($rights->query) ) throw new Exception ( "Not logged in [2]: ".$rights->error->info ) ;
+		if ( !isset($rights->query->userinfo) ) throw new Exception ( "Not logged in [3]" ) ;
+		if ( !isset($rights->query->userinfo->name) ) throw new Exception ( "Not logged in [4]" ) ;
+		return $rights->query->userinfo->name ;
+	}
+
+	public function get_user_id () {
+		$rights = $this->get_rights() ;
+		if ( !isset($rights) ) throw new Exception ( "Not logged in [1]" ) ;
+		if ( !isset($rights->query) ) throw new Exception ( "Not logged in [2]: ".$rights->error->info ) ;
+		if ( !isset($rights->query->userinfo) ) throw new Exception ( "Not logged in [3]" ) ;
+		if ( !isset($rights->query->userinfo->id) ) throw new Exception ( "Not logged in [4]" ) ;
+		return $rights->query->userinfo->id ;
 	}
 
 	protected function set_q_or_claim ( &$claim , $id , $qualifier_claim ) {
