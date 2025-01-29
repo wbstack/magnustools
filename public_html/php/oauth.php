@@ -165,10 +165,7 @@ class MW_OAuth {
 		curl_setopt( $ch, CURLOPT_URL, $url );
 		//curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
 		curl_setopt( $ch, CURLOPT_USERAGENT, $this->gUserAgent );
-
 		curl_setopt( $ch, CURLOPT_HEADER, 0 );
-		WbstackMagnusOauth::setCurlHttpHeaders( $ch );
-
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
 		$data = curl_exec( $ch );
 
@@ -295,7 +292,6 @@ class MW_OAuth {
 		//curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
 		curl_setopt( $ch, CURLOPT_USERAGENT, $this->gUserAgent );
 		curl_setopt( $ch, CURLOPT_HEADER, 0 );
-		WbstackMagnusOauth::setCurlHttpHeaders( $ch );
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
 		$data = curl_exec( $ch );
 		if ( !$data ) {
@@ -513,12 +509,10 @@ class MW_OAuth {
 		curl_setopt( $ch, CURLOPT_POST, true );
 		curl_setopt( $ch, CURLOPT_URL, $url );
 		curl_setopt( $ch, CURLOPT_POSTFIELDS, $post_fields );
+		curl_setopt( $ch, CURLOPT_HTTPHEADER, [ $header ] );
 		//curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
 		curl_setopt( $ch, CURLOPT_USERAGENT, $this->gUserAgent );
-
 		curl_setopt( $ch, CURLOPT_HEADER, 0 );
-		WbstackMagnusOauth::setCurlHttpHeaders( $ch, [ $header ] );
-
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
 
 		$data = curl_exec( $ch );
