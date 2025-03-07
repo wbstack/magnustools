@@ -158,10 +158,6 @@ class WbstackMagnusOauth {
         return $params;
     }
 
-    public static function isLocalHost(): bool {
-        return substr($_SERVER['SERVER_NAME'], -10, 10) === '.localhost';
-    }
-
     /**
      * @param string $toolUrlTail Example: "/tools/widar"
      * @return mixed
@@ -171,34 +167,18 @@ class WbstackMagnusOauth {
     ) {
         // XXX: this same logic is in quickstatements.php and platform api WikiController backend
         $domain = $_SERVER['SERVER_NAME'];
-        if ( self::isLocalHost() ){
 
-            // localhost development, with a full domain prefixing .localhost
-            // eg. wiki.addshore.com.localhost
-            $wbRoot = $domain;
-            $toolRoot = 'http://' . $domain . $toolUrlTail;
+        $wbRoot = $domain;
+        $toolRoot = $domain . $toolUrlTail;
 
-            // Directly for config
-            $publicMwOAuthUrl = 'http://' . $domain . '/w/index.php?title=Special:OAuth';
-            $mwOAuthUrl = 'http://' . self::platformIngressHostAndPort . '/w/index.php?title=Special:OAuth';
-            $wbPublicHostAndPort = $wbRoot;
-            $wbApi = 'http://' . self::platformIngressHostAndPort . '/w/api.php';
-            $wbPageBase = $wbRoot . '/wiki/';
-            $toolbase = $toolRoot;
-            $entityBase = 'http://' . $wbRoot . '/entity/';
-        } else {
-            $wbRoot = $domain;
-            $toolRoot = $domain . $toolUrlTail;
-
-            // Directly for config
-            $publicMwOAuthUrl = 'https://' . $wbRoot . '/w/index.php?title=Special:OAuth'; // TODO this could use the internal network
-            $mwOAuthUrl = 'https://' . $wbRoot . '/w/index.php?title=Special:OAuth';
-            $wbPublicHostAndPort = $wbRoot;
-            $wbApi = 'https://' . $wbRoot . '/w/api.php'; // TODO this could use the internal network
-            $wbPageBase = 'https://' . $wbRoot . '/wiki/';
-            $toolbase = 'https://' . $toolRoot;
-            $entityBase = 'https://' . $wbRoot . '/entity/';
-        }
+        // Directly for config
+        $publicMwOAuthUrl = 'https://' . $wbRoot . '/w/index.php?title=Special:OAuth'; // TODO this could use the internal network
+        $mwOAuthUrl = 'https://' . $wbRoot . '/w/index.php?title=Special:OAuth';
+        $wbPublicHostAndPort = $wbRoot;
+        $wbApi = 'https://' . $wbRoot . '/w/api.php'; // TODO this could use the internal network
+        $wbPageBase = 'https://' . $wbRoot . '/wiki/';
+        $toolbase = 'https://' . $toolRoot;
+        $entityBase = 'https://' . $wbRoot . '/entity/';
 
         $site = [
             'oauth' => [
@@ -231,13 +211,7 @@ class WbstackMagnusOauth {
 	 *
 	 */
 	public static function setCurlHttpHeaders( $curlHandle, $headers = [] ) {
-
-		if( WbstackMagnusOauth::isLocalHost() ) {
-			$domain = $_SERVER['SERVER_NAME'];
-			$headers[] = 'HOST: ' . $domain;
-		}
-	
-		if( !empty($headers) ) {
+        if( !empty($headers) ) {
 			curl_setopt( $curlHandle, CURLOPT_HTTPHEADER, $headers );
 		}
 	}
