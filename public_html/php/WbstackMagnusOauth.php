@@ -172,7 +172,7 @@ class WbstackMagnusOauth {
         $toolRoot = $domain . $toolUrlTail;
 
         // Directly for config
-        $publicMwOAuthUrl = 'https://' . $wbRoot . '/w/index.php?title=Special:OAuth'; // TODO this could use the internal network
+        $publicMwOAuthUrl = 'https://' . $wbRoot . '/w/index.php?title=Special:OAuth';
         $mwOAuthUrl = 'https://' . $wbRoot . '/w/index.php?title=Special:OAuth';
         $wbPublicHostAndPort = $wbRoot;
         $wbApi = 'https://' . $wbRoot . '/w/api.php'; // TODO this could use the internal network
