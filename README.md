@@ -12,6 +12,14 @@ It gets used by:
 - [wbstack/quickstatements](https://github.com/wbstack/quickstatements/blob/main/composer.json)
 - [wbstack/cradle](https://github.com/wbstack/cradle/blob/main/composer.json)
 
+## Syncing this fork
+- Switch/Create a branch for the merge
+- Add local upstream remote: `git remote add upstream https://bitbucket.org/magnusmanske/magnustools/src/master/`
+- Fetch upstream: `git fetch upstream`  
+- Merge master(!) branch: `git merge upstream/master`
+- Resolve conflicts (if any)
+- Update Changelog
+
 ## Development in wbstack
 In order to test pending changes from this repository with a specific tool, you can target a specific branch from this repository.
 
