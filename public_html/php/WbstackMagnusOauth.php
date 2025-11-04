@@ -3,6 +3,7 @@
 class WbstackMagnusOauth {
 
     public const platformIngressHostAndPort = "platform-nginx.default.svc.cluster.local:8080";
+    public const platformApiBackendHost = "api-app-backend.default.svc.cluster.local";
 
     /**
      * @var bool
@@ -28,6 +29,36 @@ class WbstackMagnusOauth {
      * @var string
      */
     private static $callbackUrlTail;
+
+    public static function getVersionedMediawikiBackendHost() {
+        $host = getenv('PLATFORM_MW_BACKEND_HOST'); // default fallback
+
+        $requestUrl = 'http://'
+            .self::platformApiBackendHost
+            .'/backend/ingress/getWikiVersionForDomain?domain='
+            .$_SERVER['SERVER_NAME'];
+
+        $headers = get_headers($requestUrl, true);
+
+        if (is_array($headers)) {
+            if (isset($headers['x-version'])) {
+                $wikiVersion = $headers['x-version'];
+
+                // mapping like in https://github.com/wmde/wbaas-deploy/blob/main/k8s/helmfile/env/local/platform-nginx.nginx.conf#L4
+                // TODO https://phabricator.wikimedia.org/T409078
+                switch ($wikiVersion) {
+                    case 'mw1.39-wbs1':
+                        $host = 'mediawiki-139-app-backend.default.svc.cluster.local';
+                        break;
+                    case 'mw1.43-wbs1':
+                        $host = 'mediawiki-143-app-backend.default.svc.cluster.local';
+                        break;
+                }
+            }
+        }
+
+        return $host;
+    }
 
     /**
      * Calling this means that oauth.php will just do the right thing in terms of wbstack.
@@ -104,7 +135,7 @@ class WbstackMagnusOauth {
             'callbackUrlTail' => self::$callbackUrlTail,
         ];
 
-        $client = curl_init('http://' . getenv( 'PLATFORM_MW_BACKEND_HOST' ) . '/w/api.php?action=wbstackPlatformOauthGet&format=json');
+        $client = curl_init('http://' . self::getVersionedMediawikiBackendHost() . '/w/api.php?action=wbstackPlatformOauthGet&format=json');
         curl_setopt($client, CURLOPT_HTTPHEADER, $headers);
         curl_setopt( $client, CURLOPT_USERAGENT, "WBStack - " .  self::$consumerName . " - WbstackMagnusOauth::parse_ini_file" );
         curl_setopt($client, CURLOPT_RETURNTRANSFER, true);
