@@ -152,7 +152,6 @@ class WbstackMagnusOauth {
             'callbackUrlTail' => self::$callbackUrlTail,
         ];
 
-        //$client = curl_init('http://' . getenv( 'PLATFORM_MW_BACKEND_HOST' ) . '/w/api.php?action=wbstackPlatformOauthGet&format=json');
         $client = curl_init('http://' . self::getVersionedMediawikiBackendHost() . '/w/api.php?action=wbstackPlatformOauthGet&format=json');
         curl_setopt($client, CURLOPT_HTTPHEADER, $headers);
         curl_setopt( $client, CURLOPT_USERAGENT, "WBStack - " .  self::$consumerName . " - WbstackMagnusOauth::parse_ini_file" );
