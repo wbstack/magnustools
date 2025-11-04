@@ -33,44 +33,27 @@ class WbstackMagnusOauth {
     public static function getVersionedMediawikiBackendHost() {
         $host = getenv('PLATFORM_MW_BACKEND_HOST'); // default fallback
 
-        $headers = [
-            'Host: ' . $_SERVER['SERVER_NAME'],
-        ];
+        $requestUrl = 'http://'
+            .self::platformApiBackendHost
+            .'/backend/ingress/getWikiVersionForDomain?domain='
+            .$_SERVER['SERVER_NAME'];
 
-        $client = curl_init('http://' . self::platformApiBackendHost . '/backend/ingress/getWikiVersionForDomain?domain=' . $_SERVER['SERVER_NAME']);
-        curl_setopt($client, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt( $client, CURLOPT_USERAGENT, "WBStack - " .  self::$consumerName . " - WbstackMagnusOauth::getMediawikiHostByDomain" );
-        curl_setopt($client, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($client, CURLOPT_HEADER, true);
+        $headers = get_headers($requestUrl, true);
 
-        $response = curl_exec($client);
+        if (is_array($headers)) {
+            if (isset($headers['x-version'])) {
+                $wikiVersion = $headers['x-version'];
 
-        $headerSize = curl_getinfo($client, CURLINFO_HEADER_SIZE);
-        $headerString = substr($response, 0, $headerSize);
-        $body = substr($response, $headerSize);
-        
-        if ($body == '1') { // success
-            $headerArray = explode("\r\n", $headerString);
-            $wikiVersion = null;
-
-            foreach ($headerArray as $header) {
-                if (stripos($header, 'X-Version:') !== false) {
-                    $valueStart  = strpos($header, ':') + 1;
-                    $wikiVersion = substr($header, $valueStart);
-                    $wikiVersion = trim($wikiVersion);
-                    break;
+                // mapping like in https://github.com/wmde/wbaas-deploy/blob/main/k8s/helmfile/env/local/platform-nginx.nginx.conf#L4
+                // TODO https://phabricator.wikimedia.org/T409078
+                switch ($wikiVersion) {
+                    case 'mw1.39-wbs1':
+                        $host = 'mediawiki-139-app-backend.default.svc.cluster.local';
+                        break;
+                    case 'mw1.43-wbs1':
+                        $host = 'mediawiki-143-app-backend.default.svc.cluster.local';
+                        break;
                 }
-            }
-
-            // mapping like in https://github.com/wmde/wbaas-deploy/blob/main/k8s/helmfile/env/local/platform-nginx.nginx.conf#L4
-            // ideally Platform API could give us this someday
-            switch ($wikiVersion) {
-                case 'mw1.39-wbs1':
-                    $host = 'mediawiki-139-app-backend.default.svc.cluster.local';
-                    break;
-                case 'mw1.43-wbs1':
-                    $host = 'mediawiki-143-app-backend.default.svc.cluster.local';
-                    break;
             }
         }
 
