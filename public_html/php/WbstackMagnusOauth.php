@@ -35,7 +35,7 @@ class WbstackMagnusOauth {
 
         $requestUrl = 'http://'
             .self::platformApiBackendHost
-            .'/backend/getWikiHostForDomain?domain='
+            .'/backend/getWikiHostsForDomain?domain='
             .$_SERVER['SERVER_NAME'];
 
         $headers = get_headers($requestUrl, true);
