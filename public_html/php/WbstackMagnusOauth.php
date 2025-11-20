@@ -35,25 +35,14 @@ class WbstackMagnusOauth {
 
         $requestUrl = 'http://'
             .self::platformApiBackendHost
-            .'/backend/ingress/getWikiVersionForDomain?domain='
+            .'/backend/getWikiHostsForDomain?domain='
             .$_SERVER['SERVER_NAME'];
 
         $headers = get_headers($requestUrl, true);
 
         if (is_array($headers)) {
-            if (isset($headers['x-version'])) {
-                $wikiVersion = $headers['x-version'];
-
-                // mapping like in https://github.com/wmde/wbaas-deploy/blob/main/k8s/helmfile/env/local/platform-nginx.nginx.conf#L4
-                // TODO https://phabricator.wikimedia.org/T409078
-                switch ($wikiVersion) {
-                    case 'mw1.39-wbs1':
-                        $host = 'mediawiki-139-app-backend.default.svc.cluster.local';
-                        break;
-                    case 'mw1.43-wbs1':
-                        $host = 'mediawiki-143-app-backend.default.svc.cluster.local';
-                        break;
-                }
+            if (isset($headers['x-backend-host'])) {
+                $host = $headers['x-backend-host'];
             }
         }
 
