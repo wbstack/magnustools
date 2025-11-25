@@ -185,7 +185,6 @@ class WbstackMagnusOauth {
     public static function getSite(
         string $toolUrlTail
     ) {
-        // XXX: this same logic is in quickstatements.php and platform api WikiController backend
         $domain = $_SERVER['SERVER_NAME'];
 
         $wbRoot = $domain;
