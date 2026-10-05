@@ -3,7 +3,7 @@
 
 # magnustools
 ## About
-This repository contains a fork of [magnustools](https://bitbucket.org/magnusmanske/magnustools/src/master/), which is (technically) a PHP library with shared code for wikidata tools over at https://tools.wmflabs.org
+This repository contains a fork of [magnustools](https://codeberg.org/magnusmanske/magnustools/), which is (technically) a PHP library with shared code for wikidata tools over at https://tools.wmflabs.org
 
 This fork contains modifications to use these tools with wbstack / wikibase.cloud
 
